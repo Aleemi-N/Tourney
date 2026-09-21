@@ -56,3 +56,28 @@ export const getUser = cache(async () => {
   const supabase = await createClient();
   return supabase.auth.getUser();
 });
+
+/**
+ * Cached tournament lookup for Server Components.
+ */
+export const getTournament = cache(async (id: string) => {
+  const supabase = await createClient();
+  return supabase
+    .from('tournaments')
+    .select('*')
+    .eq('id', id)
+    .single();
+});
+
+/**
+ * Cached membership lookup for Server Components.
+ */
+export const getTournamentMembership = cache(async (tournamentId: string, userId: string) => {
+  const supabase = await createClient();
+  return supabase
+    .from('tournament_members')
+    .select('role')
+    .eq('tournament_id', tournamentId)
+    .eq('user_id', userId)
+    .single();
+});

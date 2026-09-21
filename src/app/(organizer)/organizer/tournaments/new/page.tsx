@@ -45,21 +45,24 @@ export default async function NewTournamentPage({
     console.timeEnd('Tournament fetch');
 
     if (tournament) {
-      // Fetch settings
+      // Fetch settings and rules concurrently
       console.time('Rules/settings fetch');
-      const { data: settings } = await supabase
-        .from('tournament_settings')
-        .select('*')
-        .eq('tournament_id', tournament.id)
-        .single();
-      
-      // Fetch rules
-      const { data: rules } = await supabase
-        .from('volleyball_rules')
-        .select('*')
-        .eq('tournament_id', tournament.id)
-        .is('stage_id', null)
-        .single();
+      const [
+        { data: settings },
+        { data: rules }
+      ] = await Promise.all([
+        supabase
+          .from('tournament_settings')
+          .select('*')
+          .eq('tournament_id', tournament.id)
+          .single(),
+        supabase
+          .from('volleyball_rules')
+          .select('*')
+          .eq('tournament_id', tournament.id)
+          .is('stage_id', null)
+          .single()
+      ]);
       console.timeEnd('Rules/settings fetch');
 
       draftData = {

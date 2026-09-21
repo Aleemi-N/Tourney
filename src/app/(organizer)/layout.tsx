@@ -10,7 +10,7 @@
  * Placeholder shell — navigation to be built in the organizer phase.
  */
 import { DashboardShell } from '@/components/organizer/DashboardShell';
-import { createClient, getUser } from '@/lib/supabase/server';
+import { getUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
 export default async function OrganizerLayout({

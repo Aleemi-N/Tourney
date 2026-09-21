@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server';
-import { notFound, redirect } from 'next/navigation';
+import { createClient, getTournament } from '@/lib/supabase/server';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { SettingsForm } from './SettingsForm';
@@ -10,32 +10,10 @@ export default async function SettingsPage({ params }: { params: Promise<{ id: s
   const { id } = await params;
   const supabase = await createClient();
 
-  // 1. Authenticate
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return redirect('/login');
-  }
-
-  // 2. Fetch Tournament
-  const { data: tournament } = await supabase
-    .from('tournaments')
-    .select('id, name, format, league_mode')
-    .eq('id', id)
-    .single();
+  // Fetch Tournament from cache (shared with layout)
+  const { data: tournament } = await getTournament(id);
 
   if (!tournament) {
-    notFound();
-  }
-
-  // 3. Verify Organizer Role
-  const { data: membership } = await supabase
-    .from('tournament_members')
-    .select('role')
-    .eq('tournament_id', id)
-    .eq('user_id', user.id)
-    .single();
-
-  if (membership?.role !== 'ORGANIZER') {
     notFound();
   }
 

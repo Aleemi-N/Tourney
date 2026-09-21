@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server';
-import { notFound, redirect } from 'next/navigation';
+import { createClient, getTournament } from '@/lib/supabase/server';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
@@ -14,39 +14,22 @@ export default async function TournamentManagementPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
-
-  const { data: tournament } = await supabase
-    .from('tournaments')
-    .select('*')
-    .eq('id', id)
-    .single();
+  
+  // Use cached tournament lookup (shared with layout)
+  const { data: tournament } = await getTournament(id);
 
   if (!tournament) {
     notFound();
   }
 
-  const { data: membership } = await supabase
-    .from('tournament_members')
-    .select('role')
-    .eq('tournament_id', id)
-    .eq('user_id', user.id)
-    .single();
-
-  if (membership?.role !== 'ORGANIZER') {
-    notFound();
-  }
-
   // 4. Fetch counts
+  console.time('OverviewPage getCounts');
   const [{ count: playerCount }, { count: teamOwnerCount }, { count: teamCount }] = await Promise.all([
     supabase.from('player_tournament_registrations').select('*', { count: 'exact', head: true }).eq('tournament_id', id),
     supabase.from('team_owner_applications').select('*', { count: 'exact', head: true }).eq('tournament_id', id),
     supabase.from('teams').select('*', { count: 'exact', head: true }).eq('tournament_id', id)
   ]);
+  console.timeEnd('OverviewPage getCounts');
 
   return (
     <main className="p-4 md:p-8 max-w-5xl mx-auto h-full">
