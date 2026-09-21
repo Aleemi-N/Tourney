@@ -6,11 +6,14 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { ImageUpload } from '@/components/forms/ImageUpload';
 import { Loader2 } from 'lucide-react';
+import { VOLLEYBALL_POSITIONS, formatVolleyballPosition } from '@/lib/volleyball-positions';
 
 export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }: { userId: string, tournamentId: string, initialProfile: any }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(initialProfile?.photo_path || null);
+  const [primaryPosition, setPrimaryPosition] = useState(initialProfile?.primary_position || '');
+  const [secondaryPosition, setSecondaryPosition] = useState(initialProfile?.secondary_position || '');
   const supabase = createClient();
   const router = useRouter();
 
@@ -25,20 +28,26 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
     const dob = formData.get('dob') as string;
     const place = formData.get('place') as string;
     const height = formData.get('height') as string;
-    const primaryPosition = formData.get('primaryPosition') as string;
-    const secondaryPosition = formData.get('secondaryPosition') as string;
+    const submittedPrimaryPosition = formData.get('primaryPosition') as string;
+    const submittedSecondaryPosition = formData.get('secondaryPosition') as string;
+
+    if (submittedSecondaryPosition && submittedSecondaryPosition === submittedPrimaryPosition) {
+      setError('Secondary Position must be different from Primary Position.');
+      setPending(false);
+      return;
+    }
 
     try {
       const { error: rpcError } = await supabase.rpc('submit_player_registration', {
         p_tournament_id: tournamentId,
         p_display_name: displayName,
-        p_primary_position: primaryPosition,
+        p_primary_position: submittedPrimaryPosition,
         p_photo_path: photoUrl || undefined,
         p_date_of_birth: dob || undefined,
         p_phone: phone || undefined,
         p_place: place || undefined,
         p_height_cm: height ? parseFloat(height) : undefined,
-        p_secondary_position: secondaryPosition || undefined,
+        p_secondary_position: submittedSecondaryPosition || undefined,
         p_playing_history: initialProfile?.playing_history || undefined
       });
 
@@ -63,12 +72,7 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
     }
   }
 
-  const positions = [
-    'SETTER', 'LIBERO', 'MIDDLE_BLOCKER', 
-    'OUTSIDE_HITTER', 'OPPOSITE', 'UNIVERSAL'
-  ];
-
-  const fieldClass = 'min-h-11 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary scheme-dark transition-colors placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40';
+  const fieldClass = 'min-h-11 min-w-0 w-full rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary scheme-dark transition-colors placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40';
   const labelClass = 'text-sm font-medium text-text-secondary';
 
   return (
@@ -156,27 +160,33 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
             id="primaryPosition"
             name="primaryPosition"
             required
-            defaultValue={initialProfile?.primary_position || ''}
+            value={primaryPosition}
+            onChange={(event) => {
+              const nextPrimary = event.target.value;
+              setPrimaryPosition(nextPrimary);
+              if (secondaryPosition === nextPrimary) setSecondaryPosition('');
+            }}
             className={fieldClass}
           >
             <option value="" disabled>Select a position...</option>
-            {positions.map(p => (
-              <option key={p} value={p}>{p.replace('_', ' ')}</option>
+            {VOLLEYBALL_POSITIONS.map(p => (
+              <option key={p} value={p}>{formatVolleyballPosition(p)}</option>
             ))}
           </select>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="secondaryPosition" className={labelClass}>Secondary Position</label>
+          <label htmlFor="secondaryPosition" className={labelClass}>Secondary Position (Optional)</label>
           <select 
             id="secondaryPosition"
             name="secondaryPosition"
-            defaultValue={initialProfile?.secondary_position || ''}
+            value={secondaryPosition}
+            onChange={(event) => setSecondaryPosition(event.target.value)}
             className={fieldClass}
           >
             <option value="">None</option>
-            {positions.map(p => (
-              <option key={p} value={p}>{p.replace('_', ' ')}</option>
+            {VOLLEYBALL_POSITIONS.filter((position) => position !== primaryPosition).map(p => (
+              <option key={p} value={p}>{formatVolleyballPosition(p)}</option>
             ))}
           </select>
         </div>

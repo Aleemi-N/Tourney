@@ -5,6 +5,7 @@ import { MapPin, Ruler } from 'lucide-react';
 import Image from 'next/image';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { formatVolleyballPosition } from '@/lib/volleyball-positions';
 
 /** Utility for merging tailwind classes */
 function cn(...inputs: ClassValue[]) {
@@ -16,6 +17,7 @@ export type PlayerCardProps = {
     id: string;
     display_name: string;
     primary_position: string;
+    secondary_position?: string | null;
     photo_path?: string | null;
     height_cm?: number | null;
     place?: string | null;
@@ -72,11 +74,6 @@ export function PlayerCard({
     );
   };
 
-  // Replace underscores and capitalize position
-  const formatPosition = (pos: string) => {
-    return pos.split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
-  };
-
   const initials = player.display_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
   return (
@@ -119,8 +116,13 @@ export function PlayerCard({
             {player.display_name}
           </h3>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            {formatPosition(player.primary_position)}
+            {formatVolleyballPosition(player.primary_position)}
           </p>
+          {player.secondary_position && (
+            <p className="mt-0.5 truncate text-xs text-slate-400 dark:text-slate-500">
+              Secondary: {formatVolleyballPosition(player.secondary_position)}
+            </p>
+          )}
         </div>
 
         {/* Optional Metadata Grid */}

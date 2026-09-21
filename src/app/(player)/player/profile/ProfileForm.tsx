@@ -6,12 +6,15 @@ import { createClient } from '@/lib/supabase/client';
 import { ImageUpload } from '@/components/forms/ImageUpload';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { VOLLEYBALL_POSITIONS, formatVolleyballPosition } from '@/lib/volleyball-positions';
 
 export function ProfileForm({ userId, initialProfile }: { userId: string, initialProfile: any }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(initialProfile?.photo_path || null);
+  const [primaryPosition, setPrimaryPosition] = useState(initialProfile?.primary_position || '');
+  const [secondaryPosition, setSecondaryPosition] = useState(initialProfile?.secondary_position || '');
   const supabase = createClient();
   const router = useRouter();
 
@@ -27,19 +30,25 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
     const dob = formData.get('dob') as string;
     const place = formData.get('place') as string;
     const height = formData.get('height') as string;
-    const primaryPosition = formData.get('primaryPosition') as string;
-    const secondaryPosition = formData.get('secondaryPosition') as string;
+    const submittedPrimaryPosition = formData.get('primaryPosition') as string;
+    const submittedSecondaryPosition = formData.get('secondaryPosition') as string;
+
+    if (submittedSecondaryPosition && submittedSecondaryPosition === submittedPrimaryPosition) {
+      setError('Secondary Position must be different from Primary Position.');
+      setPending(false);
+      return;
+    }
 
     try {
       const { error: rpcError } = await supabase.rpc('update_player_profile', {
         p_display_name: displayName,
-        p_primary_position: primaryPosition,
+        p_primary_position: submittedPrimaryPosition,
         p_photo_path: photoUrl || undefined,
         p_date_of_birth: dob || undefined,
         p_phone: phone || undefined,
         p_place: place || undefined,
         p_height_cm: height ? parseFloat(height) : undefined,
-        p_secondary_position: secondaryPosition || undefined,
+        p_secondary_position: submittedSecondaryPosition || undefined,
         p_playing_history: initialProfile?.playing_history || undefined
       });
 
@@ -53,11 +62,6 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
       setPending(false);
     }
   }
-
-  const positions = [
-    'SETTER', 'LIBERO', 'MIDDLE_BLOCKER', 
-    'OUTSIDE_HITTER', 'OPPOSITE', 'UNIVERSAL'
-  ];
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5 rounded-2xl border border-border bg-surface-raised p-4 shadow-lg shadow-black/10 sm:gap-6 sm:p-6">
@@ -102,7 +106,7 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
             name="dob"
             type="date"
             defaultValue={initialProfile?.date_of_birth || ''}
-            className="min-h-11 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="min-h-11 min-w-0 w-full rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
@@ -146,27 +150,33 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
             id="primaryPosition"
             name="primaryPosition"
             required
-            defaultValue={initialProfile?.primary_position || ''}
-            className="min-h-11 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+            value={primaryPosition}
+            onChange={(event) => {
+              const nextPrimary = event.target.value;
+              setPrimaryPosition(nextPrimary);
+              if (secondaryPosition === nextPrimary) setSecondaryPosition('');
+            }}
+            className="min-h-11 min-w-0 w-full rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <option value="" disabled>Select a position...</option>
-            {positions.map(p => (
-              <option key={p} value={p}>{p.replace('_', ' ')}</option>
+            {VOLLEYBALL_POSITIONS.map(p => (
+              <option key={p} value={p}>{formatVolleyballPosition(p)}</option>
             ))}
           </select>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="secondaryPosition" className="text-sm font-medium text-text-secondary">Secondary Position</label>
+          <label htmlFor="secondaryPosition" className="text-sm font-medium text-text-secondary">Secondary Position (Optional)</label>
           <select 
             id="secondaryPosition"
             name="secondaryPosition"
-            defaultValue={initialProfile?.secondary_position || ''}
+            value={secondaryPosition}
+            onChange={(event) => setSecondaryPosition(event.target.value)}
             className="min-h-11 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <option value="">None</option>
-            {positions.map(p => (
-              <option key={p} value={p}>{p.replace('_', ' ')}</option>
+            {VOLLEYBALL_POSITIONS.filter((position) => position !== primaryPosition).map(p => (
+              <option key={p} value={p}>{formatVolleyballPosition(p)}</option>
             ))}
           </select>
         </div>

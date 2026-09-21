@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Menu, X } from 'lucide-react';
 import { APP_CONFIG } from '@/lib/config';
 import { VolleyballIcon } from './VolleyballIcon';
@@ -10,7 +11,7 @@ import { logout } from '@/app/actions/auth';
 interface LandingNavProps {
   isAuthenticated?: boolean;
   isOrganizer?: boolean;
-  userProfile?: { full_name: string } | null;
+  userProfile?: { full_name: string; photo_url?: string | null } | null;
 }
 
 export function LandingNav({ isAuthenticated = false, isOrganizer = false, userProfile = null }: LandingNavProps) {
@@ -91,14 +92,18 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                     aria-haspopup="true"
                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-text-primary hover:bg-white/5 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary relative z-50"
                   >
-                    <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold uppercase">
-                      {userProfile?.full_name ? userProfile.full_name.substring(0, 2) : 'U'}
+                    <div className="relative w-8 h-8 overflow-hidden rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold uppercase">
+                      {userProfile?.photo_url ? <Image src={userProfile.photo_url} alt="" fill sizes="32px" className="object-cover object-[center_22%]" /> : (userProfile?.full_name ? userProfile.full_name.substring(0, 2) : 'U')}
                     </div>
+                    <span className="max-w-28 truncate">{userProfile?.full_name || 'Account'}</span>
                   </button>
                   {isProfileMenuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-surface border border-white/10 rounded-xl shadow-xl py-2 z-50">
                       <Link href="/profile" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-text-primary hover:bg-white/5">
                         My Profile
+                      </Link>
+                      <Link href="/profile#tournament-history" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-text-primary hover:bg-white/5">
+                        Tournament History
                       </Link>
                       <form onSubmit={handleLogout}>
                         <button type="submit" disabled={isLoggingOut} className="w-full text-left px-4 py-2 text-sm text-text-secondary hover:text-danger hover:bg-white/5 transition-colors disabled:opacity-50">
@@ -182,6 +187,13 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                   className="w-full py-3 text-center text-sm font-medium text-text-primary border border-white/10 rounded-xl"
                 >
                   My Profile
+                </Link>
+                <Link
+                  href="/profile#tournament-history"
+                  onClick={() => setIsOpen(false)}
+                  className="w-full py-3 text-center text-sm font-medium text-text-primary border border-white/10 rounded-xl"
+                >
+                  Tournament History
                 </Link>
                 <form onSubmit={(e) => { handleLogout(e); setIsOpen(false); }}>
                   <button 

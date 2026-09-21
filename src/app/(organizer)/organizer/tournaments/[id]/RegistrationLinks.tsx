@@ -21,7 +21,7 @@ export function RegistrationLinks({ slug, isLeague, status }: RegistrationLinksP
   const [copiedTeam, setCopiedTeam] = useState(false);
 
   const playerUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/t/${slug}/register/player`;
-  const teamUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/t/${slug}/register/team`;
+  const teamUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/t/${slug}/register/owner`;
 
   const handleCopy = async (url: string, type: 'player' | 'team') => {
     try {
@@ -95,7 +95,7 @@ export function RegistrationLinks({ slug, isLeague, status }: RegistrationLinksP
             </p>
             <div className="flex items-center gap-2 mt-auto">
               <Link 
-                href={`/t/${slug}/register/team`}
+                href={`/t/${slug}/register/owner`}
                 target="_blank"
                 className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
               >

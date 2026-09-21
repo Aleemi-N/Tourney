@@ -20,6 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://tournyappfyniti.vercel.app'),
   title: {
     default: 'Tournament Platform',
     template: '%s | Tournament Platform',

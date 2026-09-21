@@ -53,12 +53,13 @@ export async function proxy(request: NextRequest) {
   );
 
   const isOrganizerRoute = request.nextUrl.pathname.startsWith('/organizer');
-  const isProtectedPhase4Route = 
-    request.nextUrl.pathname.match(/^\/t\/[^/]+\/register\/(player|team)$/) ||
+  // Public registration shells and their metadata must remain crawlable.
+  // Their Server Components still gate forms/data with auth.getUser().
+  const isProtectedAccountRoute =
     request.nextUrl.pathname.startsWith('/player/') ||
     request.nextUrl.pathname.startsWith('/owner/');
 
-  if (isOrganizerRoute || isProtectedPhase4Route) {
+  if (isOrganizerRoute || isProtectedAccountRoute) {
     const {
       data: { user },
     } = await supabase.auth.getUser();

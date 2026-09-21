@@ -1,7 +1,14 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { PlayerRegistrationForm } from './PlayerRegistrationForm';
 import { RegistrationShell, registrationCardClass, registrationStatusClass } from '../RegistrationShell';
+import type { Metadata } from 'next';
+import { buildTournamentMetadata } from '@/lib/public-tournament-metadata';
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  return buildTournamentMetadata(slug, 'player');
+}
 
 export default async function PlayerRegistrationPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -35,7 +42,17 @@ export default async function PlayerRegistrationPage({ params }: { params: Promi
   // 2. Enforce Authentication
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    redirect(`/login?next=/t/${slug}/register/player`);
+    return (
+      <RegistrationShell slug={slug} tournamentName={tournament.name} title="Player Registration">
+        <div className={registrationCardClass}>
+          <h2 className="text-lg font-semibold text-text-primary">Sign in required</h2>
+          <p className="mt-2 text-sm text-text-secondary">Sign in to your Tourny account to register as a player.</p>
+          <Link href={`/login?next=/t/${slug}/register/player`} className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+            Sign in to continue
+          </Link>
+        </div>
+      </RegistrationShell>
+    );
   }
 
   // 3. Fetch Player Profile

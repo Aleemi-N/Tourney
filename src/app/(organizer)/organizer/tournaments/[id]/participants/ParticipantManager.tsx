@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { PlayerReviewCard } from '@/components/player/PlayerReviewCard';
-import { approvePlayerAction, rejectPlayerAction, approveTeamOwnerAction, rejectTeamOwnerAction } from '@/app/actions/participants';
+import { approvePlayerAction, rejectPlayerAction, approveTeamOwnerAction, rejectTeamOwnerAction, reopenPlayerRegistrationAction, revokePlayerApprovalAction } from '@/app/actions/participants';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -27,6 +27,8 @@ export function ParticipantManager({
   
   // Local loading states
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const [correction, setCorrection] = useState<{ id: string; name: string; action: 'revoke' | 'reopen'; reason: string } | null>(null);
   
   // Classification state for players
   const [classifications, setClassifications] = useState<Record<string, string>>({});
@@ -41,16 +43,21 @@ export function ParticipantManager({
   const getCount = (status: string) => tab === 'PLAYERS' ? getPlayerCount(status) : getOwnerCount(status);
 
   const handleApprovePlayer = async (regId: string) => {
+    setMessage(null);
     setLoadingId(regId);
     try {
       const cls = classifications[regId];
       if (isAuctionLeague && !cls) {
-        alert('Please select an auction classification.');
+        setMessage({ type: 'error', text: 'Please select an auction classification.' });
         return;
       }
       const res = await approvePlayerAction(regId, isAuctionLeague ? cls : null);
-      if (res.error) alert(res.error);
+      if (res.error) {
+        setMessage({ type: 'error', text: res.error });
+        router.refresh();
+      }
       else {
+        setMessage({ type: 'success', text: 'Player application approved.' });
         router.refresh();
       }
     } finally {
@@ -59,33 +66,76 @@ export function ParticipantManager({
   };
 
   const handleRejectPlayer = async (regId: string) => {
+    setMessage(null);
     setLoadingId(regId);
     try {
       const res = await rejectPlayerAction(regId);
-      if (res.error) alert(res.error);
-      else router.refresh();
+      if (res.error) {
+        setMessage({ type: 'error', text: res.error });
+        router.refresh();
+      } else {
+        setMessage({ type: 'success', text: 'Player application rejected.' });
+        router.refresh();
+      }
     } finally {
       setLoadingId(null);
     }
   };
 
   const handleApproveOwner = async (appId: string) => {
+    setMessage(null);
     setLoadingId(appId);
     try {
       const res = await approveTeamOwnerAction(appId);
-      if (res.error) alert(res.error);
-      else router.refresh();
+      if (res.error) {
+        setMessage({ type: 'error', text: res.error });
+        router.refresh();
+      } else {
+        setMessage({ type: 'success', text: 'Team owner application approved.' });
+        router.refresh();
+      }
     } finally {
       setLoadingId(null);
     }
   };
 
   const handleRejectOwner = async (appId: string) => {
+    setMessage(null);
     setLoadingId(appId);
     try {
       const res = await rejectTeamOwnerAction(appId);
-      if (res.error) alert(res.error);
-      else router.refresh();
+      if (res.error) {
+        setMessage({ type: 'error', text: res.error });
+        router.refresh();
+      } else {
+        setMessage({ type: 'success', text: 'Team owner application rejected.' });
+        router.refresh();
+      }
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleCorrection = async () => {
+    if (!correction) return;
+    setMessage(null);
+    setLoadingId(correction.id);
+    try {
+      const result = correction.action === 'revoke'
+        ? await revokePlayerApprovalAction(correction.id, correction.reason)
+        : await reopenPlayerRegistrationAction(correction.id, correction.reason);
+      if (result.error) {
+        setMessage({ type: 'error', text: result.error });
+      } else {
+        setMessage({
+          type: 'success',
+          text: correction.action === 'revoke'
+            ? 'Player approval revoked. The registration is pending review.'
+            : 'Player application reopened. The registration is pending review.',
+        });
+      }
+      setCorrection(null);
+      router.refresh();
     } finally {
       setLoadingId(null);
     }
@@ -93,6 +143,14 @@ export function ParticipantManager({
 
   return (
     <div className="flex flex-col gap-6">
+      {message && (
+        <div
+          role="status"
+          className={`rounded-xl border p-3 text-sm ${message.type === 'error' ? 'border-danger/30 bg-danger/10 text-danger' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'}`}
+        >
+          {message.text}
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {/* Tabs */}
         <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-lg w-fit">
@@ -154,6 +212,7 @@ export function ParticipantManager({
                       id: profile.id,
                       display_name: profile.display_name,
                       primary_position: profile.primary_position,
+                      secondary_position: profile.secondary_position,
                       // Use Supabase client getPublicUrl for correct, consistent URL generation
                       photo_path: profile.photo_path
                         ? supabase.storage.from('avatars').getPublicUrl(profile.photo_path).data.publicUrl
@@ -164,8 +223,10 @@ export function ParticipantManager({
                     status={p.status}
                     classification={classifications[p.id] || p.auction_category || undefined}
                     onClassify={isAuctionLeague ? (val) => setClassifications(prev => ({ ...prev, [p.id]: val })) : undefined}
-                    onApprove={() => handleApprovePlayer(p.id)}
-                    onReject={() => handleRejectPlayer(p.id)}
+                    onApprove={['PENDING', 'CHANGES_REQUESTED'].includes(p.status) ? () => handleApprovePlayer(p.id) : undefined}
+                    onReject={['PENDING', 'CHANGES_REQUESTED'].includes(p.status) ? () => handleRejectPlayer(p.id) : undefined}
+                    onRevokeApproval={p.status === 'APPROVED' ? () => setCorrection({ id: p.id, name: profile.display_name, action: 'revoke', reason: '' }) : undefined}
+                    onReopenApplication={p.status === 'REJECTED' ? () => setCorrection({ id: p.id, name: profile.display_name, action: 'reopen', reason: '' }) : undefined}
                     isSubmitting={isSubmitting}
                   />
                 );
@@ -205,8 +266,8 @@ export function ParticipantManager({
                       </div>
                     </div>
                     
+                    {['PENDING', 'CHANGES_REQUESTED'].includes(o.status) && (
                     <div className="mt-auto pt-4 flex flex-col-reverse min-[350px]:flex-row gap-2 w-full">
-                      {o.status !== 'REJECTED' && (
                         <button
                           type="button"
                           onClick={() => handleRejectOwner(o.id)}
@@ -216,8 +277,6 @@ export function ParticipantManager({
                           {loadingId === o.id && <Loader2 className="h-4 w-4 animate-spin" />}
                           Reject
                         </button>
-                      )}
-                      {o.status !== 'APPROVED' && (
                         <button
                           type="button"
                           onClick={() => handleApproveOwner(o.id)}
@@ -227,8 +286,8 @@ export function ParticipantManager({
                           {loadingId === o.id && <Loader2 className="h-4 w-4 animate-spin" />}
                           Approve
                         </button>
-                      )}
                     </div>
+                    )}
                     
                     {o.status === 'APPROVED' && (
                       <div className="mt-auto pt-2">
@@ -251,6 +310,46 @@ export function ParticipantManager({
           </div>
         )}
       </div>
+
+      {correction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="presentation">
+          <section
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="correction-title"
+            aria-describedby="correction-description"
+            className="w-full max-w-md rounded-2xl border border-border bg-surface p-5 shadow-2xl sm:p-6"
+          >
+            <h2 id="correction-title" className="text-xl font-bold text-text-primary">
+              {correction.action === 'revoke' ? 'Revoke approval?' : 'Reopen application?'}
+            </h2>
+            <p id="correction-description" className="mt-2 text-sm leading-6 text-text-secondary">
+              {correction.action === 'revoke'
+                ? `${correction.name}'s registration will return to Pending for review. Their profile and registration information will be preserved.`
+                : `${correction.name}'s registration will return to Pending for review.`}
+            </p>
+            <label className="mt-5 block text-sm font-medium text-text-primary">
+              Reason <span className="font-normal text-text-muted">(optional)</span>
+              <textarea
+                value={correction.reason}
+                maxLength={1000}
+                rows={3}
+                onChange={(event) => setCorrection({ ...correction, reason: event.target.value })}
+                placeholder="Add an internal audit note"
+                className="mt-2 w-full resize-y rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-primary focus:ring-2 focus:ring-primary/30"
+              />
+            </label>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" disabled={loadingId === correction.id} onClick={() => setCorrection(null)} className="min-h-11 rounded-xl border border-border px-4 text-sm font-semibold text-text-secondary hover:bg-surface-muted disabled:opacity-50">
+                Cancel
+              </button>
+              <button type="button" disabled={loadingId === correction.id} onClick={handleCorrection} className={`min-h-11 rounded-xl px-4 text-sm font-semibold text-white disabled:opacity-50 ${correction.action === 'revoke' ? 'bg-danger hover:bg-danger/90' : 'bg-primary hover:bg-primary-hover'}`}>
+                {loadingId === correction.id ? 'Updating…' : correction.action === 'revoke' ? 'Revoke Approval' : 'Reopen Application'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

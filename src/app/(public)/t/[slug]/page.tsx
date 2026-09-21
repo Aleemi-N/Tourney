@@ -2,10 +2,11 @@ import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import Image from 'next/image';
-import { LandingNav } from '@/components/landing/LandingNav';
+import { PublicLandingNav } from '@/components/landing/PublicLandingNav';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { VolleyballIcon } from '@/components/landing/VolleyballIcon';
 import { CalendarDays, MapPin, Users, Trophy, Clock } from 'lucide-react';
+import { buildTournamentMetadata } from '@/lib/public-tournament-metadata';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -13,21 +14,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await createClient();
-  // Validates the session so RLS accurately determines if the user is a tournament member
-  await supabase.auth.getUser();
-  const { data: t } = await supabase
-    .from('tournaments')
-    .select('name, description')
-    .eq('slug', slug)
-    .single();
-  if (!t) {
-    return { title: 'Tournament Not Found | Tourny' };
-  }
-  return {
-    title: `${t.name} | Tourny`,
-    description: t.description ?? `Join ${t.name} — a volleyball tournament on Tourny.`,
-  };
+  return buildTournamentMetadata(slug, 'tournament');
 }
 
 // Status display config
@@ -78,7 +65,7 @@ export default async function TournamentPublicPage({ params }: Props) {
   if (!tournament) {
     return (
       <div className="min-h-screen bg-[#09090e] text-text-primary">
-        <LandingNav />
+        <PublicLandingNav />
         <main className="max-w-3xl mx-auto px-4 py-24 text-center">
           <Trophy className="mx-auto h-12 w-12 text-text-muted mb-4" />
           <h1 className="text-2xl font-bold text-text-primary mb-2">Tournament Not Found</h1>
@@ -126,7 +113,7 @@ export default async function TournamentPublicPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-[#09090e] text-text-primary">
-      <LandingNav />
+      <PublicLandingNav />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
 
@@ -259,7 +246,7 @@ export default async function TournamentPublicPage({ params }: Props) {
               )}
               {showTeamOwnerCTA && (
                 <Link
-                  href={`/t/${slug}/register/team`}
+                  href={`/t/${slug}/register/owner`}
                   id="team-owner-register-cta"
                   className="inline-flex items-center gap-2 px-6 py-3 border text-text-primary rounded-xl font-semibold transition-colors text-sm hover:text-text-primary"
                   style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.10)' }}

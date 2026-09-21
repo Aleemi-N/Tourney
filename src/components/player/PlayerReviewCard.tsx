@@ -7,6 +7,8 @@ type PlayerReviewCardProps = PlayerCardProps & {
   onApprove?: () => void;
   onReject?: () => void;
   onClassify?: (category: 'ICON_LOT' | 'SETTER_LOT' | 'MAIN_AUCTION') => void;
+  onRevokeApproval?: () => void;
+  onReopenApplication?: () => void;
   isSubmitting?: boolean;
 };
 
@@ -19,9 +21,12 @@ export function PlayerReviewCard({
   onApprove,
   onReject,
   onClassify,
+  onRevokeApproval,
+  onReopenApplication,
   isSubmitting
 }: PlayerReviewCardProps) {
   const selectId = React.useId();
+  const isActionable = status === 'PENDING' || status === 'CHANGES_REQUESTED';
 
   return (
     <PlayerCard
@@ -31,7 +36,7 @@ export function PlayerReviewCard({
       tournamentColor={tournamentColor}
       className={className}
     >
-      <div className="flex flex-col gap-4">
+      {(isActionable && (onApprove || onReject || onClassify)) || onRevokeApproval || onReopenApplication ? <div className="flex flex-col gap-4">
         {/* If pending/changes_requested, allow classification selection (if auction league) */}
         {status && ['PENDING', 'CHANGES_REQUESTED'].includes(status) && onClassify && (
           <div className="flex flex-col gap-1.5">
@@ -55,7 +60,7 @@ export function PlayerReviewCard({
         )}
 
         <div className="flex flex-col-reverse min-[350px]:flex-row gap-2 w-full mt-1">
-          {onReject && status !== 'REJECTED' && (
+          {onReject && (
             <button
               type="button"
               onClick={onReject}
@@ -65,7 +70,7 @@ export function PlayerReviewCard({
               Reject
             </button>
           )}
-          {onApprove && status !== 'APPROVED' && (
+          {onApprove && (
             <button
               type="button"
               onClick={onApprove}
@@ -76,7 +81,17 @@ export function PlayerReviewCard({
             </button>
           )}
         </div>
-      </div>
+        {onRevokeApproval && (
+          <button type="button" onClick={onRevokeApproval} disabled={isSubmitting} className="self-start rounded-lg border border-border px-3 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-warning/50 hover:text-warning disabled:opacity-50">
+            Revoke Approval
+          </button>
+        )}
+        {onReopenApplication && (
+          <button type="button" onClick={onReopenApplication} disabled={isSubmitting} className="self-start rounded-lg border border-border px-3 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-50">
+            Reopen Application
+          </button>
+        )}
+      </div> : null}
     </PlayerCard>
   );
 }

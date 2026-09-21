@@ -2545,8 +2545,16 @@ export type Database = {
         Args: { p_application_id: string; p_notes?: string }
         Returns: undefined
       }
+      reopen_player_registration: {
+        Args: { p_reason?: string; p_registration_id: string }
+        Returns: Json
+      }
       remove_tournament_staff_role: {
         Args: { p_role: string; p_target_user_id: string; p_tournament_id: string }
+        Returns: Json
+      }
+      revoke_player_approval: {
+        Args: { p_reason?: string; p_registration_id: string }
         Returns: Json
       }
       select_lot: {

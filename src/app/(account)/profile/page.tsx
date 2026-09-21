@@ -130,7 +130,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <LandingNav isAuthenticated={true} isOrganizer={isGlobalOrganizer} userProfile={{ full_name: fullName }} />
+      <LandingNav isAuthenticated={true} isOrganizer={isGlobalOrganizer} userProfile={{ full_name: fullName, photo_url: accountPhotoUrl }} />
       <main className="mx-auto max-w-4xl px-4 pb-12 pt-6 sm:px-8 sm:pt-10">
         <Link
           href="/"
@@ -168,7 +168,7 @@ export default async function ProfilePage() {
         </div>
 
         {/* Participation History */}
-        <div className="w-full md:w-2/3">
+        <div id="tournament-history" className="w-full scroll-mt-24 md:w-2/3">
           <h2 className="text-xl font-bold text-text-primary mb-6">Tournament History</h2>
           
           {participations.length === 0 ? (
