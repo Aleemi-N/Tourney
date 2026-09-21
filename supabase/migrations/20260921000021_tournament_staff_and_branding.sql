@@ -346,7 +346,7 @@ WITH CHECK (
   bucket_id = 'logos'
   AND EXISTS (
     SELECT 1 FROM public.tournaments t
-    WHERE t.id::text = (storage.foldername(name))[1]
+    WHERE t.id::text = (storage.foldername(storage.objects.name))[1]
       AND public.is_tournament_organizer(t.id)
   )
 );
@@ -357,7 +357,7 @@ USING (
   bucket_id = 'logos'
   AND EXISTS (
     SELECT 1 FROM public.tournaments t
-    WHERE t.id::text = (storage.foldername(name))[1]
+    WHERE t.id::text = (storage.foldername(storage.objects.name))[1]
       AND public.is_tournament_organizer(t.id)
   )
 )
@@ -365,7 +365,7 @@ WITH CHECK (
   bucket_id = 'logos'
   AND EXISTS (
     SELECT 1 FROM public.tournaments t
-    WHERE t.id::text = (storage.foldername(name))[1]
+    WHERE t.id::text = (storage.foldername(storage.objects.name))[1]
       AND public.is_tournament_organizer(t.id)
   )
 );
@@ -376,7 +376,7 @@ USING (
   bucket_id = 'logos'
   AND EXISTS (
     SELECT 1 FROM public.tournaments t
-    WHERE t.id::text = (storage.foldername(name))[1]
+    WHERE t.id::text = (storage.foldername(storage.objects.name))[1]
       AND public.is_tournament_organizer(t.id)
   )
 );
