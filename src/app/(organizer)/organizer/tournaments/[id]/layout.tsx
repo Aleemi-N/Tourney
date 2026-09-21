@@ -14,16 +14,15 @@ export default async function TournamentLayout({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { data: { user } } = await getUser();
+  const [
+    { data: { user } },
+    { data: tournament },
+  ] = await Promise.all([getUser(), getTournament(id)]);
 
   if (!user) {
     redirect('/login');
   }
 
-  // Use the React.cache() deduplicated lookups
-  // These run once per navigation to the route group
-  const { data: tournament } = await getTournament(id);
-  
   if (!tournament) {
     notFound();
   }

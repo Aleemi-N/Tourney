@@ -18,9 +18,7 @@ export default async function OrganizerLayout({
 }: {
   children: React.ReactNode;
 }) {
-  console.time('Organizer layout auth');
   const { data: { user } } = await getUser();
-  console.timeEnd('Organizer layout auth');
 
   if (!user) {
     redirect('/login?next=/organizer/dashboard');

@@ -10,7 +10,6 @@ export async function ParticipantListServer({
   const supabase = await createClient();
 
   // Fetch player registrations and team owner applications concurrently
-  console.time('ParticipantPage concurrentQueries');
   const [
     { data: players },
     { data: teamOwners }
@@ -49,7 +48,6 @@ export async function ParticipantListServer({
       .eq('tournament_id', tournament.id)
       .order('created_at', { ascending: false })
   ]);
-  console.timeEnd('ParticipantPage concurrentQueries');
 
   return (
     <ParticipantManager 

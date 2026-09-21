@@ -13,6 +13,8 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const supabase = createClient();
   const router = useRouter();
+  const fieldClass = 'min-h-11 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary scheme-dark transition-colors placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40';
+  const labelClass = 'text-sm font-medium text-text-secondary';
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -59,14 +61,14 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm flex flex-col gap-6">
-      <div className="border-b border-slate-200 dark:border-slate-800 pb-4 mb-2">
-        <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200">Team Application Form</h2>
-        <p className="text-sm text-slate-500 mt-1">Please provide details for your proposed team.</p>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6 rounded-xl border border-border bg-surface-raised p-5 shadow-2xl shadow-black/20 sm:p-6">
+      <div className="mb-2 border-b border-border pb-4">
+        <h2 className="text-xl font-semibold text-text-primary">Team Application Form</h2>
+        <p className="mt-1 text-sm text-text-secondary">Please provide details for your proposed team.</p>
       </div>
 
       {error && (
-        <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-950/20 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-lg">
+        <div className="rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger" role="alert">
           {error}
         </div>
       )}
@@ -81,54 +83,54 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div className="flex flex-col gap-1.5 md:col-span-2">
-          <label htmlFor="proposedTeamName" className="text-sm font-medium text-slate-700 dark:text-slate-300">Proposed Team Name *</label>
+          <label htmlFor="proposedTeamName" className={labelClass}>Proposed Team Name *</label>
           <input 
             id="proposedTeamName"
             name="proposedTeamName"
             type="text"
             required
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={fieldClass}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="teamShortName" className="text-sm font-medium text-slate-700 dark:text-slate-300">Short Name (3-4 letters)</label>
+          <label htmlFor="teamShortName" className={labelClass}>Short Name (3-4 letters)</label>
           <input 
             id="teamShortName"
             name="teamShortName"
             type="text"
             maxLength={4}
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={fieldClass}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="place" className="text-sm font-medium text-slate-700 dark:text-slate-300">City / Location</label>
+          <label htmlFor="place" className={labelClass}>City / Location</label>
           <input 
             id="place"
             name="place"
             type="text"
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={fieldClass}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">Contact Email</label>
+          <label htmlFor="email" className={labelClass}>Contact Email</label>
           <input 
             id="email"
             name="email"
             type="email"
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={fieldClass}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="phone" className="text-sm font-medium text-slate-700 dark:text-slate-300">Contact Phone</label>
+          <label htmlFor="phone" className={labelClass}>Contact Phone</label>
           <input 
             id="phone"
             name="phone"
             type="tel"
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={fieldClass}
           />
         </div>
       </div>
@@ -136,7 +138,7 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
       <button 
         type="submit" 
         disabled={pending}
-        className="mt-6 flex items-center justify-center gap-2 p-3.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+        className="mt-4 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary p-3.5 font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
       >
         {pending && <Loader2 className="h-5 w-5 animate-spin" />}
         {pending ? 'Submitting...' : 'Submit Application'}

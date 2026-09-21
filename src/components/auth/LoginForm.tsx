@@ -46,7 +46,7 @@ export function LoginForm({ nextUrl }: { nextUrl?: string }) {
         </Link>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5 bg-surface p-6 sm:p-8 rounded-2xl shadow-sm border border-border">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5 bg-surface-raised p-6 sm:p-8 rounded-2xl shadow-2xl shadow-black/20 border border-border">
         {nextUrl && <input type="hidden" name="nextUrl" value={nextUrl} />}
         
         <div>

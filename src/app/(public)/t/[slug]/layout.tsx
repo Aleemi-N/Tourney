@@ -8,5 +8,8 @@ export default function TournamentPublicLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  // Public tournament experiences intentionally use Tourny's dark token set.
+  // Keeping the theme on the shared route layout also prevents a light frame
+  // while navigating between the tournament page and registration pages.
+  return <div className="dark min-h-screen bg-background text-text-primary">{children}</div>;
 }

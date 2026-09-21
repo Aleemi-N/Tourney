@@ -101,13 +101,13 @@ export function ImageUpload({
 
   return (
     <div className={twMerge("flex flex-col gap-2", className)}>
-      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+      <span className="text-sm font-medium text-text-secondary">
         {label}
       </span>
       
       <div className="flex items-start gap-4">
         {/* Preview Area */}
-        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900 flex items-center justify-center">
+        <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-muted">
           {displayUrl ? (
             <Image
               src={displayUrl}
@@ -117,7 +117,7 @@ export function ImageUpload({
               unoptimized={displayUrl.startsWith('blob:')}
             />
           ) : (
-            <UploadCloud className="h-8 w-8 text-slate-400" />
+            <UploadCloud className="h-8 w-8 text-text-muted" />
           )}
           {isUploading && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/40">
@@ -140,7 +140,7 @@ export function ImageUpload({
             />
             <label
               htmlFor={`${bucket}-upload`}
-              className="cursor-pointer rounded-md bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              className="cursor-pointer rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm font-medium text-text-primary transition-colors hover:border-border-strong hover:bg-surface focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 focus-within:ring-offset-surface-raised"
             >
               Choose File
             </label>
@@ -149,18 +149,18 @@ export function ImageUpload({
                 type="button"
                 onClick={handleClear}
                 disabled={isUploading}
-                className="flex items-center gap-1 rounded-md px-2 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30"
+                className="flex items-center gap-1 rounded-lg px-2 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
               >
                 <X className="h-4 w-4" />
                 Clear
               </button>
             )}
           </div>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-text-muted">
             JPEG, PNG, WebP up to 2MB.
           </p>
           {error && (
-            <p className="text-xs font-medium text-red-600 dark:text-red-400">
+            <p className="text-xs font-medium text-danger" role="alert">
               {error}
             </p>
           )}

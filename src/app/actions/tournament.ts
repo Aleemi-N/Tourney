@@ -13,13 +13,11 @@ export async function saveTournamentDraft(data: any) {
     return { error: 'Unauthorized' };
   }
 
-  console.time('Server Action: saveTournamentDraft');
   try {
     let result;
 
     if (data.id) {
       // Update existing draft using RPC
-      console.time('Draft RPC');
       const { data: rpcData, error: rpcError } = await supabase.rpc('update_tournament_draft', {
         p_tournament_id: data.id,
         p_name: data.name || null,
@@ -35,11 +33,9 @@ export async function saveTournamentDraft(data: any) {
         console.error('Tournament UPDATE error:', JSON.stringify(rpcError));
         throw rpcError;
       }
-      console.timeEnd('Draft RPC');
       result = rpcData;
     } else {
       // Create new draft using RPC
-      console.time('Draft RPC');
       const { data: rpcData, error: rpcError } = await supabase.rpc('create_tournament_draft', {
         p_name: data.name || 'Untitled',
         p_slug: data.slug || `draft-${Date.now()}`,
@@ -54,11 +50,9 @@ export async function saveTournamentDraft(data: any) {
         console.error('Tournament CREATE error:', JSON.stringify(rpcError));
         throw rpcError;
       }
-      console.timeEnd('Draft RPC');
       result = rpcData;
     }
 
-    console.timeEnd('Server Action: saveTournamentDraft');
     return { success: true, id: (result as any)?.tournament_id };
   } catch (err: any) {
     console.error('Error saving draft:', err);

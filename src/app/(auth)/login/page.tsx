@@ -5,8 +5,9 @@ export const metadata: Metadata = { title: 'Sign In' };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
+  const isRegistrationFlow = next?.startsWith('/t/') && next.includes('/register/');
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-4">
+    <main className={`${isRegistrationFlow ? 'dark' : ''} flex min-h-screen items-center justify-center bg-background p-4 text-text-primary`}>
       <LoginForm nextUrl={next} />
     </main>
   );

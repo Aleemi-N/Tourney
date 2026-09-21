@@ -1,9 +1,21 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { ArrowRightIcon, TrophyIcon } from './icons';
 
-export async function DashboardTournamentsServer({ orgIds }: { orgIds: string[] }) {
+export async function DashboardTournamentsServer({ userId }: { userId: string }) {
   const supabase = await createClient();
+
+  const { data: orgs } = await supabase
+    .from('organization_members')
+    .select('organization_id')
+    .eq('user_id', userId);
+
+  const orgIds = orgs?.map((organization) => organization.organization_id) ?? [];
+
+  if (orgIds.length === 0) {
+    redirect('/organizer/onboarding');
+  }
 
   interface TournamentItem {
     id: string;
@@ -13,16 +25,13 @@ export async function DashboardTournamentsServer({ orgIds }: { orgIds: string[] 
     start_date: string | null;
   }
 
-  let tournaments: TournamentItem[] = [];
-  if (orgIds.length > 0) {
-    const { data } = await supabase
-      .from('tournaments')
-      .select('id, name, status, format, start_date')
-      .in('organization_id', orgIds)
-      .order('created_at', { ascending: false });
-    
-    tournaments = (data || []) as TournamentItem[];
-  }
+  const { data } = await supabase
+    .from('tournaments')
+    .select('id, name, status, format, start_date')
+    .in('organization_id', orgIds)
+    .order('created_at', { ascending: false });
+
+  const tournaments = (data || []) as TournamentItem[];
 
   if (tournaments.length === 0) {
     return (

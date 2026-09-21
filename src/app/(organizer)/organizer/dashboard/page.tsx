@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
-import { createClient, getUser } from '@/lib/supabase/server';
+import { getUser } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { PlusIcon } from '@heroicons/react/24/outline';
-import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { DashboardTournamentsServer } from './DashboardTournamentsServer';
 
@@ -22,24 +21,10 @@ function DashboardSkeleton() {
 }
 
 export default async function OrganizerDashboardPage() {
-  const supabase = await createClient();
   const { data: { user } } = await getUser();
 
   if (!user) {
     return null; // redirect handled in proxy
-  }
-
-  // Get tournaments for the user's organization
-  // Since a user might have multiple organizations, we'll get their organizations first
-  const { data: orgs } = await supabase
-    .from('organization_members')
-    .select('organization_id')
-    .eq('user_id', user.id);
-
-  const orgIds = orgs?.map((o) => o.organization_id) || [];
-
-  if (orgIds.length === 0) {
-    redirect('/organizer/onboarding');
   }
 
   return (
@@ -59,7 +44,7 @@ export default async function OrganizerDashboardPage() {
       </div>
 
       <Suspense fallback={<DashboardSkeleton />}>
-        <DashboardTournamentsServer orgIds={orgIds} />
+        <DashboardTournamentsServer userId={user.id} />
       </Suspense>
     </main>
   );

@@ -1,8 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { PlayerRegistrationForm } from './PlayerRegistrationForm';
-import Link from 'next/link';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { RegistrationShell, registrationCardClass, registrationStatusClass } from '../RegistrationShell';
 
 export default async function PlayerRegistrationPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -17,20 +16,19 @@ export default async function PlayerRegistrationPage({ params }: { params: Promi
 
   if (!tournament) {
     return (
-      <main className="p-8 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Tournament not found</h1>
-      </main>
+      <RegistrationShell slug={slug} title="Tournament not found">
+        <p className="text-text-secondary">This tournament is unavailable or no longer public.</p>
+      </RegistrationShell>
     );
   }
 
   if (tournament.status !== 'REGISTRATION') {
     return (
-      <main className="p-8 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">{tournament.name}</h1>
-        <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+      <RegistrationShell slug={slug} tournamentName={tournament.name} title="Player Registration">
+        <div className="rounded-xl border border-warning/30 bg-warning/10 p-4 text-warning" role="status">
           This tournament is not currently open for registration.
         </div>
-      </main>
+      </RegistrationShell>
     );
   }
 
@@ -63,44 +61,32 @@ export default async function PlayerRegistrationPage({ params }: { params: Promi
   }
 
   return (
-    <main className="p-4 sm:p-6 md:p-8 max-w-3xl mx-auto min-h-screen">
-      <div className="mb-8">
-        <Link 
-          href={`/t/${slug}`}
-          className="inline-flex items-center text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors mb-6"
-        >
-          <ArrowLeftIcon className="w-4 h-4 mr-1" />
-          Back to Tournament
-        </Link>
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{tournament.name}</h1>
-        <p className="text-slate-500 mt-1">Player Registration</p>
-      </div>
-
+    <RegistrationShell slug={slug} tournamentName={tournament.name} title="Player Registration">
       {existingRegistration ? (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Registration Status</h2>
+        <div className={registrationCardClass}>
+          <h2 className="mb-4 text-lg font-semibold text-text-primary">Registration Status</h2>
           
-          <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
-            <span className="font-medium text-slate-700 dark:text-slate-300">Status</span>
+          <div className={`${registrationStatusClass} flex items-center justify-between gap-4`}>
+            <span className="font-medium text-text-secondary">Status</span>
             <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
               existingRegistration.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
               existingRegistration.status === 'REJECTED' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
               existingRegistration.status === 'CHANGES_REQUESTED' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-              'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+              'bg-primary/15 text-tournament-accent'
             }`}>
               {existingRegistration.status}
             </span>
           </div>
 
           {existingRegistration.review_notes && (
-            <div className="mt-4 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 text-sm">
+            <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm text-warning">
               <span className="font-semibold block mb-1">Organizer Notes:</span>
               {existingRegistration.review_notes}
             </div>
           )}
 
-          <div className="mt-6 text-sm text-slate-500 dark:text-slate-400">
-            <p>Your registration has been submitted. If you need to update your profile information, please visit your <a href="/player/profile" className="text-emerald-600 dark:text-emerald-500 hover:underline">Player Profile</a>.</p>
+          <div className="mt-6 text-sm text-text-secondary">
+            <p>Your registration has been submitted. If you need to update your profile information, please visit your <a href="/player/profile" className="font-medium text-primary hover:text-primary-hover hover:underline">Player Profile</a>.</p>
           </div>
         </div>
       ) : (
@@ -110,6 +96,6 @@ export default async function PlayerRegistrationPage({ params }: { params: Promi
           initialProfile={profile} 
         />
       )}
-    </main>
+    </RegistrationShell>
   );
 }

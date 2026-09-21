@@ -3,13 +3,11 @@ import { createClient } from '@/lib/supabase/server';
 export async function TournamentStatsServer({ tournamentId }: { tournamentId: string }) {
   const supabase = await createClient();
 
-  console.time('OverviewPage getCounts');
   const [{ count: playerCount }, { count: teamOwnerCount }, { count: teamCount }] = await Promise.all([
     supabase.from('player_tournament_registrations').select('*', { count: 'exact', head: true }).eq('tournament_id', tournamentId),
     supabase.from('team_owner_applications').select('*', { count: 'exact', head: true }).eq('tournament_id', tournamentId),
     supabase.from('teams').select('*', { count: 'exact', head: true }).eq('tournament_id', tournamentId)
   ]);
-  console.timeEnd('OverviewPage getCounts');
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

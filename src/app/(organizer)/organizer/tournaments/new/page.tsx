@@ -10,67 +10,62 @@ export default async function NewTournamentPage({
   searchParams: Promise<{ id?: string }>;
 }) {
   const supabase = await createClient();
-  console.time('Page auth');
-  const { data: { user } } = await getUser();
-  console.timeEnd('Page auth');
+  const [
+    { data: { user } },
+    params,
+  ] = await Promise.all([getUser(), searchParams]);
 
   if (!user) {
     redirect('/login');
   }
 
-  // Check if they have an organization
-  console.time('Profile/org lookup');
-  const { data: orgs } = await supabase
-    .from('organization_members')
-    .select('organization_id')
-    .eq('user_id', user.id);
-  console.timeEnd('Profile/org lookup');
+  const [
+    { data: orgs },
+    { data: tournament },
+  ] = await Promise.all([
+    supabase
+      .from('organization_members')
+      .select('organization_id')
+      .eq('user_id', user.id),
+    params.id
+      ? supabase
+          .from('tournaments')
+          .select('*')
+          .eq('id', params.id)
+          .eq('created_by', user.id)
+          .single()
+      : Promise.resolve({ data: null }),
+  ]);
 
   if (!orgs || orgs.length === 0) {
     redirect('/organizer/onboarding?next=/organizer/tournaments/new');
   }
 
-  const params = await searchParams;
   let draftData = null;
 
-  if (params.id) {
-    // Fetch draft data
-    console.time('Tournament fetch');
-    const { data: tournament } = await supabase
-      .from('tournaments')
-      .select('*')
-      .eq('id', params.id)
-      .eq('created_by', user!.id) // security check
-      .single();
-    console.timeEnd('Tournament fetch');
+  if (params.id && tournament) {
+    const [
+      { data: settings },
+      { data: rules }
+    ] = await Promise.all([
+      supabase
+        .from('tournament_settings')
+        .select('*')
+        .eq('tournament_id', tournament.id)
+        .single(),
+      supabase
+        .from('volleyball_rules')
+        .select('*')
+        .eq('tournament_id', tournament.id)
+        .is('stage_id', null)
+        .single()
+    ]);
 
-    if (tournament) {
-      // Fetch settings and rules concurrently
-      console.time('Rules/settings fetch');
-      const [
-        { data: settings },
-        { data: rules }
-      ] = await Promise.all([
-        supabase
-          .from('tournament_settings')
-          .select('*')
-          .eq('tournament_id', tournament.id)
-          .single(),
-        supabase
-          .from('volleyball_rules')
-          .select('*')
-          .eq('tournament_id', tournament.id)
-          .is('stage_id', null)
-          .single()
-      ]);
-      console.timeEnd('Rules/settings fetch');
-
-      draftData = {
-        ...tournament,
-        settings: settings || {},
-        volleyball_rules: rules || {},
-      };
-    }
+    draftData = {
+      ...tournament,
+      settings: settings || {},
+      volleyball_rules: rules || {},
+    };
   }
 
   return (

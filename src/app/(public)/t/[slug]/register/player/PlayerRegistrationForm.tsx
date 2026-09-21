@@ -68,15 +68,18 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
     'OUTSIDE_HITTER', 'OPPOSITE', 'UNIVERSAL'
   ];
 
+  const fieldClass = 'min-h-11 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary scheme-dark transition-colors placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40';
+  const labelClass = 'text-sm font-medium text-text-secondary';
+
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm flex flex-col gap-6">
-      <div className="border-b border-slate-200 dark:border-slate-800 pb-4 mb-2">
-        <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200">Registration Form</h2>
-        <p className="text-sm text-slate-500 mt-1">Please provide your player details to register for this tournament.</p>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6 rounded-xl border border-border bg-surface-raised p-5 shadow-2xl shadow-black/20 sm:p-6">
+      <div className="mb-2 border-b border-border pb-4">
+        <h2 className="text-xl font-semibold text-text-primary">Registration Form</h2>
+        <p className="mt-1 text-sm text-text-secondary">Please provide your player details to register for this tournament.</p>
       </div>
 
       {error && (
-        <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-950/20 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-lg">
+        <div className="rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger" role="alert">
           {error}
         </div>
       )}
@@ -91,70 +94,70 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="displayName" className="text-sm font-medium text-slate-700 dark:text-slate-300">Full Name *</label>
+          <label htmlFor="displayName" className={labelClass}>Full Name *</label>
           <input 
             id="displayName"
             name="displayName"
             type="text"
             required
             defaultValue={initialProfile?.display_name || ''}
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={fieldClass}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="dob" className="text-sm font-medium text-slate-700 dark:text-slate-300">Date of Birth</label>
+          <label htmlFor="dob" className={labelClass}>Date of Birth</label>
           <input 
             id="dob"
             name="dob"
             type="date"
             defaultValue={initialProfile?.date_of_birth || ''}
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={fieldClass}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="phone" className="text-sm font-medium text-slate-700 dark:text-slate-300">Phone</label>
+          <label htmlFor="phone" className={labelClass}>Phone</label>
           <input 
             id="phone"
             name="phone"
             type="tel"
             defaultValue={initialProfile?.phone || ''}
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={fieldClass}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="place" className="text-sm font-medium text-slate-700 dark:text-slate-300">Club / Location</label>
+          <label htmlFor="place" className={labelClass}>Club / Location</label>
           <input 
             id="place"
             name="place"
             type="text"
             defaultValue={initialProfile?.place || ''}
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={fieldClass}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="height" className="text-sm font-medium text-slate-700 dark:text-slate-300">Height (cm)</label>
+          <label htmlFor="height" className={labelClass}>Height (cm)</label>
           <input 
             id="height"
             name="height"
             type="number"
             step="0.01"
             defaultValue={initialProfile?.height_cm || ''}
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={fieldClass}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="primaryPosition" className="text-sm font-medium text-slate-700 dark:text-slate-300">Primary Position *</label>
+          <label htmlFor="primaryPosition" className={labelClass}>Primary Position *</label>
           <select 
             id="primaryPosition"
             name="primaryPosition"
             required
             defaultValue={initialProfile?.primary_position || ''}
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={fieldClass}
           >
             <option value="" disabled>Select a position...</option>
             {positions.map(p => (
@@ -164,12 +167,12 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="secondaryPosition" className="text-sm font-medium text-slate-700 dark:text-slate-300">Secondary Position</label>
+          <label htmlFor="secondaryPosition" className={labelClass}>Secondary Position</label>
           <select 
             id="secondaryPosition"
             name="secondaryPosition"
             defaultValue={initialProfile?.secondary_position || ''}
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={fieldClass}
           >
             <option value="">None</option>
             {positions.map(p => (
@@ -182,7 +185,7 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
       <button 
         type="submit" 
         disabled={pending}
-        className="mt-6 flex items-center justify-center gap-2 p-3.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+        className="mt-4 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary p-3.5 font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
       >
         {pending && <Loader2 className="h-5 w-5 animate-spin" />}
         {pending ? 'Submitting...' : 'Submit Registration'}
