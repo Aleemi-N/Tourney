@@ -93,7 +93,6 @@ export default async function TeamOwnerRegistrationPage({ params }: { params: Pr
         <TeamOwnerRegistrationForm 
           userId={user.id} 
           tournamentId={tournament.id}
-          tournamentSlug={slug}
         />
       )}
     </main>

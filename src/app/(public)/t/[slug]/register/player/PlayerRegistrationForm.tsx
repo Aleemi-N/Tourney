@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { ImageUpload } from '@/components/forms/ImageUpload';
 import { Loader2 } from 'lucide-react';
 
-export function PlayerRegistrationForm({ userId, tournamentId, tournamentSlug, initialProfile }: { userId: string, tournamentId: string, tournamentSlug: string, initialProfile: any }) {
+export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }: { userId: string, tournamentId: string, initialProfile: any }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(initialProfile?.photo_path || null);
@@ -44,11 +44,22 @@ export function PlayerRegistrationForm({ userId, tournamentId, tournamentSlug, i
 
       if (rpcError) throw rpcError;
       
-      // Navigate to the actual tournament page — slug comes from the tournament record
-      router.push(`/t/${tournamentSlug}`);
+      // Force Next.js to refresh the RSC payload for this route so the 
+      // page.tsx layout switches from the Form to the Success UI.
+      router.refresh();
     } catch (err: any) {
-      setError(err.message || 'Failed to submit registration');
+      console.error('Registration error:', err);
+      
+      if (err?.code === '23503') {
+        setError('Unable to submit registration. Your profile is not fully initialized. Please try signing out and signing back in.');
+      } else if (err?.code && typeof err.code === 'string' && err.code.startsWith('PT')) {
+        setError(err.message || 'Validation failed.');
+      } else {
+        setError(err?.message || 'Failed to submit registration. Please try again.');
+      }
+      
       setPending(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 

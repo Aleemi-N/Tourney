@@ -59,9 +59,11 @@ export async function proxy(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/owner/');
 
   if (isOrganizerRoute || isProtectedPhase4Route) {
+    console.time('Proxy auth');
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    console.timeEnd('Proxy auth');
 
     if (!user) {
       const redirectUrl = request.nextUrl.clone();

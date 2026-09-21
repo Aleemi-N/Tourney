@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 import type { Database } from './types';
 
 /**
@@ -45,3 +46,13 @@ export async function createClient() {
     },
   );
 }
+
+/**
+ * Cached getUser for Server Components and Route Handlers.
+ * Deduplicates the network request to Supabase Auth during a single RSC render.
+ * DO NOT use this in Middleware.
+ */
+export const getUser = cache(async () => {
+  const supabase = await createClient();
+  return supabase.auth.getUser();
+});

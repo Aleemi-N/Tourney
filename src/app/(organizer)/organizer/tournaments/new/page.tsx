@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 import { TournamentWizard } from '@/components/organizer/wizard/TournamentWizard';
 import { redirect } from 'next/navigation';
 
@@ -10,17 +10,21 @@ export default async function NewTournamentPage({
   searchParams: Promise<{ id?: string }>;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  console.time('Page auth');
+  const { data: { user } } = await getUser();
+  console.timeEnd('Page auth');
 
   if (!user) {
     redirect('/login');
   }
 
   // Check if they have an organization
+  console.time('Profile/org lookup');
   const { data: orgs } = await supabase
     .from('organization_members')
     .select('organization_id')
     .eq('user_id', user.id);
+  console.timeEnd('Profile/org lookup');
 
   if (!orgs || orgs.length === 0) {
     redirect('/organizer/onboarding?next=/organizer/tournaments/new');
@@ -31,15 +35,18 @@ export default async function NewTournamentPage({
 
   if (params.id) {
     // Fetch draft data
+    console.time('Tournament fetch');
     const { data: tournament } = await supabase
       .from('tournaments')
       .select('*')
       .eq('id', params.id)
       .eq('created_by', user!.id) // security check
       .single();
+    console.timeEnd('Tournament fetch');
 
     if (tournament) {
       // Fetch settings
+      console.time('Rules/settings fetch');
       const { data: settings } = await supabase
         .from('tournament_settings')
         .select('*')
@@ -53,6 +60,7 @@ export default async function NewTournamentPage({
         .eq('tournament_id', tournament.id)
         .is('stage_id', null)
         .single();
+      console.timeEnd('Rules/settings fetch');
 
       draftData = {
         ...tournament,

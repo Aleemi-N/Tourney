@@ -10,7 +10,7 @@
  * Placeholder shell — navigation to be built in the organizer phase.
  */
 import { DashboardShell } from '@/components/organizer/DashboardShell';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
 export default async function OrganizerLayout({
@@ -18,8 +18,9 @@ export default async function OrganizerLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  console.time('Organizer layout auth');
+  const { data: { user } } = await getUser();
+  console.timeEnd('Organizer layout auth');
 
   if (!user) {
     redirect('/login?next=/organizer/dashboard');

@@ -56,7 +56,7 @@ async function runConcurrencyTests() {
 
     // 2. Setup Base Data
     await client.query(`INSERT INTO auth.users (id) VALUES ($1), ($2), ($3), ($4)`, [organizerId, owner1Id, owner2Id, scorerId]);
-    await client.query(`INSERT INTO public.profiles (id, full_name) VALUES ($1, 'Org'), ($2, 'O1'), ($3, 'O2'), ($4, 'Scorer')`, [organizerId, owner1Id, owner2Id, scorerId]);
+    await client.query(`INSERT INTO public.profiles (id, full_name) VALUES ($1, 'Org'), ($2, 'O1'), ($3, 'O2'), ($4, 'Scorer') ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name`, [organizerId, owner1Id, owner2Id, scorerId]);
     
     await client.query(`INSERT INTO public.organizations (id, name, slug, created_by) VALUES ($1, 'Org', 'org-c', $2)`, [orgId, organizerId]);
     await client.query(`INSERT INTO public.tournaments (id, organization_id, name, slug, format, is_public, created_by) VALUES ($1, $2, 'Tourn', 'tourn-c', 'KNOCKOUT', true, $3)`, [tournId, orgId, organizerId]);

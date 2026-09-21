@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { redirect } from 'next/navigation';
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function OrganizerDashboardPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getUser();
 
   if (!user) {
     return null; // redirect handled in proxy

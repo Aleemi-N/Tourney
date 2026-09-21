@@ -99,14 +99,13 @@ test.describe('Phase 4 Browser E2E', () => {
 
     await page.click('button[type="submit"]');
 
-    // After successful registration, user is navigated back to the actual tournament page
-    await expect(page).toHaveURL(`http://localhost:3000/t/${auctionTournySlug}`, { timeout: 15000 });
-    // The public tournament page must show the tournament name (not "coming soon")
-    await expect(page.locator('h1')).toBeVisible({ timeout: 5000 });
+    // After successful registration, user stays on the page and sees their registration status (PENDING)
+    await expect(page).toHaveURL(`http://localhost:3000/t/${auctionTournySlug}/register/player`, { timeout: 15000 });
+    await expect(page.locator('text=Registration Status')).toBeVisible({ timeout: 5000 });
 
-    // Re-visiting the registration form should still show status (duplicate guard)
-    await page.goto(`http://localhost:3000/t/${auctionTournySlug}/register/player`);
-    await expect(page.locator('text=Registration Status')).toBeVisible();
+    // Navigate to the tournament page manually to check it's accessible
+    await page.goto(`http://localhost:3000/t/${auctionTournySlug}`);
+    await expect(page.locator('h1')).toBeVisible({ timeout: 5000 });
 
     await page.goto('http://localhost:3000/player/profile');
     const profileBody = await page.locator('body').innerText();
@@ -151,14 +150,13 @@ test.describe('Phase 4 Browser E2E', () => {
 
     await page.click('button[type="submit"]');
 
-    // After successful application, user is navigated to the actual tournament page
-    await expect(page).toHaveURL(`http://localhost:3000/t/${auctionTournySlug}`, { timeout: 15000 });
-    // The public tournament page must show the tournament name (not "coming soon")
-    await expect(page.locator('h1')).toBeVisible({ timeout: 5000 });
+    // After successful application, user stays on the page and sees their application status
+    await expect(page).toHaveURL(`http://localhost:3000/t/${auctionTournySlug}/register/team`, { timeout: 15000 });
+    await expect(page.locator('text=Application Status')).toBeVisible({ timeout: 5000 });
 
-    // Prevent duplicate — re-visiting shows status
-    await page.goto(`http://localhost:3000/t/${auctionTournySlug}/register/team`);
-    await expect(page.locator('text=Application Status')).toBeVisible();
+    // Navigate to the tournament page manually to check it's accessible
+    await page.goto(`http://localhost:3000/t/${auctionTournySlug}`);
+    await expect(page.locator('h1')).toBeVisible({ timeout: 5000 });
   });
 
   test('3. ORGANIZER — PLAYER E2E', async ({ browser }) => {

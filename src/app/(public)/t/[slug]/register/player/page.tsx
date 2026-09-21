@@ -107,7 +107,6 @@ export default async function PlayerRegistrationPage({ params }: { params: Promi
         <PlayerRegistrationForm 
           userId={user.id} 
           tournamentId={tournament.id}
-          tournamentSlug={slug}
           initialProfile={profile} 
         />
       )}

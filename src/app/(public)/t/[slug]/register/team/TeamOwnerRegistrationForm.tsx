@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { ImageUpload } from '@/components/forms/ImageUpload';
 import { Loader2 } from 'lucide-react';
 
-export function TeamOwnerRegistrationForm({ userId, tournamentId, tournamentSlug }: { userId: string, tournamentId: string, tournamentSlug: string }) {
+export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: string, tournamentId: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -39,11 +39,22 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId, tournamentSlug
 
       if (rpcError) throw rpcError;
       
-      // Navigate to the actual tournament page — slug comes from the tournament record
-      router.push(`/t/${tournamentSlug}`);
+      // Force Next.js to refresh the RSC payload for this route so the 
+      // page.tsx layout switches from the Form to the Success UI.
+      router.refresh();
     } catch (err: any) {
-      setError(err.message || 'Failed to submit application');
+      console.error('Registration error:', err);
+      
+      if (err?.code === '23503') {
+        setError('Unable to submit application. Your profile is not fully initialized. Please try signing out and signing back in.');
+      } else if (err?.code && typeof err.code === 'string' && err.code.startsWith('PT')) {
+        setError(err.message || 'Validation failed.');
+      } else {
+        setError(err?.message || 'Failed to submit application. Please try again.');
+      }
+      
       setPending(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 

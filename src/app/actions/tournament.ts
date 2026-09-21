@@ -1,23 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 // Update or create draft tournament
 export async function saveTournamentDraft(data: any) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getUser();
 
   if (!user) {
     return { error: 'Unauthorized' };
   }
 
+  console.time('Server Action: saveTournamentDraft');
   try {
     let result;
 
     if (data.id) {
       // Update existing draft using RPC
+      console.time('Draft RPC');
       const { data: rpcData, error: rpcError } = await supabase.rpc('update_tournament_draft', {
         p_tournament_id: data.id,
         p_name: data.name || null,
@@ -33,9 +35,11 @@ export async function saveTournamentDraft(data: any) {
         console.error('Tournament UPDATE error:', JSON.stringify(rpcError));
         throw rpcError;
       }
+      console.timeEnd('Draft RPC');
       result = rpcData;
     } else {
       // Create new draft using RPC
+      console.time('Draft RPC');
       const { data: rpcData, error: rpcError } = await supabase.rpc('create_tournament_draft', {
         p_name: data.name || 'Untitled',
         p_slug: data.slug || `draft-${Date.now()}`,
@@ -50,11 +54,11 @@ export async function saveTournamentDraft(data: any) {
         console.error('Tournament CREATE error:', JSON.stringify(rpcError));
         throw rpcError;
       }
+      console.timeEnd('Draft RPC');
       result = rpcData;
     }
 
-    revalidatePath('/organizer/dashboard');
-    
+    console.timeEnd('Server Action: saveTournamentDraft');
     return { success: true, id: (result as any)?.tournament_id };
   } catch (err: any) {
     console.error('Error saving draft:', err);
@@ -75,7 +79,7 @@ export async function saveTournamentDraft(data: any) {
 
 export async function publishTournament(tournamentId: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getUser();
 
   if (!user) return { error: 'Unauthorized' };
 
@@ -99,6 +103,9 @@ export async function publishTournament(tournamentId: string) {
 
   // Revalidate both the organizer dashboard AND the public homepage so the
   // newly published tournament appears immediately without a manual hard refresh.
+  // In intermediate draft saves, we intentionally DO NOT revalidatePath('/organizer/dashboard')
+  // here. The UI uses local React state to transition instantly.
+  // Revalidation happens only on final publish.
   revalidatePath('/organizer/dashboard');
   revalidatePath('/');
   if (tourny?.slug) {
