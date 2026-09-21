@@ -280,7 +280,7 @@ test.describe('Phase 4 Browser E2E', () => {
     // Must stay on the page (not redirect)
     expect(page.url()).toContain('/t/this-slug-does-not-exist-xyz123');
     // Must show not-found message
-    await expect(page.locator('text=Tournament Not Found')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole('heading', { name: 'Tournament Not Found' })).toBeVisible({ timeout: 8000 });
   });
 
   // ──────────────────────────────────────────────────────────────────────────

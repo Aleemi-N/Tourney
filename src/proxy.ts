@@ -52,21 +52,23 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const isOrganizerRoute = request.nextUrl.pathname.startsWith('/organizer');
   const isProtectedPhase4Route = 
     request.nextUrl.pathname.match(/^\/t\/[^/]+\/register\/(player|team)$/) ||
     request.nextUrl.pathname.startsWith('/player/') ||
     request.nextUrl.pathname.startsWith('/owner/');
 
-  if ((isOrganizerRoute || isProtectedPhase4Route) && !user) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = '/login';
-    redirectUrl.searchParams.set('next', request.nextUrl.pathname);
-    return NextResponse.redirect(redirectUrl);
+  if (isOrganizerRoute || isProtectedPhase4Route) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = '/login';
+      redirectUrl.searchParams.set('next', request.nextUrl.pathname);
+      return NextResponse.redirect(redirectUrl);
+    }
   }
 
   return response;

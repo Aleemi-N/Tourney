@@ -13,6 +13,14 @@ const steps = [
   { id: 5, name: 'Review' },
 ];
 
+function normalizeSlug(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-') // replace non-alphanumeric with hyphen
+    .replace(/-+/g, '-')         // remove duplicate hyphens
+    .replace(/^-|-$/g, '');      // remove leading/trailing hyphens
+}
+
 export function TournamentWizard({ initialData }: { initialData?: any }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<any>(initialData || {
@@ -39,27 +47,60 @@ export function TournamentWizard({ initialData }: { initialData?: any }) {
   const router = useRouter();
 
   const handleUpdate = (section: string, field: string, value: any) => {
+    let finalValue = value;
+    if (field === 'slug' && typeof value === 'string') {
+      // Don't fully trim trailing hyphens while they are typing to allow them to type `-` naturally
+      finalValue = value
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '-')
+        .replace(/-+/g, '-');
+    }
+
     setFormData((prev: any) => {
       if (section) {
         return {
           ...prev,
           [section]: {
             ...prev[section],
-            [field]: value
+            [field]: finalValue
           }
         };
       }
       return {
         ...prev,
-        [field]: value
+        [field]: finalValue
       };
     });
   };
 
+  const validateDraft = () => {
+    if (!formData.name || formData.name.trim() === '') {
+      return 'Tournament Name is required.';
+    }
+    const finalSlug = normalizeSlug(formData.slug || '');
+    if (!finalSlug) {
+      return 'URL Slug is required.';
+    }
+    if (!/^[a-z0-9-]+$/.test(finalSlug) || finalSlug.startsWith('-') || finalSlug.endsWith('-')) {
+      return 'URL Slug must contain only lowercase letters, numbers, and hyphens.';
+    }
+    return null;
+  };
+
   const handleSaveDraft = async () => {
+    const validationError = validateDraft();
+    if (validationError) {
+      setError(validationError);
+      return { error: validationError };
+    }
+
+    // Clean up slug before saving
+    const normalizedData = { ...formData, slug: normalizeSlug(formData.slug) };
+    setFormData(normalizedData);
+
     setPending(true);
     setError(null);
-    const result = await saveTournamentDraft(formData);
+    const result = await saveTournamentDraft(normalizedData);
     setPending(false);
 
     if (result.error) {

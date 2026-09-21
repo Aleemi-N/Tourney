@@ -46,7 +46,7 @@ test.describe('Phase 4 Final Pass', () => {
     await expect(page.getByRole('link', { name: 'My Tournaments' }).first()).toBeVisible();
 
     // Issue 3: Profile dropdown stacking and clicking
-    const profileBtn = page.getByRole('button', { expanded: false });
+    const profileBtn = page.getByRole('button', { name: 'Fi', exact: false });
     await profileBtn.click();
     
     // Ensure dropdown is open

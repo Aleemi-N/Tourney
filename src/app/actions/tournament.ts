@@ -56,8 +56,19 @@ export async function saveTournamentDraft(data: any) {
     revalidatePath('/organizer/dashboard');
     
     return { success: true, id: (result as any)?.tournament_id };
-  } catch (err) {
+  } catch (err: any) {
     console.error('Error saving draft:', err);
+    
+    // Safely handle Supabase PostgrestError
+    if (err && typeof err === 'object' && 'code' in err && 'message' in err) {
+      // Known custom RPC validation errors use PT prefix
+      if (typeof err.code === 'string' && err.code.startsWith('PT')) {
+        return { error: err.message };
+      }
+      // Hide internal database errors from the user but log them
+      return { error: 'A database error occurred while saving the draft.' };
+    }
+    
     return { error: err instanceof Error ? err.message : 'Failed to save tournament draft.' };
   }
 }

@@ -113,7 +113,7 @@ export function ImageUpload({
               src={displayUrl}
               alt="Preview"
               fill
-              className="object-cover"
+              className="object-cover pointer-events-none"
               unoptimized={displayUrl.startsWith('blob:')}
             />
           ) : (
