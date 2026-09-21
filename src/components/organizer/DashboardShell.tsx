@@ -13,6 +13,7 @@ import {
   ArrowLeftIcon
 } from '@heroicons/react/24/outline';
 import { VolleyballIcon } from '../landing/VolleyballIcon';
+import { OrganizerLinkPending } from './OrganizerLinkPending';
 
 const globalNavigation = [
   { name: 'Dashboard', href: '/organizer/dashboard', icon: HomeIcon, disabled: false },
@@ -70,6 +71,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
                     <li key={item.name}>
                       <Link
                         href={item.disabled ? '#' : item.href}
+                        prefetch={item.disabled ? false : undefined}
                         aria-disabled={item.disabled ? true : undefined}
                         tabIndex={item.disabled ? -1 : undefined}
                         className={`
@@ -89,6 +91,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
                           aria-hidden="true"
                         />
                         {item.name}
+                        {!item.disabled && <OrganizerLinkPending className="ml-auto" />}
                       </Link>
                     </li>
                   );
@@ -145,6 +148,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
             <Link
               key={item.name}
               href={item.disabled ? '#' : item.href}
+              prefetch={item.disabled ? false : undefined}
               aria-disabled={item.disabled ? true : undefined}
               tabIndex={item.disabled ? -1 : undefined}
               onClick={(e) => {
@@ -159,7 +163,10 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
               }`}
             >
               <item.icon className="h-6 w-6" />
-              <span className="text-[10px] font-medium truncate max-w-[60px] text-center">{item.name.replace(' (Coming Soon)', '')}</span>
+              <span className="flex items-center gap-1 text-[10px] font-medium truncate max-w-[72px] text-center">
+                {item.name.replace(' (Coming Soon)', '')}
+                {!item.disabled && <OrganizerLinkPending className="h-2.5 w-2.5" />}
+              </span>
             </Link>
           );
         })}

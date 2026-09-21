@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ArrowRightIcon, TrophyIcon } from './icons';
+import { OrganizerLinkPending } from '@/components/organizer/OrganizerLinkPending';
 
 export async function DashboardTournamentsServer({ userId }: { userId: string }) {
   const supabase = await createClient();
@@ -120,8 +121,9 @@ export async function DashboardTournamentsServer({ userId }: { userId: string })
             <Link 
               key={tournament.id as string} 
               href={`/organizer/tournaments/${tournament.id}`}
-              className="bg-surface border border-border p-5 rounded-xl hover:shadow-md transition-shadow group"
+              className="relative bg-surface border border-border p-5 rounded-xl hover:shadow-md transition-shadow group"
             >
+              <OrganizerLinkPending className="absolute right-3 bottom-3 text-primary" />
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-semibold text-text-primary group-hover:text-primary transition-colors">
                   {tournament.name}

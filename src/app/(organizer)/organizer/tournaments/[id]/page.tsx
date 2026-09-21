@@ -6,6 +6,7 @@ import { Suspense } from 'react';
 
 import { RegistrationLinks } from './RegistrationLinks';
 import { TournamentStatsServer } from './TournamentStatsServer';
+import { OrganizerLinkPending } from '@/components/organizer/OrganizerLinkPending';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +20,7 @@ function StatsSkeleton() {
   );
 }
 
-export default async function TournamentManagementPage({
+async function TournamentOverviewContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -36,7 +37,7 @@ export default async function TournamentManagementPage({
   return (
     <main className="p-4 md:p-8 max-w-5xl mx-auto h-full">
       <Link href="/organizer/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors mb-6">
-        <ArrowLeftIcon className="w-4 h-4" /> Back to Dashboard
+        <ArrowLeftIcon className="w-4 h-4" /> Back to Dashboard <OrganizerLinkPending />
       </Link>
       
       <div className="bg-surface rounded-2xl border border-border p-8">
@@ -64,6 +65,33 @@ export default async function TournamentManagementPage({
         isLeague={tournament.format === 'LEAGUE'} 
         status={tournament.status as string}
       />
+    </main>
+  );
+}
+
+export default function TournamentManagementPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  return (
+    <Suspense fallback={<TournamentOverviewSkeleton />}>
+      <TournamentOverviewContent params={params} />
+    </Suspense>
+  );
+}
+
+function TournamentOverviewSkeleton() {
+  return (
+    <main className="p-4 md:p-8 max-w-5xl mx-auto" aria-label="Loading tournament overview">
+      <div className="animate-pulse space-y-6">
+        <div className="h-4 w-36 rounded bg-surface-muted" />
+        <div className="rounded-2xl border border-border bg-surface p-5 md:p-8">
+          <div className="h-9 w-64 max-w-full rounded-lg bg-surface-muted" />
+          <div className="mt-3 h-4 w-40 rounded bg-surface-muted" />
+          <div className="mt-8"><StatsSkeleton /></div>
+        </div>
+      </div>
     </main>
   );
 }

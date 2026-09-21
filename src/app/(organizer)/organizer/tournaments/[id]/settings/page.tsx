@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { SettingsServer } from './SettingsServer';
 import { Suspense } from 'react';
+import { OrganizerLinkPending } from '@/components/organizer/OrganizerLinkPending';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,7 @@ function SettingsSkeleton() {
   );
 }
 
-export default async function SettingsPage({ params }: { params: Promise<{ id: string }> }) {
+async function SettingsContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   
   // Fetch Tournament from cache (shared with layout)
@@ -36,6 +37,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ id: s
         >
           <ArrowLeftIcon className="w-4 h-4 mr-1" />
           Back to Overview
+          <OrganizerLinkPending className="ml-2" />
         </Link>
       </div>
 
@@ -53,3 +55,25 @@ export default async function SettingsPage({ params }: { params: Promise<{ id: s
   );
 }
 
+export default function SettingsPage({ params }: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense fallback={<SettingsPageSkeleton />}>
+      <SettingsContent params={params} />
+    </Suspense>
+  );
+}
+
+function SettingsPageSkeleton() {
+  return (
+    <main className="p-4 md:p-8 max-w-4xl mx-auto" aria-label="Loading tournament settings">
+      <div className="animate-pulse space-y-6">
+        <div className="h-4 w-32 rounded bg-surface-muted" />
+        <div className="space-y-3">
+          <div className="h-9 w-40 rounded-lg bg-surface-muted" />
+          <div className="h-4 w-72 max-w-full rounded bg-surface-muted" />
+        </div>
+        <SettingsSkeleton />
+      </div>
+    </main>
+  );
+}
