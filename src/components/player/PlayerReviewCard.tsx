@@ -41,7 +41,7 @@ export function PlayerReviewCard({
             <select 
               id={selectId}
               name="classification"
-              className="h-10 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-10 w-full rounded-md border border-border bg-surface-muted px-3 py-2 text-sm text-text-primary shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
               value={classification || ''}
               onChange={(e) => onClassify(e.target.value as 'ICON_LOT' | 'SETTER_LOT' | 'MAIN_AUCTION')}
               disabled={isSubmitting}

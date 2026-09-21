@@ -46,10 +46,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0f0f11' },
-  ],
+  themeColor: '#0f0f11',
+  colorScheme: 'dark',
   width: 'device-width',
   initialScale: 1,
   minimumScale: 1,
@@ -65,7 +63,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full scroll-smooth`}
+      className={`dark ${geistSans.variable} ${geistMono.variable} h-full scroll-smooth bg-background`}
       suppressHydrationWarning
     >
       <body className="min-h-full bg-background text-text-primary antialiased">

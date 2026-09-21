@@ -198,6 +198,8 @@
 }
 
 html {
+  color-scheme: dark;
+  background-color: var(--background);
   -webkit-text-size-adjust: 100%;
   tab-size: 4;
   scroll-behavior: smooth;

@@ -100,7 +100,8 @@ export function PlayerCard({
             alt={player.display_name}
             fill
             unoptimized
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover object-[center_22%] transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-slate-400 dark:text-slate-500 transition-transform duration-500 group-hover:scale-105">

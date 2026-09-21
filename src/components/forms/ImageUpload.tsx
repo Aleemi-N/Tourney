@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
 import { UploadCloud, X, Loader2 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
 
 interface ImageUploadProps {
   userId: string;
@@ -27,6 +28,7 @@ export function ImageUpload({
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentPhotoUrl || null);
+  const [imageFailed, setImageFailed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
@@ -54,6 +56,7 @@ export function ImageUpload({
       // Show local preview immediately
       const objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
+      setImageFailed(false);
 
       const ext = file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${ext}`;
@@ -76,6 +79,7 @@ export function ImageUpload({
       console.error('Upload error:', err);
       setError(err.message || 'Failed to upload image');
       setPreviewUrl(currentPhotoUrl || null);
+      setImageFailed(false);
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
@@ -86,18 +90,11 @@ export function ImageUpload({
 
   const handleClear = () => {
     setPreviewUrl(null);
+    setImageFailed(false);
     onUploadSuccess('', ''); // Empty string implies cleared
   };
 
-  const getDisplayUrl = (urlOrPath: string | null) => {
-    if (!urlOrPath) return null;
-    if (urlOrPath.startsWith('http') || urlOrPath.startsWith('blob:') || urlOrPath.startsWith('/')) {
-      return urlOrPath;
-    }
-    return supabase.storage.from(bucket).getPublicUrl(urlOrPath).data.publicUrl;
-  };
-
-  const displayUrl = getDisplayUrl(previewUrl);
+  const displayUrl = resolvePublicStorageUrl(supabase, bucket, previewUrl);
 
   return (
     <div className={twMerge("flex flex-col gap-2", className)}>
@@ -105,16 +102,18 @@ export function ImageUpload({
         {label}
       </span>
       
-      <div className="flex items-start gap-4">
+      <div className="flex min-w-0 flex-col gap-4 min-[360px]:flex-row min-[360px]:items-start">
         {/* Preview Area */}
         <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-muted">
-          {displayUrl ? (
+          {displayUrl && !imageFailed ? (
             <Image
               src={displayUrl}
               alt="Preview"
               fill
-              className="object-cover pointer-events-none"
+              sizes="96px"
+              className="pointer-events-none object-cover object-[center_22%]"
               unoptimized={displayUrl.startsWith('blob:')}
+              onError={() => setImageFailed(true)}
             />
           ) : (
             <UploadCloud className="h-8 w-8 text-text-muted" />
@@ -127,7 +126,7 @@ export function ImageUpload({
         </div>
 
         {/* Controls */}
-        <div className="flex flex-col gap-2 pt-2">
+        <div className="flex min-w-0 flex-col gap-2 min-[360px]:pt-2">
           <div className="flex flex-wrap items-center gap-2">
             <input
               type="file"

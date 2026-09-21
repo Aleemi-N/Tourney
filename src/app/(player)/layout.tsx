@@ -11,5 +11,5 @@ export default function PlayerLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <div className="min-h-screen bg-background text-text-primary">{children}</div>;
 }

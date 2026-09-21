@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { LandingNav } from '@/components/landing/LandingNav';
+import { ArrowLeft } from 'lucide-react';
+import { AccountAvatar } from '@/components/profile/AccountAvatar';
+import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
 
 export const metadata = { title: 'My Profile' };
 export const dynamic = 'force-dynamic';
@@ -41,7 +44,7 @@ export default async function ProfilePage() {
   // player_tournament_registrations requires player_id. We fetch player_profile first
   const { data: playerProfile } = await supabase
     .from('player_profiles')
-    .select('id')
+    .select('id, photo_path')
     .eq('user_id', user.id)
     .single();
 
@@ -119,21 +122,31 @@ export default async function ProfilePage() {
   const isGlobalOrganizer = !!(orgs && orgs.length > 0);
 
   const participations = Array.from(participationMap.values());
+  const accountPhotoUrl = resolvePublicStorageUrl(
+    supabase,
+    'avatars',
+    playerProfile?.photo_path || profile?.avatar_path,
+  );
 
   return (
     <div className="min-h-screen bg-background">
       <LandingNav isAuthenticated={true} isOrganizer={isGlobalOrganizer} userProfile={{ full_name: fullName }} />
-      <main className="p-4 sm:p-8 max-w-4xl mx-auto pt-12">
+      <main className="mx-auto max-w-4xl px-4 pb-12 pt-6 sm:px-8 sm:pt-10">
+        <Link
+          href="/"
+          className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-muted hover:text-text-primary"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Back to Tourny
+        </Link>
         <div className="flex flex-col md:flex-row gap-8 items-start">
         {/* Identity Section */}
-        <div className="w-full md:w-1/3 bg-surface border border-border rounded-2xl p-6 shadow-sm">
+        <div className="w-full rounded-2xl border border-border bg-surface-raised p-5 shadow-lg shadow-black/10 sm:p-6 md:w-1/3">
           <div className="flex flex-col items-center text-center gap-4">
-            <div className="w-24 h-24 rounded-full bg-primary/20 text-primary flex items-center justify-center text-3xl font-bold uppercase shrink-0">
-              {fullName.substring(0, 2)}
-            </div>
+            <AccountAvatar name={fullName} photoUrl={accountPhotoUrl} />
             <div>
-              <h1 className="text-2xl font-bold text-text-primary tracking-tight">{fullName}</h1>
-              <p className="text-text-secondary mt-1">{email}</p>
+              <h1 className="break-words text-2xl font-bold tracking-tight text-text-primary">{fullName}</h1>
+              <p className="mt-1 break-all text-sm text-text-secondary">{email}</p>
             </div>
           </div>
           
@@ -159,7 +172,7 @@ export default async function ProfilePage() {
           <h2 className="text-xl font-bold text-text-primary mb-6">Tournament History</h2>
           
           {participations.length === 0 ? (
-            <div className="bg-surface border border-border border-dashed rounded-xl p-8 text-center">
+            <div className="rounded-xl border border-dashed border-border bg-surface-raised p-6 text-center sm:p-8">
               <p className="text-text-secondary mb-4">You haven&apos;t participated in any tournaments yet.</p>
               <Link
                 href="/#tournaments"
@@ -171,8 +184,8 @@ export default async function ProfilePage() {
           ) : (
             <div className="flex flex-col gap-4">
               {participations.map((p, idx) => (
-                <div key={p.tournament.id || idx} className="bg-surface border border-border rounded-xl p-5 hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start mb-2">
+                <div key={p.tournament.id || idx} className="rounded-xl border border-border bg-surface-raised p-4 transition-colors hover:border-border-strong sm:p-5">
+                  <div className="flex flex-col items-start gap-2 sm:flex-row sm:justify-between">
                     <Link href={`/t/${p.tournament.slug}`} className="font-semibold text-lg text-text-primary hover:text-primary transition-colors">
                       {p.tournament.name}
                     </Link>

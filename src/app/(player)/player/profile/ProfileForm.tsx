@@ -60,16 +60,16 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
   ];
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm flex flex-col gap-6">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 rounded-2xl border border-border bg-surface-raised p-4 shadow-lg shadow-black/10 sm:gap-6 sm:p-6">
       
       {error && (
-        <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-950/20 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-lg">
+        <div role="alert" className="rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
           {error}
         </div>
       )}
       
       {success && (
-        <div className="p-3 text-sm text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50 rounded-lg">
+        <div role="status" className="rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success">
           Profile updated successfully.
         </div>
       )}
@@ -84,70 +84,70 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="displayName" className="text-sm font-medium text-slate-700 dark:text-slate-300">Full Name *</label>
+          <label htmlFor="displayName" className="text-sm font-medium text-text-secondary">Full Name *</label>
           <input 
             id="displayName"
             name="displayName"
             type="text"
             required
             defaultValue={initialProfile?.display_name || ''}
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="min-h-11 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="dob" className="text-sm font-medium text-slate-700 dark:text-slate-300">Date of Birth</label>
+          <label htmlFor="dob" className="text-sm font-medium text-text-secondary">Date of Birth</label>
           <input 
             id="dob"
             name="dob"
             type="date"
             defaultValue={initialProfile?.date_of_birth || ''}
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="min-h-11 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="phone" className="text-sm font-medium text-slate-700 dark:text-slate-300">Phone</label>
+          <label htmlFor="phone" className="text-sm font-medium text-text-secondary">Phone</label>
           <input 
             id="phone"
             name="phone"
             type="tel"
             defaultValue={initialProfile?.phone || ''}
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="min-h-11 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="place" className="text-sm font-medium text-slate-700 dark:text-slate-300">Club / Location</label>
+          <label htmlFor="place" className="text-sm font-medium text-text-secondary">Club / Location</label>
           <input 
             id="place"
             name="place"
             type="text"
             defaultValue={initialProfile?.place || ''}
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="min-h-11 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="height" className="text-sm font-medium text-slate-700 dark:text-slate-300">Height (cm)</label>
+          <label htmlFor="height" className="text-sm font-medium text-text-secondary">Height (cm)</label>
           <input 
             id="height"
             name="height"
             type="number"
             step="0.01"
             defaultValue={initialProfile?.height_cm || ''}
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="min-h-11 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="primaryPosition" className="text-sm font-medium text-slate-700 dark:text-slate-300">Primary Position *</label>
+          <label htmlFor="primaryPosition" className="text-sm font-medium text-text-secondary">Primary Position *</label>
           <select 
             id="primaryPosition"
             name="primaryPosition"
             required
             defaultValue={initialProfile?.primary_position || ''}
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="min-h-11 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <option value="" disabled>Select a position...</option>
             {positions.map(p => (
@@ -157,12 +157,12 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="secondaryPosition" className="text-sm font-medium text-slate-700 dark:text-slate-300">Secondary Position</label>
+          <label htmlFor="secondaryPosition" className="text-sm font-medium text-text-secondary">Secondary Position</label>
           <select 
             id="secondaryPosition"
             name="secondaryPosition"
             defaultValue={initialProfile?.secondary_position || ''}
-            className="p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="min-h-11 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <option value="">None</option>
             {positions.map(p => (
@@ -175,7 +175,7 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
       <button 
         type="submit" 
         disabled={pending}
-        className="mt-4 flex items-center justify-center gap-2 p-3 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+        className="mt-1 flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
       >
         {pending && <Loader2 className="h-4 w-4 animate-spin" />}
         {pending ? 'Saving...' : 'Save Profile'}
