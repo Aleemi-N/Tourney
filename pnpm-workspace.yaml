@@ -1,0 +1,5 @@
+allowBuilds:
+  '@playwright/browser-chromium': true
+  esbuild: true
+  sharp: false
+  unrs-resolver: false

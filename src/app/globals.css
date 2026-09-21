@@ -1,0 +1,243 @@
+/**
+ * Tournament Platform — Global Design Tokens
+ *
+ * Design system from docs/design.md.
+ * All semantic tokens are CSS custom properties; Tailwind maps to them.
+ *
+ * Two token layers:
+ *   1. Application UI tokens  — stable across all tournaments
+ *   2. Tournament brand slots — set per tournament on a wrapping element
+ *
+ * Rules:
+ *   - Status is NEVER communicated by color alone; always include a label/icon.
+ *   - Tournament brand colors must never destroy accessibility of operational controls.
+ *   - Dark mode is supported via .dark class (or OS preference fallback).
+ */
+
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   1. LIGHT MODE — Application UI Tokens
+   ───────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --background:        #ffffff;
+  --surface:           #f8f8fa;
+  --surface-raised:    #ffffff;
+  --surface-muted:     #f2f2f5;
+
+  /* Text */
+  --text-primary:      #111113;
+  --text-secondary:    #4b4b57;
+  --text-muted:        #8888a0;
+  --text-inverse:      #ffffff;
+
+  /* Borders */
+  --border:            #e4e4ea;
+  --border-strong:     #c8c8d6;
+
+  /* Brand / primary action */
+  --primary:           #4f46e5;   /* Indigo-600 — energetic sports blue-violet */
+  --primary-hover:     #4338ca;
+  --primary-foreground:#ffffff;
+
+  /* Semantic status */
+  --success:           #16a34a;
+  --warning:           #d97706;
+  --danger:            #dc2626;
+  --info:              #0284c7;
+
+  /* Live-operation states */
+  --live:              #ef4444;   /* Red — clearly "happening now" */
+  --sold:              #16a34a;   /* Green */
+  --unsold:            #6b7280;   /* Gray */
+  --offline:           #f59e0b;   /* Amber */
+
+  /* Radius scale (used by Tailwind) */
+  --radius-sm:   8px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   18px;
+  --radius-2xl:  24px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   2. DARK MODE — Application UI Tokens
+   System preference respected by default; explicit .dark class overrides.
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background:        #0f0f11;
+    --surface:           #18181c;
+    --surface-raised:    #222228;
+    --surface-muted:     #1c1c21;
+
+    --text-primary:      #f0f0f4;
+    --text-secondary:    #a0a0b8;
+    --text-muted:        #606075;
+    --text-inverse:      #111113;
+
+    --border:            #2c2c38;
+    --border-strong:     #42424f;
+
+    --primary:           #6366f1;
+    --primary-hover:     #818cf8;
+    --primary-foreground:#ffffff;
+
+    --success:           #22c55e;
+    --warning:           #f59e0b;
+    --danger:            #f87171;
+    --info:              #38bdf8;
+
+    --live:              #f87171;
+    --sold:              #22c55e;
+    --unsold:            #9ca3af;
+    --offline:           #fbbf24;
+  }
+}
+
+.dark {
+  --background:        #0f0f11;
+  --surface:           #18181c;
+  --surface-raised:    #222228;
+  --surface-muted:     #1c1c21;
+
+  --text-primary:      #f0f0f4;
+  --text-secondary:    #a0a0b8;
+  --text-muted:        #606075;
+  --text-inverse:      #111113;
+
+  --border:            #2c2c38;
+  --border-strong:     #42424f;
+
+  --primary:           #6366f1;
+  --primary-hover:     #818cf8;
+  --primary-foreground:#ffffff;
+
+  --success:           #22c55e;
+  --warning:           #f59e0b;
+  --danger:            #f87171;
+  --info:              #38bdf8;
+
+  --live:              #f87171;
+  --sold:              #22c55e;
+  --unsold:            #9ca3af;
+  --offline:           #fbbf24;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   3. TOURNAMENT BRAND SLOTS
+   Applied per-tournament on a wrapping element.
+   Never allow these to override operational control accessibility.
+   ───────────────────────────────────────────────────────────────────────────── */
+:root {
+  --tournament-primary:    #4f46e5;
+  --tournament-secondary:  #6366f1;
+  --tournament-accent:     #a5b4fc;
+  --tournament-background: transparent;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   4. TAILWIND v4 THEME INLINE MAPPING
+   Maps CSS custom properties to Tailwind utility classes.
+   ───────────────────────────────────────────────────────────────────────────── */
+@theme inline {
+  /* Fonts (loaded via next/font — variables injected by layout.tsx) */
+  --font-sans:  var(--font-sans);
+  --font-mono:  var(--font-mono);
+
+  /* Colors — Application UI tokens */
+  --color-background:        var(--background);
+  --color-surface:           var(--surface);
+  --color-surface-raised:    var(--surface-raised);
+  --color-surface-muted:     var(--surface-muted);
+
+  --color-text-primary:      var(--text-primary);
+  --color-text-secondary:    var(--text-secondary);
+  --color-text-muted:        var(--text-muted);
+  --color-text-inverse:      var(--text-inverse);
+
+  --color-border:            var(--border);
+  --color-border-strong:     var(--border-strong);
+
+  --color-primary:           var(--primary);
+  --color-primary-hover:     var(--primary-hover);
+  --color-primary-foreground:var(--primary-foreground);
+
+  --color-success:           var(--success);
+  --color-warning:           var(--warning);
+  --color-danger:            var(--danger);
+  --color-info:              var(--info);
+
+  --color-live:              var(--live);
+  --color-sold:              var(--sold);
+  --color-unsold:            var(--unsold);
+  --color-offline:           var(--offline);
+
+  /* Colors — Tournament brand slots */
+  --color-tournament-primary:    var(--tournament-primary);
+  --color-tournament-secondary:  var(--tournament-secondary);
+  --color-tournament-accent:     var(--tournament-accent);
+  --color-tournament-background: var(--tournament-background);
+
+  /* Border radius */
+  --radius-sm:   var(--radius-sm);
+  --radius-md:   var(--radius-md);
+  --radius-lg:   var(--radius-lg);
+  --radius-xl:   var(--radius-xl);
+  --radius-2xl:  var(--radius-2xl);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   5. BASE STYLES
+   ───────────────────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  tab-size: 4;
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "rlig" 1, "calt" 1;
+  background-color: var(--background);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* Reduced-motion preference — respected for lot/auction/scoring animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Focus ring — keyboard accessibility */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Numeric tabular figures — important for scores, purse amounts, bid values */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Live score / auction amount display — extremely legible large numerics */
+.numeric-display {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}

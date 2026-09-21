@@ -1,0 +1,150 @@
+'use client';
+
+import React from 'react';
+import { MapPin, Ruler } from 'lucide-react';
+import Image from 'next/image';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+/** Utility for merging tailwind classes */
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export type PlayerCardProps = {
+  player: {
+    id: string;
+    display_name: string;
+    primary_position: string;
+    photo_path?: string | null;
+    height_cm?: number | null;
+    place?: string | null;
+  };
+  classification?: 'ICON_LOT' | 'SETTER_LOT' | 'MAIN_AUCTION' | null;
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CHANGES_REQUESTED' | 'WITHDRAWN';
+  tournamentColor?: string;
+  className?: string;
+  children?: React.ReactNode;
+};
+
+export function PlayerCard({
+  player,
+  classification,
+  status,
+  tournamentColor,
+  className,
+  children
+}: PlayerCardProps) {
+  // Format classification for display
+  const getClassificationBadge = () => {
+    if (!classification) return null;
+    const labels: Record<string, string> = {
+      ICON_LOT: 'ICON',
+      SETTER_LOT: 'SETTER',
+      MAIN_AUCTION: 'MAIN AUCTION'
+    };
+    return (
+      <span 
+        className="absolute top-2 right-2 z-10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white rounded-full shadow-sm backdrop-blur-md"
+        style={{ backgroundColor: tournamentColor || '#0ea5e9' }}
+      >
+        {labels[classification] || classification}
+      </span>
+    );
+  };
+
+  const getStatusBadge = () => {
+    if (!status) return null;
+    const config: Record<string, { label: string; cls: string }> = {
+      PENDING: { label: 'PENDING', cls: 'bg-amber-500/90 text-white' },
+      APPROVED: { label: 'APPROVED', cls: 'bg-emerald-500/90 text-white' },
+      REJECTED: { label: 'REJECTED', cls: 'bg-red-500/90 text-white' },
+      CHANGES_REQUESTED: { label: 'CHANGES REQ', cls: 'bg-orange-500/90 text-white' },
+      WITHDRAWN: { label: 'WITHDRAWN', cls: 'bg-slate-500/90 text-white' }
+    };
+    const mapped = config[status];
+    if (!mapped) return null;
+    
+    return (
+      <span className={cn("absolute top-2 right-2 z-10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full shadow-sm backdrop-blur-md", mapped.cls)}>
+        {mapped.label}
+      </span>
+    );
+  };
+
+  // Replace underscores and capitalize position
+  const formatPosition = (pos: string) => {
+    return pos.split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
+  };
+
+  const initials = player.display_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+  return (
+    <div
+      className={cn(
+        "group relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900/40 shadow-sm transition-all hover:shadow-md",
+        className
+      )}
+      style={{
+        borderTop: tournamentColor ? `3px solid ${tournamentColor}` : undefined
+      }}
+    >
+      {/* Badges */}
+      {status ? getStatusBadge() : getClassificationBadge()}
+
+      {/* Photo Area (Approx 55-60% visually via aspect ratio) */}
+      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
+        {player.photo_path ? (
+          <Image
+            src={player.photo_path}
+            alt={player.display_name}
+            fill
+            unoptimized
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-slate-400 dark:text-slate-500 transition-transform duration-500 group-hover:scale-105">
+            <span className="text-4xl font-bold tracking-widest opacity-40">{initials}</span>
+          </div>
+        )}
+        {/* Subtle gradient overlay for premium feel at the bottom of the photo */}
+        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-slate-900/60 to-transparent pointer-events-none" />
+      </div>
+
+      {/* Typography Area */}
+      <div className="flex flex-1 flex-col justify-between p-4">
+        <div>
+          <h3 className="line-clamp-2 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-0.5">
+            {player.display_name}
+          </h3>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            {formatPosition(player.primary_position)}
+          </p>
+        </div>
+
+        {/* Optional Metadata Grid */}
+        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-slate-500/90 dark:text-slate-400/90">
+          {player.height_cm && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Ruler size={14} className="opacity-70 shrink-0" />
+              <span className="truncate">{player.height_cm} cm</span>
+            </div>
+          )}
+          {player.place && (
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <MapPin size={14} className="opacity-70 shrink-0" />
+              <span className="truncate">{player.place}</span>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Extension Slot (e.g. for Review Buttons) */}
+      {children && (
+        <div className="mt-auto border-t border-slate-100 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/80 p-4">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
