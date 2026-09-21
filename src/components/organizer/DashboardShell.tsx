@@ -7,6 +7,7 @@ import {
   HomeIcon, 
   TrophyIcon, 
   UsersIcon,
+  UserGroupIcon,
   VideoCameraIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
@@ -39,6 +40,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
   const tournamentNavigation = isTournamentContext ? [
     { name: 'Overview', href: `/organizer/tournaments/${tournamentId}`, icon: TrophyIcon },
     { name: 'Participants', href: `/organizer/tournaments/${tournamentId}/participants`, icon: UsersIcon },
+    { name: 'Staff', href: `/organizer/tournaments/${tournamentId}/staff`, icon: UserGroupIcon, disabled: false },
     { name: 'Live', href: '#', icon: VideoCameraIcon, disabled: true },
     { name: 'Settings', href: `/organizer/tournaments/${tournamentId}/settings`, icon: Cog6ToothIcon, disabled: false },
   ] : [];
@@ -142,7 +144,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
           <span className="text-[10px] font-medium">Home</span>
         </Link>
         
-        {navigation.slice(0, 3).map((item) => {
+        {navigation.map((item) => {
           const isActive = !item.disabled && pathname === item.href;
           return (
             <Link

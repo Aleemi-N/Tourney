@@ -44,7 +44,7 @@ async function SettingsContent({ params }: { params: Promise<{ id: string }> }) 
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-text-primary tracking-tight">Settings</h1>
         <p className="text-text-secondary mt-1">
-          Configure registration and auction rules for {tournament.name}.
+          Manage tournament details, registration, and auction rules for {tournament.name}.
         </p>
       </div>
 

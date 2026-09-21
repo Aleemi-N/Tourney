@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { MapPin, Calendar, ArrowRight } from 'lucide-react';
 
 export type DiscoveryTournamentProps = {
@@ -12,11 +13,16 @@ export type DiscoveryTournamentProps = {
     venue: string | null;
     format: string;
     league_mode: string;
+    tournament_branding?: { logo_path: string | null } | Array<{ logo_path: string | null }>;
     tournament_settings?: { player_registration_enabled: boolean; team_registration_enabled: boolean } | Array<{ player_registration_enabled: boolean; team_registration_enabled: boolean }>;
   };
 };
 
 export function TournamentDiscoveryCard({ tournament }: DiscoveryTournamentProps) {
+  const branding = Array.isArray(tournament.tournament_branding) ? tournament.tournament_branding[0] : tournament.tournament_branding;
+  const logoUrl = branding?.logo_path
+    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/${branding.logo_path}`
+    : null;
   const getStatusDisplay = (tournament: DiscoveryTournamentProps['tournament']) => {
     const { status, tournament_settings, format } = tournament;
     
@@ -80,10 +86,8 @@ export function TournamentDiscoveryCard({ tournament }: DiscoveryTournamentProps
       <div className="absolute top-0 right-0 left-0 h-24 bg-gradient-to-br from-primary/10 to-transparent opacity-50 pointer-events-none group-hover:from-primary/20 transition-all" />
       <div className="p-5 flex flex-col flex-1 relative z-10 gap-4">
         <div className="flex justify-between items-start">
-          <div className="w-12 h-12 rounded-xl bg-[#1c1c21] flex items-center justify-center border border-white/5">
-            <span className="text-text-muted font-bold text-sm">
-              {tournament.name.substring(0, 2).toUpperCase()}
-            </span>
+          <div className="relative w-12 h-12 overflow-hidden rounded-xl bg-[#1c1c21] flex items-center justify-center border border-white/5">
+            {logoUrl ? <Image src={logoUrl} alt="" fill sizes="48px" className="object-contain p-1.5" unoptimized /> : <span className="text-text-muted font-bold text-sm">{tournament.name.substring(0, 2).toUpperCase()}</span>}
           </div>
           {getStatusDisplay(tournament)}
         </div>

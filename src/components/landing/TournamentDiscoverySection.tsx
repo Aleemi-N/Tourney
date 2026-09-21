@@ -19,6 +19,7 @@ export async function TournamentDiscoverySection() {
       venue, 
       format, 
       league_mode,
+      tournament_branding (logo_path),
       tournament_settings (
         player_registration_enabled,
         team_registration_enabled
@@ -30,7 +31,7 @@ export async function TournamentDiscoverySection() {
     .limit(6);
 
   return (
-    <section id="tournaments" className="w-full py-16 lg:py-24 bg-[#0d0d13] border-y border-white/5 relative z-10 scroll-mt-20">
+    <section id="tournaments" className="w-full py-12 lg:py-16 bg-[#0d0d13] border-y border-white/5 relative z-10 scroll-mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>

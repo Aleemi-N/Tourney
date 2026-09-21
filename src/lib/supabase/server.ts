@@ -79,5 +79,7 @@ export const getTournamentMembership = cache(async (tournamentId: string, userId
     .select('role')
     .eq('tournament_id', tournamentId)
     .eq('user_id', userId)
+    .eq('role', 'ORGANIZER')
+    .eq('status', 'ACTIVE')
     .single();
 });

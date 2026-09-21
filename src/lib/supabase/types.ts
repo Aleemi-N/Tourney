@@ -2453,6 +2453,10 @@ export type Database = {
       }
     }
     Functions: {
+      add_tournament_staff_role: {
+        Args: { p_email: string; p_role: string; p_tournament_id: string }
+        Returns: Json
+      }
       approve_player_registration: {
         Args: {
           p_auction_category?: string
@@ -2493,6 +2497,18 @@ export type Database = {
         Args: { p_auction_id: string; p_auction_player_id: string }
         Returns: Json
       }
+      get_tournament_staff: {
+        Args: { p_tournament_id: string }
+        Returns: {
+          avatar_path: string | null
+          display_name: string
+          email: string | null
+          is_primary_organizer: boolean
+          membership_status: string
+          roles: string[]
+          user_id: string
+        }[]
+      }
       initialize_organizer_onboarding: {
         Args: { p_full_name: string; p_org_name: string; p_org_slug: string }
         Returns: Json
@@ -2528,6 +2544,10 @@ export type Database = {
       reject_team_owner_application: {
         Args: { p_application_id: string; p_notes?: string }
         Returns: undefined
+      }
+      remove_tournament_staff_role: {
+        Args: { p_role: string; p_target_user_id: string; p_tournament_id: string }
+        Returns: Json
       }
       select_lot: {
         Args: {
@@ -2586,6 +2606,18 @@ export type Database = {
           p_secondary_position?: string
         }
         Returns: string
+      }
+      update_tournament_details: {
+        Args: {
+          p_description?: string
+          p_end_date?: string
+          p_logo_path?: string
+          p_name: string
+          p_start_date?: string
+          p_tournament_id: string
+          p_venue?: string
+        }
+        Returns: Json
       }
       update_tournament_draft: {
         Args: {

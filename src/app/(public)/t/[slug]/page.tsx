@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
+import Image from 'next/image';
 import { LandingNav } from '@/components/landing/LandingNav';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { VolleyballIcon } from '@/components/landing/VolleyballIcon';
@@ -70,7 +71,7 @@ export default async function TournamentPublicPage({ params }: Props) {
   // Organizers can read even if is_public = false (because they pass is_tournament_member check).
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('id, name, slug, sport, format, venue, description, start_date, end_date, status')
+    .select('id, name, slug, sport, format, league_mode, venue, description, start_date, end_date, status, tournament_branding(logo_path)')
     .eq('slug', slug)
     .single();
 
@@ -117,6 +118,8 @@ export default async function TournamentPublicPage({ params }: Props) {
   const startDate = formatDate(tournament.start_date ?? null);
   const endDate = formatDate(tournament.end_date ?? null);
   const teamsCount = teams?.length ?? 0;
+  const branding = Array.isArray(tournament.tournament_branding) ? tournament.tournament_branding[0] : tournament.tournament_branding;
+  const logoUrl = branding?.logo_path ? supabase.storage.from('logos').getPublicUrl(branding.logo_path).data.publicUrl : null;
 
   const showPlayerCTA = isRegistrationOpen && playerRegEnabled;
   const showTeamOwnerCTA = isRegistrationOpen && isLeague && teamRegEnabled;
@@ -145,10 +148,10 @@ export default async function TournamentPublicPage({ params }: Props) {
             <span className="text-xs font-bold uppercase tracking-widest text-text-muted">Volleyball</span>
           </div>
 
-          {/* Tournament name */}
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-text-primary mb-3 leading-tight">
-            {tournament.name}
-          </h1>
+          <div className="mb-3 flex items-center gap-4">
+            {logoUrl && <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]"><Image src={logoUrl} alt={`${tournament.name} logo`} fill sizes="64px" className="object-contain p-2" unoptimized /></div>}
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-text-primary leading-tight">{tournament.name}</h1>
+          </div>
 
           {/* Status + format badges */}
           <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -164,7 +167,7 @@ export default async function TournamentPublicPage({ params }: Props) {
               className="px-3 py-1 rounded-full text-xs font-semibold text-text-secondary"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              {formatFormat(tournament.format ?? '', null)}
+              {formatFormat(tournament.format ?? '', tournament.league_mode)}
             </span>
           </div>
 

@@ -1,12 +1,14 @@
 import { getTournament } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Suspense } from 'react';
 
 import { RegistrationLinks } from './RegistrationLinks';
 import { TournamentStatsServer } from './TournamentStatsServer';
 import { OrganizerLinkPending } from '@/components/organizer/OrganizerLinkPending';
+import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +36,10 @@ async function TournamentOverviewContent({
     notFound();
   }
 
+  const supabase = await createClient();
+  const { data: branding } = await supabase.from('tournament_branding').select('logo_path').eq('tournament_id', id).maybeSingle();
+  const logoUrl = branding?.logo_path ? supabase.storage.from('logos').getPublicUrl(branding.logo_path).data.publicUrl : null;
+
   return (
     <main className="p-4 md:p-8 max-w-5xl mx-auto h-full">
       <Link href="/organizer/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors mb-6">
@@ -42,9 +48,12 @@ async function TournamentOverviewContent({
       
       <div className="bg-surface rounded-2xl border border-border p-8">
         <div className="flex justify-between items-start mb-6">
-          <div>
+          <div className="flex min-w-0 items-center gap-4">
+            {logoUrl && <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-border bg-background"><Image src={logoUrl} alt="" fill sizes="56px" className="object-contain p-1.5" unoptimized /></div>}
+            <div className="min-w-0">
             <h1 className="text-3xl font-bold text-text-primary tracking-tight">{tournament.name as string}</h1>
             <p className="text-text-secondary">/{tournament.slug as string}</p>
+            </div>
           </div>
           <span className="px-3 py-1 bg-primary/10 text-primary font-bold tracking-wider text-xs uppercase rounded">
             {tournament.status as string}

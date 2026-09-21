@@ -50,7 +50,14 @@ export function SettingsForm({ tournament, initialSettings }: SettingsFormProps)
       const { error: rpcError } = await supabase.rpc('update_tournament_settings', payload);
 
       if (rpcError) {
-        throw new Error(rpcError.message);
+        const safeMessage = rpcError.message.includes('below current approved team count')
+          ? 'Maximum teams cannot be lower than the number of approved teams.'
+          : rpcError.message.includes('below largest current team size')
+            ? 'Maximum squad size cannot be lower than an existing team size.'
+            : rpcError.message.includes('Unauthorized')
+              ? 'You do not have permission to update this tournament.'
+              : 'Unable to update settings right now.';
+        throw new Error(safeMessage);
       }
 
       setSuccess(true);
