@@ -1,62 +1,36 @@
-import { createClient, getTournament } from '@/lib/supabase/server';
+import { getTournament } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
-import { ParticipantManager } from './ParticipantManager';
+import { ParticipantListServer } from './ParticipantListServer';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { Suspense } from 'react';
 
 export const dynamic = 'force-dynamic';
 
+function ParticipantsSkeleton() {
+  return (
+    <div className="flex flex-col gap-6 animate-pulse">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="h-10 w-48 bg-slate-200 dark:bg-slate-800 rounded-md" />
+        <div className="h-10 w-32 bg-slate-200 dark:bg-slate-800 rounded-md" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="h-72 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default async function ParticipantsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
 
   // Fetch tournament from cache
   const { data: tournament } = await getTournament(id);
   if (!tournament) {
     notFound();
   }
-
-  // Fetch player registrations and team owner applications concurrently
-  console.time('ParticipantPage concurrentQueries');
-  const [
-    { data: players },
-    { data: teamOwners }
-  ] = await Promise.all([
-    supabase
-      .from('player_tournament_registrations')
-      .select(`
-        id,
-        status,
-        auction_category,
-        player_profiles (
-          id,
-          display_name,
-          primary_position,
-          secondary_position,
-          photo_path,
-          place,
-          height_cm
-        )
-      `)
-      .eq('tournament_id', id)
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('team_owner_applications')
-      .select(`
-        id,
-        proposed_team_name,
-        team_short_name,
-        logo_path,
-        place,
-        status,
-        profiles:user_id (
-          full_name
-        )
-      `)
-      .eq('tournament_id', id)
-      .order('created_at', { ascending: false })
-  ]);
-  console.timeEnd('ParticipantPage concurrentQueries');
 
   return (
     <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto min-h-screen">
@@ -74,11 +48,10 @@ export default async function ParticipantsPage({ params }: { params: Promise<{ i
         </div>
       </div>
 
-      <ParticipantManager 
-        tournament={tournament} 
-        players={players || []} 
-        teamOwners={teamOwners || []} 
-      />
+      <Suspense fallback={<ParticipantsSkeleton />}>
+        <ParticipantListServer tournament={tournament} />
+      </Suspense>
     </div>
   );
 }
+

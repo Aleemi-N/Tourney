@@ -1,30 +1,29 @@
-import { createClient, getTournament } from '@/lib/supabase/server';
+import { getTournament } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { SettingsForm } from './SettingsForm';
+import { SettingsServer } from './SettingsServer';
+import { Suspense } from 'react';
 
 export const dynamic = 'force-dynamic';
 
+function SettingsSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse mt-8">
+      <div className="h-10 w-48 bg-slate-200 dark:bg-slate-800 rounded-md" />
+      <div className="h-64 w-full bg-slate-200 dark:bg-slate-800 rounded-xl" />
+      <div className="h-48 w-full bg-slate-200 dark:bg-slate-800 rounded-xl" />
+    </div>
+  );
+}
+
 export default async function SettingsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
-
+  
   // Fetch Tournament from cache (shared with layout)
   const { data: tournament } = await getTournament(id);
 
   if (!tournament) {
-    notFound();
-  }
-
-  // 4. Fetch Settings
-  const { data: settings } = await supabase
-    .from('tournament_settings')
-    .select('*')
-    .eq('tournament_id', id)
-    .single();
-
-  if (!settings) {
     notFound();
   }
 
@@ -47,7 +46,10 @@ export default async function SettingsPage({ params }: { params: Promise<{ id: s
         </p>
       </div>
 
-      <SettingsForm tournament={tournament} initialSettings={settings} />
+      <Suspense fallback={<SettingsSkeleton />}>
+        <SettingsServer tournament={tournament} />
+      </Suspense>
     </main>
   );
 }
+
