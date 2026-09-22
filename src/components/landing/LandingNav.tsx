@@ -84,7 +84,7 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
               <>
                 {isOrganizer && (
                   <Link href="/organizer/dashboard" className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">
-                    My Tournaments
+                    Organizer Dashboard
                   </Link>
                 )}
                 <div className="relative z-50">
@@ -104,8 +104,8 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                       <Link href="/profile" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-text-primary hover:bg-white/5">
                         My Profile
                       </Link>
-                      <Link href="/profile#tournament-history" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-text-primary hover:bg-white/5">
-                        Tournament History
+                      <Link href="/profile#my-tournaments" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-text-primary hover:bg-white/5">
+                        My Tournaments
                       </Link>
                       <PwaInstallAction onComplete={() => setIsProfileMenuOpen(false)} className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-text-primary hover:bg-white/5" />
                       <form onSubmit={handleLogout}>
@@ -181,7 +181,7 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                     onClick={() => setIsOpen(false)}
                     className="w-full py-3 text-center text-sm font-medium text-text-primary border border-white/10 rounded-xl"
                   >
-                    My Tournaments
+                    Organizer Dashboard
                   </Link>
                 )}
                 <Link 
@@ -192,11 +192,11 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                   My Profile
                 </Link>
                 <Link
-                  href="/profile#tournament-history"
+                  href="/profile#my-tournaments"
                   onClick={() => setIsOpen(false)}
                   className="w-full py-3 text-center text-sm font-medium text-text-primary border border-white/10 rounded-xl"
                 >
-                  Tournament History
+                  My Tournaments
                 </Link>
                 <PwaInstallAction onComplete={() => setIsOpen(false)} className="flex w-full items-center justify-center gap-2 py-3 text-sm font-medium text-text-primary rounded-xl border border-white/10" />
                 <form onSubmit={(e) => { handleLogout(e); setIsOpen(false); }}>

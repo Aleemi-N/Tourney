@@ -6,9 +6,47 @@ import { LandingNav } from '@/components/landing/LandingNav';
 import { ArrowLeft } from 'lucide-react';
 import { AccountAvatar } from '@/components/profile/AccountAvatar';
 import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
+import Image from 'next/image';
+import { CalendarDays, MapPin } from 'lucide-react';
+import { VolleyballIcon } from '@/components/landing/VolleyballIcon';
 
 export const metadata = { title: 'My Profile' };
 export const dynamic = 'force-dynamic';
+
+const playerStatusPresentation: Record<string, { label: string; description: string; className: string }> = {
+  PENDING: {
+    label: 'Registration Pending',
+    description: 'Your registration has been submitted and is awaiting organizer review.',
+    className: 'border-warning/30 bg-warning/10 text-warning',
+  },
+  APPROVED: {
+    label: 'Approved',
+    description: 'Your player registration has been approved.',
+    className: 'border-success/30 bg-success/10 text-success',
+  },
+  REJECTED: {
+    label: 'Registration Rejected',
+    description: 'Your player registration was not approved for this tournament.',
+    className: 'border-danger/30 bg-danger/10 text-danger',
+  },
+  CHANGES_REQUESTED: {
+    label: 'Changes Requested',
+    description: 'The organizer requested changes. Review your registration and player profile.',
+    className: 'border-warning/40 bg-warning/10 text-warning',
+  },
+  WITHDRAWN: {
+    label: 'Withdrawn',
+    description: 'This player registration has been withdrawn.',
+    className: 'border-border-strong bg-surface-muted text-text-secondary',
+  },
+};
+
+function formatTournamentDate(startDate?: string | null, endDate?: string | null) {
+  if (!startDate) return null;
+  const start = new Date(startDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  if (!endDate || endDate === startDate) return start;
+  return `${start} – ${new Date(endDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+}
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -34,7 +72,7 @@ export default async function ProfilePage() {
     .from('tournament_members')
     .select(`
       tournament_id,
-      tournaments!inner (id, name, slug, status, format)
+      tournaments!inner (id, name, slug, status, format, start_date, end_date, venue, tournament_branding (logo_path))
     `)
     .eq('user_id', user.id)
     .eq('role', 'ORGANIZER')
@@ -55,10 +93,10 @@ export default async function ProfilePage() {
       .select(`
         tournament_id,
         status,
-        tournaments!inner (id, name, slug, status, format)
+        auction_category,
+        tournaments!inner (id, name, slug, status, format, start_date, end_date, venue, tournament_branding (logo_path))
       `)
-      .eq('player_id', playerProfile.id)
-      .eq('status', 'APPROVED');
+      .eq('player_id', playerProfile.id);
     playerRegistrations = data || [];
   }
 
@@ -68,7 +106,7 @@ export default async function ProfilePage() {
     .select(`
       tournament_id,
       status,
-      tournaments!inner (id, name, slug, status, format)
+      tournaments!inner (id, name, slug, status, format, start_date, end_date, venue, tournament_branding (logo_path))
     `)
     .eq('user_id', user.id)
     .eq('status', 'APPROVED');
@@ -80,7 +118,8 @@ export default async function ProfilePage() {
     if (m.tournaments) {
       participationMap.set(m.tournament_id, {
         tournament: m.tournaments,
-        roles: ['Organizer']
+        roles: ['Organizer'],
+        playerRegistration: null,
       });
     }
   });
@@ -90,10 +129,12 @@ export default async function ProfilePage() {
       const existing = participationMap.get(r.tournament_id);
       if (existing) {
         if (!existing.roles.includes('Player')) existing.roles.push('Player');
+        existing.playerRegistration = { status: r.status, auctionCategory: r.auction_category };
       } else {
         participationMap.set(r.tournament_id, {
           tournament: r.tournaments,
-          roles: ['Player']
+          roles: ['Player'],
+          playerRegistration: { status: r.status, auctionCategory: r.auction_category },
         });
       }
     }
@@ -163,22 +204,23 @@ export default async function ProfilePage() {
             >
               Update Volleyball Profile &rarr;
             </Link>
-            <Link 
-              href="/organizer/dashboard"
-              className="text-primary hover:text-primary-hover font-medium text-sm transition-colors"
-            >
-              Go to Organizer Dashboard &rarr;
-            </Link>
+            {isGlobalOrganizer && (
+              <Link href="/organizer/dashboard" className="text-primary hover:text-primary-hover font-medium text-sm transition-colors">
+                Go to Organizer Dashboard &rarr;
+              </Link>
+            )}
           </div>
         </div>
 
-        {/* Participation History */}
-        <div id="tournament-history" className="w-full scroll-mt-24 md:w-2/3">
-          <h2 className="text-xl font-bold text-text-primary mb-6">Tournament History</h2>
+        {/* Contextual tournament relationships */}
+        <div id="my-tournaments" className="relative w-full scroll-mt-24 md:w-2/3">
+          <span id="tournament-history" className="absolute -top-24" aria-hidden="true" />
+          <h2 className="text-xl font-bold text-text-primary">My Tournaments</h2>
+          <p className="mb-6 mt-1 text-sm text-text-secondary">Your player registrations and organizer relationships.</p>
           
           {participations.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-surface-raised p-6 text-center sm:p-8">
-              <p className="text-text-secondary mb-4">You haven&apos;t participated in any tournaments yet.</p>
+              <p className="text-text-secondary mb-4">You don&apos;t have any tournament registrations or organizer access yet.</p>
               <Link
                 href="/#tournaments"
                 className="inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary-hover transition-colors"
@@ -188,26 +230,57 @@ export default async function ProfilePage() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              {participations.map((p, idx) => (
-                <div key={p.tournament.id || idx} className="rounded-xl border border-border bg-surface-raised p-4 transition-colors hover:border-border-strong sm:p-5">
-                  <div className="flex flex-col items-start gap-2 sm:flex-row sm:justify-between">
-                    <Link href={`/t/${p.tournament.slug}`} className="font-semibold text-lg text-text-primary hover:text-primary transition-colors">
-                      {p.tournament.name}
-                    </Link>
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-surface-muted text-text-secondary rounded">
-                      {p.tournament.status}
-                    </span>
+              {participations.map((p, idx) => {
+                const playerStatus = p.playerRegistration ? playerStatusPresentation[p.playerRegistration.status] : null;
+                const branding = Array.isArray(p.tournament.tournament_branding) ? p.tournament.tournament_branding[0] : p.tournament.tournament_branding;
+                const logoUrl = resolvePublicStorageUrl(supabase, 'logos', branding?.logo_path);
+                const date = formatTournamentDate(p.tournament.start_date, p.tournament.end_date);
+                return (
+                <article key={p.tournament.id || idx} className="overflow-hidden rounded-xl border border-border bg-surface-raised transition-colors hover:border-border-strong">
+                  <div className="flex min-w-0 gap-3 p-4 sm:gap-4 sm:p-5">
+                    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-surface-muted sm:h-16 sm:w-16">
+                      {logoUrl ? <Image src={logoUrl} alt="" fill sizes="64px" className="object-contain p-1.5" /> : <VolleyballIcon className="h-7 w-7 text-primary" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-col items-start gap-2 sm:flex-row sm:justify-between">
+                        <h3 className="break-words text-lg font-semibold text-text-primary">{p.tournament.name}</h3>
+                        <span className="shrink-0 rounded bg-surface-muted px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-text-secondary">{p.tournament.status}</span>
+                      </div>
+                      <p className="mt-1 text-sm text-text-secondary">{p.tournament.format?.replaceAll('_', ' ')}</p>
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-muted">
+                        {date && <span className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />{date}</span>}
+                        {p.tournament.venue && <span className="flex min-w-0 items-center gap-1.5"><MapPin className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{p.tournament.venue}</span></span>}
+                      </div>
+                    </div>
                   </div>
-                  
-                  <div className="flex gap-2 mt-4 flex-wrap">
+
+                  <div className="border-t border-border px-4 py-4 sm:px-5">
+                    <div className="flex flex-wrap gap-2">
                     {p.roles.map((role: string) => (
                       <span key={role} className="px-2.5 py-1 text-xs font-semibold rounded bg-primary/10 text-primary">
                         {role}
                       </span>
                     ))}
+                    </div>
+                    {playerStatus && (
+                      <div className={`mt-3 rounded-lg border p-3 ${playerStatus.className}`}>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-sm font-bold">{playerStatus.label}</span>
+                          {p.playerRegistration.status === 'APPROVED' && p.playerRegistration.auctionCategory && (
+                            <span className="rounded-full bg-black/10 px-2.5 py-1 text-xs font-semibold dark:bg-white/10">Classification: {p.playerRegistration.auctionCategory.replaceAll('_', ' ')}</span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-xs opacity-90">{playerStatus.description}</p>
+                      </div>
+                    )}
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Link href={`/t/${p.tournament.slug}`} className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">View Tournament</Link>
+                      {p.playerRegistration && <Link href="/player/profile" className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-3 py-2 text-sm font-semibold text-text-secondary hover:bg-surface-muted hover:text-text-primary">View / Edit Profile</Link>}
+                      {p.roles.includes('Organizer') && <Link href={`/organizer/tournaments/${p.tournament.id}`} className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-3 py-2 text-sm font-semibold text-text-secondary hover:bg-surface-muted hover:text-text-primary">Open Dashboard</Link>}
+                    </div>
                   </div>
-                </div>
-              ))}
+                </article>
+              )})}
             </div>
           )}
         </div>
