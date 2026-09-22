@@ -7,6 +7,7 @@ import { Menu, X } from 'lucide-react';
 import { APP_CONFIG } from '@/lib/config';
 import { VolleyballIcon } from './VolleyballIcon';
 import { logout } from '@/app/actions/auth';
+import { PwaInstallAction } from '@/components/pwa/PwaInstallAction';
 
 interface LandingNavProps {
   isAuthenticated?: boolean;
@@ -62,6 +63,7 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
           <div className="hidden md:flex items-center gap-4">
             {!isAuthenticated ? (
               <>
+                <PwaInstallAction className="flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-text-primary" />
                 <Link href="/login" className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">
                   Sign In
                 </Link>
@@ -105,6 +107,7 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                       <Link href="/profile#tournament-history" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-text-primary hover:bg-white/5">
                         Tournament History
                       </Link>
+                      <PwaInstallAction onComplete={() => setIsProfileMenuOpen(false)} className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-text-primary hover:bg-white/5" />
                       <form onSubmit={handleLogout}>
                         <button type="submit" disabled={isLoggingOut} className="w-full text-left px-4 py-2 text-sm text-text-secondary hover:text-danger hover:bg-white/5 transition-colors disabled:opacity-50">
                           {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
@@ -195,6 +198,7 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                 >
                   Tournament History
                 </Link>
+                <PwaInstallAction onComplete={() => setIsOpen(false)} className="flex w-full items-center justify-center gap-2 py-3 text-sm font-medium text-text-primary rounded-xl border border-white/10" />
                 <form onSubmit={(e) => { handleLogout(e); setIsOpen(false); }}>
                   <button 
                     type="submit"
@@ -206,13 +210,14 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                 </form>
               </>
             )}
-            <Link 
+            <Link
               href="/organizer/tournaments/new" 
               onClick={() => setIsOpen(false)}
-              className="w-full py-3 text-center bg-primary hover:bg-primary-hover text-primary-foreground text-sm font-semibold rounded-xl"
+              className="w-full py-2 text-center text-sm font-semibold text-primary hover:text-primary-hover"
             >
               Create Tournament
             </Link>
+            {!isAuthenticated && <PwaInstallAction onComplete={() => setIsOpen(false)} className="flex w-full items-center justify-center gap-2 py-2 text-sm font-medium text-text-secondary hover:text-text-primary" />}
           </div>
         </div>
       )}

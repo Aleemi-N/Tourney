@@ -29,7 +29,7 @@ export default async function TournamentLayout({
 
   const { data: membership } = await getTournamentMembership(id, user.id);
   
-  if (membership?.role !== 'ORGANIZER') {
+  if (membership?.role !== 'ORGANIZER' && tournament.created_by !== user.id) {
     notFound();
   }
 

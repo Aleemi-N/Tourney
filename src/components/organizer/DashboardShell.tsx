@@ -165,7 +165,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
               }`}
             >
               <item.icon className="h-6 w-6" />
-              <span className="flex items-center gap-1 text-[10px] font-medium truncate max-w-[72px] text-center">
+              <span className="flex items-center gap-1 text-[10px] font-medium truncate max-w-18 text-center">
                 {item.name.replace(' (Coming Soon)', '')}
                 {!item.disabled && <OrganizerLinkPending className="h-2.5 w-2.5" />}
               </span>

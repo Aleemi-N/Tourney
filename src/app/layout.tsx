@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { ServiceWorkerRegistration } from '@/components/pwa/ServiceWorkerRegistration';
 
 /**
  * Application font — loaded via next/font (never CSS @import).
@@ -28,6 +29,9 @@ export const metadata: Metadata = {
   description:
     'Mobile-first volleyball tournament management — lots, auction, live scoring, fixtures, and standings.',
   manifest: '/manifest.json',
+  icons: {
+    apple: '/icons/apple-touch-icon.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -68,6 +72,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       suppressHydrationWarning
     >
       <body className="min-h-full bg-background text-text-primary antialiased">
+        <ServiceWorkerRegistration />
         {children}
       </body>
     </html>

@@ -90,7 +90,7 @@ export function PlayerCard({
       {status ? getStatusBadge() : getClassificationBadge()}
 
       {/* Photo Area (Approx 55-60% visually via aspect ratio) */}
-      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
+      <div className="relative aspect-4/3 w-full shrink-0 overflow-hidden bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
         {player.photo_path ? (
           <Image
             src={player.photo_path}
@@ -106,7 +106,7 @@ export function PlayerCard({
           </div>
         )}
         {/* Subtle gradient overlay for premium feel at the bottom of the photo */}
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-slate-900/60 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-slate-900/60 to-transparent pointer-events-none" />
       </div>
 
       {/* Typography Area */}

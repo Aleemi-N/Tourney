@@ -1,12 +1,13 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import React, { useState, useRef } from 'react';
+import React, { useId, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
 import { UploadCloud, X, Loader2 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
+import { PhotoCropModal } from './PhotoCropModal';
 
 interface ImageUploadProps {
   userId: string;
@@ -29,36 +30,37 @@ export function ImageUpload({
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentPhotoUrl || null);
   const [imageFailed, setImageFailed] = useState(false);
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputId = useId();
   const supabase = createClient();
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const validateFile = (file: File) => {
     setError(null);
-
-    // Validate size (2MB max)
     if (file.size > 2 * 1024 * 1024) {
       setError('File must be less than 2MB');
-      return;
+      return false;
     }
-
-    // Validate MIME type
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       setError('Invalid file type. Only JPEG, PNG, and WebP are allowed.');
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const uploadFile = async (file: File) => {
+    if (!validateFile(file)) return;
 
     setIsUploading(true);
+    let objectUrl: string | null = null;
 
     try {
       // Show local preview immediately
-      const objectUrl = URL.createObjectURL(file);
+      objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
       setImageFailed(false);
 
-      const ext = file.name.split('.').pop();
+      const ext = file.type === 'image/webp' ? 'webp' : file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${ext}`;
       const filePath = `${userId}/${fileName}`;
 
@@ -74,18 +76,38 @@ export function ImageUpload({
         .from(bucket)
         .getPublicUrl(filePath);
 
+      URL.revokeObjectURL(objectUrl);
+      objectUrl = null;
+      setPreviewUrl(publicUrl);
       onUploadSuccess(publicUrl, filePath);
+      setCropFile(null);
     } catch (err: any) {
       console.error('Upload error:', err);
       setError(err.message || 'Failed to upload image');
       setPreviewUrl(currentPhotoUrl || null);
       setImageFailed(false);
+      setCropFile(null);
     } finally {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
       setIsUploading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !validateFile(file)) {
+      e.target.value = '';
+      return;
+    }
+    if (bucket === 'avatars') {
+      setCropFile(file);
+      e.target.value = '';
+      return;
+    }
+    void uploadFile(file);
   };
 
   const handleClear = () => {
@@ -134,11 +156,11 @@ export function ImageUpload({
               onChange={handleFileChange}
               accept="image/jpeg,image/png,image/webp"
               className="sr-only"
-              id={`${bucket}-upload`}
+              id={`${bucket}-${inputId}-upload`}
               disabled={isUploading}
             />
             <label
-              htmlFor={`${bucket}-upload`}
+              htmlFor={`${bucket}-${inputId}-upload`}
               className="cursor-pointer rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm font-medium text-text-primary transition-colors hover:border-border-strong hover:bg-surface focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 focus-within:ring-offset-surface-raised"
             >
               Choose File
@@ -165,6 +187,13 @@ export function ImageUpload({
           )}
         </div>
       </div>
+      {cropFile && (
+        <PhotoCropModal
+          file={cropFile}
+          onCancel={() => setCropFile(null)}
+          onApply={uploadFile}
+        />
+      )}
     </div>
   );
 }

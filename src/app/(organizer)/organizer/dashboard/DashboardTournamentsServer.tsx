@@ -7,17 +7,6 @@ import { OrganizerLinkPending } from '@/components/organizer/OrganizerLinkPendin
 export async function DashboardTournamentsServer({ userId }: { userId: string }) {
   const supabase = await createClient();
 
-  const { data: orgs } = await supabase
-    .from('organization_members')
-    .select('organization_id')
-    .eq('user_id', userId);
-
-  const orgIds = orgs?.map((organization) => organization.organization_id) ?? [];
-
-  if (orgIds.length === 0) {
-    redirect('/organizer/onboarding');
-  }
-
   interface TournamentItem {
     id: string;
     name: string;
@@ -26,13 +15,33 @@ export async function DashboardTournamentsServer({ userId }: { userId: string })
     start_date: string | null;
   }
 
-  const { data } = await supabase
-    .from('tournaments')
-    .select('id, name, status, format, start_date')
-    .in('organization_id', orgIds)
-    .order('created_at', { ascending: false });
+  const [{ data: memberships }, { data: createdTournaments }] = await Promise.all([
+    supabase
+      .from('tournament_members')
+      .select('tournament_id')
+      .eq('user_id', userId)
+      .eq('role', 'ORGANIZER')
+      .eq('status', 'ACTIVE'),
+    supabase
+      .from('tournaments')
+      .select('id, name, status, format, start_date')
+      .eq('created_by', userId)
+      .order('created_at', { ascending: false }),
+  ]);
 
-  const tournaments = (data || []) as TournamentItem[];
+  const memberTournamentIds = [...new Set((memberships || []).map((membership) => membership.tournament_id))];
+  const { data: memberTournaments } = memberTournamentIds.length
+    ? await supabase.from('tournaments').select('id, name, status, format, start_date').in('id', memberTournamentIds).order('created_at', { ascending: false })
+    : { data: [] };
+
+  const tournamentMap = new Map<string, TournamentItem>();
+  [...(createdTournaments || []), ...(memberTournaments || [])].forEach((tournament) => tournamentMap.set(tournament.id, tournament as TournamentItem));
+  const tournaments = [...tournamentMap.values()];
+
+  if (tournaments.length === 0) {
+    const { data: organizationMembership } = await supabase.from('organization_members').select('organization_id').eq('user_id', userId).eq('status', 'ACTIVE').limit(1);
+    if (!organizationMembership?.length) redirect('/organizer/onboarding');
+  }
 
   if (tournaments.length === 0) {
     return (
@@ -126,7 +135,7 @@ export async function DashboardTournamentsServer({ userId }: { userId: string })
               <OrganizerLinkPending className="absolute right-3 bottom-3 text-primary" />
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-semibold text-text-primary group-hover:text-primary transition-colors">
-                  {tournament.name}
+                    {tournament.name}
                 </h3>
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-primary/10 text-primary rounded">
                   {tournament.status}
@@ -158,6 +167,7 @@ export async function DashboardTournamentsServer({ userId }: { userId: string })
                   </span>
                 )}
               </div>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary group-hover:underline">Open Dashboard <ArrowRightIcon className="h-4 w-4" /></span>
             </Link>
           ))}
         </div>

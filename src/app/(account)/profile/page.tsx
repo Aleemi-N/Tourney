@@ -114,12 +114,17 @@ export default async function ProfilePage() {
   });
 
   // 4. Global Organizer Status
-  const { data: orgs } = await supabase
-    .from('organization_members')
-    .select('id')
+  const [{ data: organizerAccessMemberships }, { data: createdTournament }] = await Promise.all([
+    supabase
+    .from('tournament_members')
+    .select('tournament_id')
     .eq('user_id', user.id)
-    .limit(1);
-  const isGlobalOrganizer = !!(orgs && orgs.length > 0);
+    .eq('role', 'ORGANIZER')
+    .eq('status', 'ACTIVE')
+    .limit(1),
+    supabase.from('tournaments').select('id').eq('created_by', user.id).limit(1).maybeSingle(),
+  ]);
+  const isGlobalOrganizer = Boolean(organizerAccessMemberships?.length || createdTournament);
 
   const participations = Array.from(participationMap.values());
   const accountPhotoUrl = resolvePublicStorageUrl(

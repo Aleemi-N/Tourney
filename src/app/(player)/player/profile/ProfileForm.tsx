@@ -53,6 +53,12 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
       });
 
       if (rpcError) throw rpcError;
+
+      const previousPhotoPath = initialProfile?.photo_path as string | null | undefined;
+      if (previousPhotoPath && photoUrl !== previousPhotoPath && previousPhotoPath.startsWith(`${userId}/`)) {
+        const { error: cleanupError } = await supabase.storage.from('avatars').remove([previousPhotoPath]);
+        if (cleanupError) console.error('Previous profile photo cleanup failed:', cleanupError);
+      }
       
       setSuccess(true);
       router.refresh();

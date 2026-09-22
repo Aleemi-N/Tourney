@@ -8,9 +8,10 @@ export async function PublicLandingNav() {
 
   if (!user) return <LandingNav />;
 
-  const [{ data: profile }, { data: organizerMemberships }, { data: playerProfile }] = await Promise.all([
+  const [{ data: profile }, { data: organizerMemberships }, { data: createdTournament }, { data: playerProfile }] = await Promise.all([
     supabase.from('profiles').select('full_name, avatar_path').eq('id', user.id).single(),
-    supabase.from('organization_members').select('organization_id').eq('user_id', user.id).eq('status', 'ACTIVE').limit(1),
+    supabase.from('tournament_members').select('tournament_id').eq('user_id', user.id).eq('role', 'ORGANIZER').eq('status', 'ACTIVE').limit(1),
+    supabase.from('tournaments').select('id').eq('created_by', user.id).limit(1).maybeSingle(),
     supabase.from('player_profiles').select('photo_path').eq('user_id', user.id).maybeSingle(),
   ]);
 
@@ -20,7 +21,7 @@ export async function PublicLandingNav() {
   return (
     <LandingNav
       isAuthenticated
-      isOrganizer={Boolean(organizerMemberships?.length)}
+      isOrganizer={Boolean(organizerMemberships?.length || createdTournament)}
       userProfile={{ full_name: fullName, photo_url: photoUrl }}
     />
   );

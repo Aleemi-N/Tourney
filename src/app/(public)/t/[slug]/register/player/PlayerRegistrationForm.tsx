@@ -52,6 +52,12 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
       });
 
       if (rpcError) throw rpcError;
+
+      const previousPhotoPath = initialProfile?.photo_path as string | null | undefined;
+      if (previousPhotoPath && photoUrl !== previousPhotoPath && previousPhotoPath.startsWith(`${userId}/`)) {
+        const { error: cleanupError } = await supabase.storage.from('avatars').remove([previousPhotoPath]);
+        if (cleanupError) console.error('Previous profile photo cleanup failed:', cleanupError);
+      }
       
       // Force Next.js to refresh the RSC payload for this route so the 
       // page.tsx layout switches from the Form to the Success UI.
