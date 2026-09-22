@@ -1,251 +1,47 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { CurrencyRupeeIcon } from '@heroicons/react/24/outline';
+import { CurrencyRupeeIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { createClient } from '@/lib/supabase/client';
 
-interface SettingsFormProps {
-  tournament: Record<string, unknown>;
-  initialSettings: Record<string, unknown>;
+type Method = 'LOT_DRAW' | 'AUCTION';
+type PriceRule = 'SAME_BASE_PRICE' | 'ORGANIZER_SETS_PRICE';
+type LockState = { locked: boolean; reason: string | null };
+type Readiness = { key: string; label: string; status: 'READY' | 'BLOCKED' | 'NOT_APPLICABLE'; message: string | null; issues: string[] };
+type Settings = { player_registration_enabled: boolean; team_registration_enabled: boolean; max_teams: number | null; min_squad_size: number; max_squad_size: number | null; auction_starting_purse: number | null; auction_base_price: number | null; auction_bid_increment: number | null; icon_selection_method: Method; setter_selection_method: Method; reauction_price_rule: PriceRule };
+export type Stage = { id: string; name: string; stage_type: 'LEAGUE' | 'KNOCKOUT'; sequence: number; qualification_count: number | null; status: string };
+export type VolleyballRule = { id: string; stage_id: string | null; sets_to_win: number; win_by_two: boolean; set_rules: { set_number: number; target_points: number }[] };
+export interface Phase5Configuration { settings: Settings; icon_lock: LockState; setter_lock: LockState; readiness: Readiness[]; stages: Stage[]; rules: VolleyballRule[] }
+
+function Choice<T extends string>({ value, selected, title, description, disabled, onSelect }: { value: T; selected: boolean; title: string; description: string; disabled?: boolean; onSelect: (value: T) => void }) {
+  return <button type="button" disabled={disabled} onClick={() => onSelect(value)} aria-pressed={selected} className={`min-h-24 rounded-xl border p-4 text-left transition-colors ${selected ? 'border-primary bg-primary/10 ring-1 ring-primary' : 'border-border bg-surface-muted hover:border-text-muted'} disabled:cursor-not-allowed disabled:opacity-70`}><span className="block font-semibold text-text-primary">{title}</span><span className="mt-1 block text-xs leading-5 text-text-secondary">{description}</span></button>;
 }
 
-export function SettingsForm({ tournament, initialSettings }: SettingsFormProps) {
-  const router = useRouter();
-  const supabase = createClient();
-  
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+function MoneyField({ label, value, onChange, hint }: { label: string; value: string; onChange: (value: string) => void; hint: string }) {
+  return <label className="block min-w-0 text-sm font-medium text-text-primary">{label}<span className="relative mt-2 block"><CurrencyRupeeIcon className="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-text-muted" /><input type="number" min="0" step="0.01" value={value} onChange={e => onChange(e.target.value)} className="w-full rounded-lg border border-border bg-surface py-2 pl-10 pr-3 text-text-primary" /></span><span className="mt-1 block text-xs font-normal text-text-secondary">{hint}</span></label>;
+}
 
-  const [playerRegEnabled, setPlayerRegEnabled] = useState(initialSettings.player_registration_enabled as boolean);
-  const [teamRegEnabled, setTeamRegEnabled] = useState(initialSettings.team_registration_enabled as boolean);
-  const [maxTeams, setMaxTeams] = useState<string>((initialSettings.max_teams as number)?.toString() || '');
-  const [maxSquadSize, setMaxSquadSize] = useState<string>((initialSettings.max_squad_size as number)?.toString() || '');
-  
-  const [auctionPurse, setAuctionPurse] = useState<string>((initialSettings.auction_starting_purse as number)?.toString() || '');
-  const [auctionBasePrice, setAuctionBasePrice] = useState<string>((initialSettings.auction_base_price as number)?.toString() || '');
-  const [auctionBidInc, setAuctionBidInc] = useState<string>((initialSettings.auction_bid_increment as number)?.toString() || '');
-
+export function SettingsForm({ tournament, configuration }: { tournament: Record<string, unknown>; configuration: Phase5Configuration }) {
+  const router = useRouter(); const supabase = createClient(); const initial = configuration.settings;
+  const [form, setForm] = useState({ playerRegistration: initial.player_registration_enabled, teamRegistration: initial.team_registration_enabled, maxTeams: initial.max_teams?.toString() ?? '', minSquad: initial.min_squad_size.toString(), maxSquad: initial.max_squad_size?.toString() ?? '', purse: initial.auction_starting_purse?.toString() ?? '', basePrice: initial.auction_base_price?.toString() ?? '', increment: initial.auction_bid_increment?.toString() ?? '', iconMethod: initial.icon_selection_method, setterMethod: initial.setter_selection_method, reauctionRule: initial.reauction_price_rule });
+  const [loading, setLoading] = useState(false); const [error, setError] = useState<string | null>(null); const [success, setSuccess] = useState(false);
   const isAuction = tournament.format === 'LEAGUE' && tournament.league_mode === 'AUCTION';
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
-
-    try {
-      const payload = {
-        p_tournament_id: tournament.id as string,
-        p_player_registration_enabled: playerRegEnabled,
-        p_team_registration_enabled: teamRegEnabled,
-        p_max_teams: maxTeams ? parseInt(maxTeams, 10) : undefined,
-        p_max_squad_size: maxSquadSize ? parseInt(maxSquadSize, 10) : undefined,
-        p_auction_starting_purse: auctionPurse ? parseFloat(auctionPurse) : undefined,
-        p_auction_base_price: auctionBasePrice ? parseFloat(auctionBasePrice) : undefined,
-        p_auction_bid_increment: auctionBidInc ? parseFloat(auctionBidInc) : undefined,
-      };
-
-      const { error: rpcError } = await supabase.rpc('update_tournament_settings', payload);
-
-      if (rpcError) {
-        const safeMessage = rpcError.message.includes('below current approved team count')
-          ? 'Maximum teams cannot be lower than the number of approved teams.'
-          : rpcError.message.includes('below largest current team size')
-            ? 'Maximum squad size cannot be lower than an existing team size.'
-            : rpcError.message.includes('Unauthorized')
-              ? 'You do not have permission to update this tournament.'
-              : 'Unable to update settings right now.';
-        throw new Error(safeMessage);
-      }
-
-      setSuccess(true);
-      router.refresh();
-      
-      // hide success message after 3 seconds
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
-      const e = err as Error;
-      setError(e.message || 'Failed to update settings');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      {error && (
-        <div className="bg-danger/10 border border-danger/20 text-danger p-4 rounded-lg text-sm">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 p-4 rounded-lg text-sm font-medium">
-          Settings updated successfully.
-        </div>
-      )}
-
-      {/* Registration Settings */}
-      <section className="bg-surface border border-border rounded-xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-border">
-          <h2 className="text-lg font-semibold text-text-primary">Registration Settings</h2>
-          <p className="text-sm text-text-secondary mt-1">Control who can register and team capacity.</p>
-        </div>
-        
-        <div className="p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="text-sm font-medium text-text-primary">Player Registration</label>
-              <p className="text-xs text-text-secondary mt-1">Allow players to submit their profiles for this tournament.</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
-                className="sr-only peer" 
-                checked={playerRegEnabled}
-                onChange={(e) => setPlayerRegEnabled(e.target.checked)}
-              />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary dark:bg-slate-700 dark:border-slate-600"></div>
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="text-sm font-medium text-text-primary">Team Owner Registration</label>
-              <p className="text-xs text-text-secondary mt-1">Allow users to apply to own a team.</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
-                className="sr-only peer" 
-                checked={teamRegEnabled}
-                onChange={(e) => setTeamRegEnabled(e.target.checked)}
-              />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary dark:bg-slate-700 dark:border-slate-600"></div>
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border">
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">
-                Maximum Teams
-              </label>
-              <input
-                type="number"
-                min="2"
-                value={maxTeams}
-                onChange={(e) => setMaxTeams(e.target.value)}
-                placeholder="e.g. 8"
-                className="w-full px-4 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
-              />
-              <p className="text-xs text-text-secondary mt-1">Leave blank for unlimited.</p>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">
-                Maximum Squad Size
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={maxSquadSize}
-                onChange={(e) => setMaxSquadSize(e.target.value)}
-                placeholder="e.g. 12"
-                className="w-full px-4 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Auction Settings (Conditional) */}
-      {isAuction && (
-        <section className="bg-surface border border-border rounded-xl overflow-hidden">
-          <div className="px-6 py-5 border-b border-border">
-            <h2 className="text-lg font-semibold text-text-primary">Auction Settings</h2>
-            <p className="text-sm text-text-secondary mt-1">Financial rules for the live auction.</p>
-          </div>
-          
-          <div className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-2">
-                  Team Purse
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <CurrencyRupeeIcon className="h-5 w-5 text-text-muted" aria-hidden="true" />
-                  </div>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={auctionPurse}
-                    onChange={(e) => setAuctionPurse(e.target.value)}
-                    placeholder="50000"
-                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
-                  />
-                </div>
-                <p className="text-xs text-text-secondary mt-1">Starting wallet balance per team.</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-2">
-                  Default Base Price
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <CurrencyRupeeIcon className="h-5 w-5 text-text-muted" aria-hidden="true" />
-                  </div>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={auctionBasePrice}
-                    onChange={(e) => setAuctionBasePrice(e.target.value)}
-                    placeholder="1000"
-                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
-                  />
-                </div>
-                <p className="text-xs text-text-secondary mt-1">Initial opening bid for players.</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-2">
-                  Min. Bid Increment
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <CurrencyRupeeIcon className="h-5 w-5 text-text-muted" aria-hidden="true" />
-                  </div>
-                  <input
-                    type="number"
-                    min="1"
-                    step="0.01"
-                    value={auctionBidInc}
-                    onChange={(e) => setAuctionBidInc(e.target.value)}
-                    placeholder="500"
-                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
-                  />
-                </div>
-                <p className="text-xs text-text-secondary mt-1">Minimum amount each bid must raise.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      <div className="flex justify-end pt-4">
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-6 py-2 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50"
-        >
-          {loading ? 'Saving...' : 'Save Settings'}
-        </button>
-      </div>
-    </form>
-  );
+  async function submit(event: React.FormEvent) {
+    event.preventDefault(); setLoading(true); setError(null); setSuccess(false);
+    const min = Number(form.minSquad); const max = form.maxSquad ? Number(form.maxSquad) : undefined;
+    if (!Number.isInteger(min) || min <= 0 || (max !== undefined && max < min)) { setError('Maximum squad size must be at least the positive minimum squad size.'); setLoading(false); return; }
+    const { error: rpcError } = await supabase.rpc('update_tournament_settings', { p_tournament_id: tournament.id as string, p_player_registration_enabled: form.playerRegistration, p_team_registration_enabled: form.teamRegistration, p_max_teams: form.maxTeams ? Number(form.maxTeams) : undefined, p_min_squad_size: min, p_max_squad_size: max, p_auction_starting_purse: form.purse ? Number(form.purse) : undefined, p_auction_base_price: form.basePrice ? Number(form.basePrice) : undefined, p_auction_bid_increment: form.increment ? Number(form.increment) : undefined, p_icon_selection_method: form.iconMethod, p_setter_selection_method: form.setterMethod, p_reauction_price_rule: form.reauctionRule });
+    setLoading(false); if (rpcError) { setError(rpcError.message.includes('locked:') ? rpcError.message.split('locked:').pop()?.trim() ?? 'This setting is locked.' : 'Unable to update tournament settings.'); return; }
+    setSuccess(true); router.refresh();
+  }
+  const methodCopy = { LOT_DRAW: ['Lot Draw', 'Players are assigned through the random hidden-card draw.'], AUCTION: ['Auction', 'Players participate in the live auction.'] } as const;
+  return <form onSubmit={submit} className="space-y-8">
+    {(error || success) && <div role="status" className={`rounded-lg border p-4 text-sm ${error ? 'border-danger/20 bg-danger/10 text-danger' : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600'}`}>{error ?? 'Settings updated successfully.'}</div>}
+    <section className="rounded-xl border border-border bg-surface p-5 sm:p-6"><h2 className="text-lg font-semibold text-text-primary">Registration</h2><p className="mt-1 text-sm text-text-secondary">Control applications and team capacity.</p><div className="mt-5 grid gap-4 sm:grid-cols-2">{([['Player registration', 'playerRegistration'], ['Team owner registration', 'teamRegistration']] as const).map(([label, key]) => <label key={key} className="flex min-h-14 items-center justify-between gap-3 rounded-lg bg-surface-muted p-4 text-sm font-medium text-text-primary">{label}<input type="checkbox" className="h-5 w-5 accent-primary" checked={form[key]} onChange={e => setForm(v => ({ ...v, [key]: e.target.checked }))} /></label>)}<label className="text-sm font-medium text-text-primary">Maximum Teams<input type="number" min="2" value={form.maxTeams} onChange={e => setForm(v => ({ ...v, maxTeams: e.target.value }))} className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2" placeholder="Unlimited" /></label></div></section>
+    {isAuction && <section id="special-allocation" className="scroll-mt-24 rounded-xl border border-border bg-surface p-5 sm:p-6"><h2 className="text-lg font-semibold text-text-primary">Special Player Allocation</h2><p className="mt-1 text-sm text-text-secondary">Choose each player class&apos;s independent allocation route.</p>{([['Icon Player Selection', 'iconMethod', configuration.icon_lock], ['Setter Selection', 'setterMethod', configuration.setter_lock]] as const).map(([label, key, lock]) => <fieldset key={key} className="mt-6"><legend className="flex items-center gap-2 text-sm font-semibold text-text-primary">{label}{lock.locked && <LockClosedIcon className="h-4 w-4 text-amber-500" />}</legend><div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">{(['LOT_DRAW', 'AUCTION'] as Method[]).map(value => <Choice key={value} value={value} selected={form[key] === value} disabled={lock.locked} title={methodCopy[value][0]} description={methodCopy[value][1]} onSelect={next => setForm(v => ({ ...v, [key]: next }))} />)}</div>{lock.locked && <p className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">Locked: {lock.reason}</p>}</fieldset>)}</section>}
+    {isAuction && <section id="auction-settings" className="scroll-mt-24 rounded-xl border border-border bg-surface p-5 sm:p-6"><h2 className="text-lg font-semibold text-text-primary">Auction Settings</h2><p className="mt-1 text-sm text-text-secondary">Financial rules and squad limits for auction preparation.</p><div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"><MoneyField label="Team Purse" value={form.purse} onChange={value => setForm(v => ({ ...v, purse: value }))} hint="Starting balance per team." /><MoneyField label="Default Player Base Price" value={form.basePrice} onChange={value => setForm(v => ({ ...v, basePrice: value }))} hint="Minimum acquisition-price floor." /><MoneyField label="Minimum Bid Increment" value={form.increment} onChange={value => setForm(v => ({ ...v, increment: value }))} hint="Smallest valid bid increase." /><label className="text-sm font-medium text-text-primary">Minimum Squad Size<input required type="number" min="1" value={form.minSquad} onChange={e => setForm(v => ({ ...v, minSquad: e.target.value }))} className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2" /></label><label className="text-sm font-medium text-text-primary">Maximum Squad Size<input type="number" min="1" value={form.maxSquad} onChange={e => setForm(v => ({ ...v, maxSquad: e.target.value }))} className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2" placeholder="Unlimited" /></label></div><fieldset className="mt-6"><legend className="text-sm font-semibold text-text-primary">Re-auction Price Rule</legend><div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2"><Choice value="SAME_BASE_PRICE" selected={form.reauctionRule === 'SAME_BASE_PRICE'} title="Same Base Price" description="Unsold players return at their existing base price." onSelect={value => setForm(v => ({ ...v, reauctionRule: value }))} /><Choice value="ORGANIZER_SETS_PRICE" selected={form.reauctionRule === 'ORGANIZER_SETS_PRICE'} title="Organizer Sets Price" description="Choose a new valid base price before re-auction starts." onSelect={value => setForm(v => ({ ...v, reauctionRule: value }))} /></div></fieldset></section>}
+    {isAuction && <section id="readiness" className="scroll-mt-24 rounded-xl border border-border bg-surface p-5 sm:p-6"><h2 className="text-lg font-semibold text-text-primary">Readiness</h2><p className="mt-1 text-sm text-text-secondary">Independent checks for each live operation.</p><div className="mt-5 grid gap-4 lg:grid-cols-3">{configuration.readiness.map(item => <article key={item.key} className="min-w-0 rounded-xl border border-border bg-surface-muted p-4"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold text-text-primary">{item.label}</h3><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${item.status === 'READY' ? 'bg-emerald-500/15 text-emerald-600' : item.status === 'NOT_APPLICABLE' ? 'bg-slate-500/15 text-text-secondary' : 'bg-danger/10 text-danger'}`}>{item.status.replace('_', ' ')}</span></div>{item.message && <p className="mt-3 text-sm text-text-secondary">{item.message}</p>}{item.issues.length > 0 && <ul className="mt-3 space-y-2 text-sm text-text-secondary">{item.issues.map(issue => <li key={issue} className="flex gap-2"><span>•</span><span>{issue}</span></li>)}</ul>}</article>)}</div></section>}
+    <div className="flex justify-end"><button type="submit" disabled={loading} className="w-full rounded-lg bg-primary px-6 py-3 font-semibold text-primary-foreground disabled:opacity-50 sm:w-auto">{loading ? 'Saving…' : 'Save Settings'}</button></div>
+  </form>;
 }

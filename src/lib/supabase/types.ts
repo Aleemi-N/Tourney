@@ -1956,12 +1956,15 @@ export type Database = {
           auction_bid_increment: number | null
           auction_starting_purse: number | null
           created_at: string
+          icon_selection_method: string
           max_squad_size: number | null
           max_teams: number | null
           min_squad_size: number
           owner_registration_mode: string
           player_registration_enabled: boolean
           public_live_enabled: boolean
+          reauction_price_rule: string
+          setter_selection_method: string
           team_registration_enabled: boolean
           timezone: string
           tournament_id: string
@@ -1972,12 +1975,15 @@ export type Database = {
           auction_bid_increment?: number | null
           auction_starting_purse?: number | null
           created_at?: string
+          icon_selection_method?: string
           max_squad_size?: number | null
           max_teams?: number | null
           min_squad_size?: number
           owner_registration_mode?: string
           player_registration_enabled?: boolean
           public_live_enabled?: boolean
+          reauction_price_rule?: string
+          setter_selection_method?: string
           team_registration_enabled?: boolean
           timezone?: string
           tournament_id: string
@@ -1988,12 +1994,15 @@ export type Database = {
           auction_bid_increment?: number | null
           auction_starting_purse?: number | null
           created_at?: string
+          icon_selection_method?: string
           max_squad_size?: number | null
           max_teams?: number | null
           min_squad_size?: number
           owner_registration_mode?: string
           player_registration_enabled?: boolean
           public_live_enabled?: boolean
+          reauction_price_rule?: string
+          setter_selection_method?: string
           team_registration_enabled?: boolean
           timezone?: string
           tournament_id?: string
@@ -2497,6 +2506,10 @@ export type Database = {
         Args: { p_auction_id: string; p_auction_player_id: string }
         Returns: Json
       }
+      get_tournament_phase5a_configuration: {
+        Args: { p_tournament_id: string }
+        Returns: Json
+      }
       get_tournament_staff: {
         Args: { p_tournament_id: string }
         Returns: {
@@ -2615,6 +2628,27 @@ export type Database = {
         }
         Returns: string
       }
+      save_tournament_stage: {
+        Args: {
+          p_name: string
+          p_qualification_count?: number
+          p_sequence: number
+          p_stage_id: string | null
+          p_stage_type: string
+          p_tournament_id: string
+        }
+        Returns: string
+      }
+      save_volleyball_rule: {
+        Args: {
+          p_set_rules: Json
+          p_sets_to_win: number
+          p_stage_id: string | null
+          p_tournament_id: string
+          p_win_by_two: boolean
+        }
+        Returns: string
+      }
       update_tournament_details: {
         Args: {
           p_description?: string
@@ -2645,13 +2679,17 @@ export type Database = {
           p_auction_base_price?: number
           p_auction_bid_increment?: number
           p_auction_starting_purse?: number
+          p_icon_selection_method?: string
+          p_min_squad_size?: number
           p_max_squad_size?: number
           p_max_teams?: number
           p_player_registration_enabled: boolean
           p_team_registration_enabled: boolean
           p_tournament_id: string
+          p_reauction_price_rule?: string
+          p_setter_selection_method?: string
         }
-        Returns: undefined
+        Returns: Json
       }
     }
     Enums: {
