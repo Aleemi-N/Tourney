@@ -461,6 +461,12 @@ export type Database = {
           },
         ]
       }
+      lot_public_events: {
+        Row: { card_number: number | null; created_at: string; event_type: string; id: string; lot_session_id: string; lot_type: string; payload: Json; sequence_number: number; session_status: string; team_id: string | null; tournament_id: string; turn_id: string | null }
+        Insert: { card_number?: number | null; created_at?: string; event_type: string; id?: string; lot_session_id: string; lot_type: string; payload?: Json; sequence_number: number; session_status: string; team_id?: string | null; tournament_id: string; turn_id?: string | null }
+        Update: { card_number?: number | null; created_at?: string; event_type?: string; id?: string; lot_session_id?: string; lot_type?: string; payload?: Json; sequence_number?: number; session_status?: string; team_id?: string | null; tournament_id?: string; turn_id?: string | null }
+        Relationships: []
+      }
       lot_sessions: {
         Row: {
           cancellation_reason: string | null
@@ -534,6 +540,8 @@ export type Database = {
           completed_at: string | null
           id: string
           lot_session_id: string
+          round_number: number
+          selection_request_key: string | null
           selected_entry_id: string | null
           started_at: string | null
           status: string
@@ -544,6 +552,8 @@ export type Database = {
           completed_at?: string | null
           id?: string
           lot_session_id: string
+          round_number?: number
+          selection_request_key?: string | null
           selected_entry_id?: string | null
           started_at?: string | null
           status?: string
@@ -554,6 +564,8 @@ export type Database = {
           completed_at?: string | null
           id?: string
           lot_session_id?: string
+          round_number?: number
+          selection_request_key?: string | null
           selected_entry_id?: string | null
           started_at?: string | null
           status?: string
@@ -2490,6 +2502,14 @@ export type Database = {
         Args: { p_lot_session_id: string; p_reason: string }
         Returns: undefined
       }
+      get_lot_organizer_state: {
+        Args: { p_lot_session_id: string }
+        Returns: Json
+      }
+      get_lot_public_state: {
+        Args: { p_lot_session_id: string }
+        Returns: Json
+      }
       create_tournament_draft: {
         Args: {
           p_description?: string
@@ -2562,6 +2582,14 @@ export type Database = {
         Args: { p_reason?: string; p_registration_id: string }
         Returns: Json
       }
+      prepare_lot_session: {
+        Args: {
+          p_lot_type: string
+          p_team_order: string[]
+          p_tournament_id: string
+        }
+        Returns: string
+      }
       remove_tournament_staff_role: {
         Args: { p_role: string; p_target_user_id: string; p_tournament_id: string }
         Returns: Json
@@ -2572,9 +2600,10 @@ export type Database = {
       }
       select_lot: {
         Args: {
+          p_expected_turn_id: string
           p_lot_number: number
           p_lot_session_id: string
-          p_team_id: string
+          p_request_key: string
         }
         Returns: Json
       }

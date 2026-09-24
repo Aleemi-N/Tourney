@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { PublicLandingNav } from '@/components/landing/PublicLandingNav';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { VolleyballIcon } from '@/components/landing/VolleyballIcon';
-import { CalendarDays, MapPin, Users, Trophy, Clock } from 'lucide-react';
+import { CalendarDays, MapPin, Users, Trophy, Clock, Radio } from 'lucide-react';
 import { buildTournamentMetadata } from '@/lib/public-tournament-metadata';
 
 type Props = {
@@ -280,17 +280,17 @@ export default async function TournamentPublicPage({ params }: Props) {
           </section>
         )}
 
-        {/* Live/Completed — Phase 5 not yet available */}
+        {/* Live hub */}
         {(tournament.status === 'LIVE' || tournament.status === 'COMPLETED') && (
-          <div
-            className="rounded-xl p-6 text-center"
+          <Link
+            href={`/t/${slug}/live`}
+            className="block rounded-xl p-6 text-center transition-colors hover:bg-white/[0.06]"
             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
           >
-            <Trophy className="h-8 w-8 text-text-muted mx-auto mb-3" aria-hidden="true" />
-            <p className="text-text-secondary text-sm">
-              Live scoring, fixtures, and standings are coming soon for this tournament.
-            </p>
-          </div>
+            <Radio className="h-8 w-8 text-primary mx-auto mb-3" aria-hidden="true" />
+            <p className="font-bold text-text-primary">Open Live Tournament</p>
+            <p className="mt-1 text-text-secondary text-sm">Watch the current Lot Draw and revealed selections.</p>
+          </Link>
         )}
       </main>
 

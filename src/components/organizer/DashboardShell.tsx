@@ -8,7 +8,7 @@ import {
   TrophyIcon, 
   UsersIcon,
   UserGroupIcon,
-  VideoCameraIcon,
+  Squares2X2Icon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
   ArrowLeftIcon
@@ -27,9 +27,10 @@ interface DashboardShellProps {
     full_name: string;
     email?: string;
   };
+  lotEnabledTournamentIds?: string[];
 }
 
-export function DashboardShell({ children, user }: DashboardShellProps) {
+export function DashboardShell({ children, user, lotEnabledTournamentIds = [] }: DashboardShellProps) {
   const pathname = usePathname();
 
   // Extract tournament ID from the pathname if it exists
@@ -41,7 +42,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
     { name: 'Overview', href: `/organizer/tournaments/${tournamentId}`, icon: TrophyIcon },
     { name: 'Participants', href: `/organizer/tournaments/${tournamentId}/participants`, icon: UsersIcon },
     { name: 'Staff', href: `/organizer/tournaments/${tournamentId}/staff`, icon: UserGroupIcon, disabled: false },
-    { name: 'Live', href: '#', icon: VideoCameraIcon, disabled: true },
+    ...(lotEnabledTournamentIds.includes(tournamentId) ? [{ name: 'Lot Draw', href: `/organizer/tournaments/${tournamentId}/lot`, icon: Squares2X2Icon, disabled: false }] : []),
     { name: 'Settings', href: `/organizer/tournaments/${tournamentId}/settings`, icon: Cog6ToothIcon, disabled: false },
   ] : [];
 
