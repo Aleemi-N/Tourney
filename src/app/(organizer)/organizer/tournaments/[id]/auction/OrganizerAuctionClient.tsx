@@ -40,7 +40,6 @@ import {
   openNextAuctionPlayerAction,
   finalizeAuctionSaleAction,
   markAuctionPlayerUnsoldAction,
-  setReauctionPriceAction,
   requeueAuctionPlayerAction,
   completeAuctionAction,
 } from '@/app/actions/auction';
@@ -388,14 +387,16 @@ function AuctionProgress({ snapshot }: { snapshot: OrganizerAuctionSnapshot }) {
   );
 }
 
-// ─── Re-auction price modal ───────────────────────────────────────────────────
+// ─── Re-queue player modal ────────────────────────────────────────────────────
 
-function ReauctionPriceModal({
+function RequeuePlayerModal({
+  categoryBase,
   currentPrice,
   busy,
   onConfirm,
   onCancel,
 }: {
+  categoryBase: number;
   currentPrice: number;
   busy: boolean;
   onConfirm: (price: number) => void;
@@ -413,35 +414,42 @@ function ReauctionPriceModal({
         aria-labelledby="reauction-title"
         className="w-full max-w-sm rounded-2xl border border-border bg-surface p-5 shadow-2xl sm:p-6"
       >
-        <h2 id="reauction-title" className="text-lg font-bold text-text-primary">Set Re-auction Price</h2>
-        <p className="mt-2 text-sm text-text-secondary">
-          Enter the new base price for this player&apos;s re-auction.
-        </p>
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-text-primary mb-1.5">
-            New Base Price
-          </label>
-          <div className="relative">
-            <span className="absolute left-3 top-2.5 text-text-muted text-sm font-medium">₹</span>
-            <input
-              type="number"
-              min={1}
-              step={1}
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background py-2 pl-7 pr-3 text-sm text-text-primary focus:border-primary focus:ring-2 focus:ring-primary/30"
-              autoFocus
-            />
+        <h2 id="reauction-title" className="text-lg font-bold text-text-primary">Re-auction Player</h2>
+        <div className="mt-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              Category Base
+            </label>
+            <p className="text-sm font-semibold text-text-primary">
+              {formatMoney(categoryBase)}
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1.5">
+              New Base Price
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-text-muted text-sm font-medium">₹</span>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background py-2 pl-7 pr-3 text-sm text-text-primary focus:border-primary focus:ring-2 focus:ring-primary/30"
+                autoFocus
+              />
+            </div>
           </div>
         </div>
-        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button type="button" disabled={busy} onClick={onCancel}
             className="min-h-10 rounded-xl border border-border px-4 text-sm font-semibold text-text-secondary hover:bg-surface-muted disabled:opacity-50">
             Cancel
           </button>
           <button type="button" disabled={busy || !valid} onClick={() => onConfirm(parsed)}
-            className="min-h-10 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50">
-            {busy ? 'Saving…' : 'Set Price'}
+            className="min-h-10 rounded-xl bg-warning px-4 text-sm font-semibold text-white hover:bg-warning/90 disabled:opacity-50">
+            {busy ? 'Processing…' : 'Confirm & Re-queue'}
           </button>
         </div>
       </section>
@@ -563,8 +571,8 @@ export function OrganizerAuctionClient({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [confirm, setConfirm] = useState<Confirm | null>(null);
-  const [showReauctionModal, setShowReauctionModal] = useState<{
-    playerId: string; playerVersion: number; currentPrice: number;
+  const [showRequeueModal, setShowRequeueModal] = useState<{
+    playerId: string; playerVersion: number; categoryBase: number; currentPrice: number;
   } | null>(null);
 
   // Stable Supabase client — created once per component mount
@@ -748,20 +756,11 @@ export function OrganizerAuctionClient({
 
   // ── Requeue (confirmed) ───────────────────────────────────────────────────
 
-  async function handleRequeue(playerId: string, playerVersion: number) {
+  async function handleRequeue(playerId: string, playerVersion: number, newPrice?: number) {
     if (!auctionId) return;
     setConfirm(null);
-    await run(() => requeueAuctionPlayerAction(auctionId, playerId, playerVersion, genKey()));
-  }
-
-  // ── Re-auction price (confirmed) ──────────────────────────────────────────
-
-  async function handleReauctionPrice(playerId: string, playerVersion: number, price: number) {
-    if (!auctionId) return;
-    setShowReauctionModal(null);
-    await run(() =>
-      setReauctionPriceAction(auctionId, playerId, price, playerVersion, genKey())
-    );
+    setShowRequeueModal(null);
+    await run(() => requeueAuctionPlayerAction(auctionId, playerId, playerVersion, genKey(), newPrice));
   }
 
   // ── Complete (confirmed) ──────────────────────────────────────────────────
@@ -977,34 +976,25 @@ export function OrganizerAuctionClient({
                         </p>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        {/* Set Price only when organizer is allowed to set re-auction price */}
-                        {reauctionPriceRule === 'ORGANIZER_SETS_PRICE' && (
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() =>
-                              setShowReauctionModal({
-                                playerId: p.auction_player_id,
-                                playerVersion: p.state_version,
-                                currentPrice: p.base_price,
-                              })
-                            }
-                            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-secondary hover:border-primary/50 hover:text-primary disabled:opacity-50"
-                          >
-                            <DollarSign className="h-3.5 w-3.5" />
-                            Set Price
-                          </button>
-                        )}
                         <button
                           type="button"
                           disabled={busy}
-                          onClick={() =>
-                            setConfirm({
-                              type: 'REQUEUE',
-                              playerId: p.auction_player_id,
-                              playerVersion: p.state_version,
-                            })
-                          }
+                          onClick={() => {
+                            if (reauctionPriceRule === 'ORGANIZER_SETS_PRICE') {
+                              setShowRequeueModal({
+                                playerId: p.auction_player_id,
+                                playerVersion: p.state_version,
+                                categoryBase: p.category_base_price ?? p.base_price,
+                                currentPrice: p.base_price,
+                              });
+                            } else {
+                              setConfirm({
+                                type: 'REQUEUE',
+                                playerId: p.auction_player_id,
+                                playerVersion: p.state_version,
+                              });
+                            }
+                          }}
                           className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-secondary hover:border-warning/50 hover:text-warning disabled:opacity-50"
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
@@ -1120,19 +1110,20 @@ export function OrganizerAuctionClient({
         )}
       </AnimatePresence>
 
-      {/* Re-auction price modal */}
-      {showReauctionModal && (
-        <ReauctionPriceModal
-          currentPrice={showReauctionModal.currentPrice}
+      {/* Re-auction queue modal */}
+      {showRequeueModal && (
+        <RequeuePlayerModal
+          categoryBase={showRequeueModal.categoryBase}
+          currentPrice={showRequeueModal.currentPrice}
           busy={busy}
           onConfirm={(price) =>
-            handleReauctionPrice(
-              showReauctionModal.playerId,
-              showReauctionModal.playerVersion,
+            handleRequeue(
+              showRequeueModal.playerId,
+              showRequeueModal.playerVersion,
               price
             )
           }
-          onCancel={() => setShowReauctionModal(null)}
+          onCancel={() => setShowRequeueModal(null)}
         />
       )}
     </div>

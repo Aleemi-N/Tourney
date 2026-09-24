@@ -1,13 +1,14 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Player Home' };
 
-/** Player home placeholder — to be implemented in the player phase. */
-export default function PlayerHomePage() {
-  return (
-    <main className="p-8">
-      <h1 className="text-2xl font-bold text-text-primary">Player Home</h1>
-      <p className="text-text-secondary">Player dashboard — coming soon.</p>
-    </main>
-  );
+export default async function PlayerHomePage() {
+  const supabase = await createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) redirect('/login');
+  const { data: profile } = await supabase.from('player_profiles').select('id,display_name,primary_position,secondary_position').eq('user_id', user.id).maybeSingle();
+  const { data: registrations } = profile ? await supabase.from('player_tournament_registrations').select('id,status,auction_category,auction_price_category_id,tournaments(id,name,slug,format,league_mode,status)').eq('player_id', profile.id).order('created_at', { ascending: false }) : { data: [] };
+  const { data: assignments } = profile ? await supabase.from('public_player_view').select('tournament_id,team_id,acquisition_type,tournaments(name),teams(name)').eq('id', profile.id) : { data: [] };
+  return <main className="min-h-screen bg-[#100d1c] px-5 py-8 text-white sm:px-8 lg:px-12 lg:py-12"><div className="mx-auto max-w-5xl"><p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-200/70">Player portal</p><h1 className="mt-3 text-4xl font-black tracking-tight">Welcome, {profile?.display_name ?? user.email?.split('@')[0] ?? 'Player'}.</h1><p className="mt-3 text-white/55">Your registrations, tournament status, and team assignment stay authoritative on the server.</p><section className="mt-10"><p className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">My tournaments</p><div className="mt-4 grid gap-3 md:grid-cols-2">{registrations?.map((registration) => { const tournament = Array.isArray(registration.tournaments) ? registration.tournaments[0] : registration.tournaments; return <article key={registration.id} className="rounded-3xl border border-white/10 bg-[#17132a] p-5"><div className="flex items-start justify-between gap-3"><div><h2 className="text-xl font-black">{tournament?.name ?? 'Tournament'}</h2><p className="mt-1 text-sm text-white/45">{tournament?.format} {tournament?.league_mode ? `· ${tournament.league_mode}` : ''}</p></div><span className="rounded-full border border-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white/55">{registration.status}</span></div>{registration.auction_category ? <p className="mt-5 text-xs font-bold uppercase tracking-wider text-fuchsia-200/70">{registration.auction_category.replaceAll('_', ' ')}</p> : null}</article>; })}{(!registrations || registrations.length === 0) && <div className="rounded-3xl border border-dashed border-white/15 bg-white/3 p-8 text-sm text-white/55">No tournament registrations are attached to this player profile yet.</div>}</div></section><section className="mt-10"><p className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">Team assignment</p><div className="mt-4 rounded-3xl border border-white/10 bg-white/3 p-6">{assignments?.length ? assignments.map((assignment) => <p key={`${assignment.tournament_id}-${assignment.team_id}`} className="font-semibold">{Array.isArray(assignment.teams) ? assignment.teams[0]?.name : assignment.teams?.name} <span className="text-white/45">· {assignment.acquisition_type}</span></p>) : <p className="text-sm text-white/55">No active team assignment yet.</p>}</div></section><Link href="/player/profile" className="mt-8 inline-flex min-h-11 items-center rounded-xl border border-white/15 px-4 py-2 text-sm font-bold text-white/75 hover:bg-white/10">Edit profile</Link></div></main>;
 }

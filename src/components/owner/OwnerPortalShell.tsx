@@ -40,7 +40,7 @@ export function OwnerPortalShell({
                                 </Link>
                             </>
                         ) : null}
-                        <span className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/30">Fixtures</span>
+                        {activeTeam ? <Link href={`/owner/teams/${activeTeam.id}/fixtures`} className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white">Fixtures</Link> : <span className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/30">Fixtures</span>}
                         <span className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/30">Results</span>
                     </nav>
 

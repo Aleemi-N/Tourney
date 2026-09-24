@@ -439,26 +439,23 @@ try {
       [auctionId, opened.auction_player_id, opened.player_version],
     ),
   );
-  const repriced = rpcValue(
-    await organizer.query(
-      "SELECT public.set_reauction_price($1,$2,50,$3,'integration-price-custom') value",
-      [auctionId, opened.auction_player_id, unsold.player_version],
-    ),
+  const requeuedWithNegativePrice = organizer.query(
+    "SELECT public.requeue_auction_player($1,$2,$3,'integration-requeue-negative',$4) value",
+    [auctionId, opened.auction_player_id, unsold.player_version, -50],
   );
+  await assert.rejects(requeuedWithNegativePrice, /must be positive/i);
+
   requeued = rpcValue(
     await organizer.query(
-      "SELECT public.requeue_auction_player($1,$2,$3,'integration-requeue-custom') value",
-      [auctionId, opened.auction_player_id, repriced.player_version],
+      "SELECT public.requeue_auction_player($1,$2,$3,'integration-requeue-custom',$4) value",
+      [auctionId, opened.auction_player_id, unsold.player_version, 50],
     ),
   );
+  const customOriginalBase = Number(
+    (await admin.query('SELECT original_base_price FROM public.auction_players WHERE id=$1', [opened.auction_player_id])).rows[0].original_base_price,
+  );
+  assert.equal(customOriginalBase, originalBase); // 300 (or whatever it was initially)
   assert.equal(Number(requeued.base_price), 50);
-  await assert.rejects(
-    organizer.query(
-      "SELECT public.set_reauction_price($1,$2,25,$3,'integration-illegal-live-price')",
-      [auctionId, opened.auction_player_id, requeued.player_version],
-    ),
-    /cannot be changed/i,
-  );
 
   while (true) {
     organizerState = rpcValue(

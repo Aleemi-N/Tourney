@@ -1,0 +1,11 @@
+import { createClient } from '@/lib/supabase/server';
+import { PublicTournamentFrame } from '@/components/public/PublicTournamentFrame';
+
+export default async function PublicResultsPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params; const supabase = await createClient();
+  const { data: tournament } = await supabase.from('tournaments').select('id,name').eq('slug', slug).eq('is_public', true).maybeSingle();
+  if (!tournament) return <div className="p-10 text-white">Tournament not found.</div>;
+  const { data: results } = await supabase.from('public_fixture_view').select('id,match_number,status,home_team_id,away_team_id,total_home_score,total_away_score,home_sets_won,away_sets_won').eq('tournament_id', tournament.id).eq('status', 'COMPLETED').order('match_number');
+  const ids = [...new Set((results ?? []).flatMap((item) => [item.home_team_id, item.away_team_id]).filter(Boolean))]; const { data: teams } = ids.length ? await supabase.from('public_team_view').select('id,name').in('id', ids) : { data: [] }; const name = (id: string | null) => teams?.find((team) => team.id === id)?.name ?? 'TBD';
+  return <PublicTournamentFrame slug={slug} name={tournament.name}><p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-200/70">Completed matches</p><h1 className="mt-3 text-4xl font-black">Results</h1><div className="mt-8 space-y-3">{results?.map((result) => <article key={result.id} className="rounded-2xl border border-white/10 bg-white/3 p-5"><p className="text-xs font-bold uppercase tracking-wider text-white/40">Match {result.match_number ?? '—'}</p><div className="mt-3 grid grid-cols-[1fr_auto] gap-3 text-lg font-black"><span>{name(result.home_team_id)}</span><span>{result.total_home_score ?? 0}</span><span>{name(result.away_team_id)}</span><span>{result.total_away_score ?? 0}</span></div><p className="mt-3 text-sm text-white/45">Sets {result.home_sets_won ?? 0} — {result.away_sets_won ?? 0}</p></article>)}{(!results || results.length === 0) && <div className="rounded-3xl border border-dashed border-white/15 bg-white/3 p-8 text-sm text-white/55">Completed results will appear here.</div>}</div></PublicTournamentFrame>;
+}

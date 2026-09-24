@@ -177,32 +177,13 @@ export async function markAuctionPlayerUnsoldAction(
   return { ok: true, data };
 }
 
-export async function setReauctionPriceAction(
-  auctionId: string,
-  auctionPlayerId: string,
-  newPrice: number,
-  expectedPlayerVersion: number,
-  requestKey: string
-) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('set_reauction_price', {
-    p_auction_id: auctionId,
-    p_auction_player_id: auctionPlayerId,
-    p_new_price: newPrice,
-    p_expected_player_version: expectedPlayerVersion,
-    p_request_key: requestKey,
-  });
-  if (error) {
-    return { error: error.message };
-  }
-  return { ok: true, data };
-}
 
 export async function requeueAuctionPlayerAction(
   auctionId: string,
   auctionPlayerId: string,
   expectedPlayerVersion: number,
-  requestKey: string
+  requestKey: string,
+  newPrice?: number
 ) {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc('requeue_auction_player', {
@@ -210,6 +191,7 @@ export async function requeueAuctionPlayerAction(
     p_auction_player_id: auctionPlayerId,
     p_expected_player_version: expectedPlayerVersion,
     p_request_key: requestKey,
+    p_new_price: newPrice,
   });
   if (error) {
     return { error: error.message };

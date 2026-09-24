@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -7,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -2756,6 +2776,10 @@ export type Database = {
         Args: { p_application_id: string; p_notes?: string }
         Returns: undefined
       }
+      assign_match_scorer: {
+        Args: { p_match_id: string; p_scorer_user_id: string }
+        Returns: Json
+      }
       auction_player_is_eligible: {
         Args: { p_player_id: string; p_tournament_id: string }
         Returns: boolean
@@ -2840,6 +2864,7 @@ export type Database = {
         }
         Returns: Json
       }
+      generate_stage_fixtures: { Args: { p_stage_id: string }; Returns: Json }
       get_auction_organizer_state: {
         Args: { p_auction_id: string }
         Returns: Json
@@ -2868,6 +2893,9 @@ export type Database = {
         Args: { p_tournament_id: string }
         Returns: Json
       }
+      get_public_match_state: { Args: { p_match_id: string }; Returns: Json }
+      get_public_standings: { Args: { p_tournament_id: string }; Returns: Json }
+      get_scorer_match_state: { Args: { p_match_id: string }; Returns: Json }
       get_tournament_phase5a_configuration: {
         Args: { p_tournament_id: string }
         Returns: Json
@@ -3254,6 +3282,9 @@ export type CompositeTypes<
   : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

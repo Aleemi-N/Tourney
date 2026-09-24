@@ -1,0 +1,5 @@
+import Link from 'next/link';
+
+export function PublicTournamentFrame({ slug, name, children }: { slug: string; name: string; children: React.ReactNode }) {
+  return <div className="min-h-screen bg-[#09090e] text-white"><header className="border-b border-white/10 bg-[#11101a] px-4 py-5 sm:px-6"><div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4"><Link href={`/t/${slug}`} className="text-lg font-black">{name}</Link><nav aria-label="Tournament navigation" className="flex max-w-full gap-1 overflow-x-auto text-sm font-semibold text-white/55">{[['Live','live'],['Fixtures','fixtures'],['Results','results'],['Table','table'],['Teams','teams'],['Players','players']].map(([label,path]) => <Link key={path} href={`/t/${slug}/${path}`} className="shrink-0 rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">{label}</Link>)}</nav></div></header><main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">{children}</main></div>;
+}

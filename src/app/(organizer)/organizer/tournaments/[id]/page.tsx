@@ -95,6 +95,14 @@ async function TournamentOverviewContent({
               <h3 className="font-semibold text-text-primary">Auction Control</h3>
               <p className="text-sm text-text-secondary">Prepare and run the live player auction.</p>
             </Link>
+            <Link
+              href={`/organizer/tournaments/${id}/fixtures`}
+              className="group flex flex-col gap-2 rounded-xl border border-border bg-surface p-5 transition-colors hover:border-primary/50 hover:bg-primary/5"
+            >
+              <span className="text-2xl">📅</span>
+              <h3 className="font-semibold text-text-primary">Fixtures & Scorers</h3>
+              <p className="text-sm text-text-secondary">Generate the schedule and assign authorized scorers.</p>
+            </Link>
           </div>
         </div>
       )}

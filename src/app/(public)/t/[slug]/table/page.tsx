@@ -1,0 +1,11 @@
+import { createClient } from '@/lib/supabase/server';
+import { PublicTournamentFrame } from '@/components/public/PublicTournamentFrame';
+
+export default async function PublicTablePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params; const supabase = await createClient();
+  const { data: tournament } = await supabase.from('tournaments').select('id,name').eq('slug', slug).eq('is_public', true).maybeSingle();
+  if (!tournament) return <div className="p-10 text-white">Tournament not found.</div>;
+  const { data: standings } = await supabase.rpc('get_public_standings', { p_tournament_id: tournament.id });
+  const rows = (standings ?? []) as Array<{ stage_id: string; team_id: string; team_name: string; played: number; won: number; lost: number; league_points: number; sets_won: number; sets_lost: number; points_for: number; points_against: number }>;
+  return <PublicTournamentFrame slug={slug} name={tournament.name}><p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-200/70">League table</p><h1 className="mt-3 text-4xl font-black">Standings</h1><div className="mt-8 overflow-x-auto rounded-3xl border border-white/10 bg-[#17132a]"><table className="min-w-full text-left text-sm"><thead className="border-b border-white/10 text-xs uppercase tracking-wider text-white/40"><tr>{['Team','P','W','L','Pts','Sets','PF-PA'].map((heading) => <th key={heading} className="px-4 py-4">{heading}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={`${row.stage_id}-${row.team_id}`} className="border-b border-white/5 last:border-0"><td className="px-4 py-4 font-bold"><span className="mr-3 text-white/35">{index + 1}</span>{row.team_name}</td><td className="px-4 py-4 text-white/65">{row.played}</td><td className="px-4 py-4 text-white/65">{row.won}</td><td className="px-4 py-4 text-white/65">{row.lost}</td><td className="px-4 py-4 font-black text-fuchsia-200">{row.league_points}</td><td className="px-4 py-4 text-white/65">{row.sets_won}-{row.sets_lost}</td><td className="px-4 py-4 text-white/65">{row.points_for}-{row.points_against}</td></tr>)}</tbody></table>{rows.length === 0 && <p className="p-8 text-sm text-white/55">Standings will appear after completed league matches.</p>}</div></PublicTournamentFrame>;
+}
