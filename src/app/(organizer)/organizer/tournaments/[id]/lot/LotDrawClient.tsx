@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ArrowDown, ArrowUp, Expand, LockKeyhole, Shuffle, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Ban, Expand, LockKeyhole, Plus, Shuffle, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { PlayerCard } from '@/components/player/PlayerCard';
 import { lotLabel, safeLotError, type LotPlayer, type LotType, type OrganizerLotState } from '@/lib/lot-draw';
@@ -34,8 +34,9 @@ export function LotDrawClient({ tournament, types, teams, readiness, initialStat
     else if (data) setStates((current) => ({ ...current, [type]: data as unknown as OrganizerLotState }));
   }, [activeType, states, supabase]);
 
+  // Only subscribe to realtime for operational sessions (not CANCELLED / COMPLETED historical ones)
   useEffect(() => {
-    if (!state?.session.id) return;
+    if (!state?.session.id || state.session.status === 'CANCELLED') return;
     let lastSequence = 0;
     const channel = supabase.channel(`lot-organizer-${state.session.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lot_public_events', filter: `lot_session_id=eq.${state.session.id}` }, (message) => {
@@ -46,7 +47,7 @@ export function LotDrawClient({ tournament, types, teams, readiness, initialStat
       })
       .subscribe((status) => { if (status === 'SUBSCRIBED') void refresh(activeType, state.session.id); });
     return () => { void supabase.removeChannel(channel); };
-  }, [activeType, refresh, reveal, state?.session.id, supabase]);
+  }, [activeType, refresh, reveal, state?.session.id, state?.session.status, supabase]);
 
   const run = async (operation: () => Promise<{ error: { message: string } | null }>, after?: () => Promise<void>) => {
     setBusy(true); setError('');
@@ -92,15 +93,62 @@ export function LotDrawClient({ tournament, types, teams, readiness, initialStat
   const currentTeam = teams.find((team) => team.id === activeTurn?.team_id);
   const ready = readiness.find((item) => item.key === `${activeType}_LOT`);
 
+  // Detect a dead-end cancelled session: CANCELLED with zero selections — show restart path
+  const isCancelledWithNoSelections = state?.session.status === 'CANCELLED' && selectedCount === 0;
+  // Show the "no session yet" preparation form when there's no active/operational session
+  const showPrepareForm = !state || isCancelledWithNoSelections;
+
   const body = (
     <div className={presentation ? 'min-h-screen bg-[#08070f] p-4 text-white sm:p-8' : 'space-y-6'}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div><p className="text-xs font-bold uppercase tracking-[.2em] text-primary">{lotLabel(activeType)}</p><h1 className="mt-1 text-2xl font-extrabold sm:text-4xl">{tournament.name}</h1>{activeTurn && <p className="mt-2 text-text-secondary">Round {activeTurn.round_number} · Pick {selectedCount + 1} of {total}</p>}</div>
-        {state && <button type="button" onClick={() => setPresentation(!presentation)} className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 font-semibold focus-visible:outline-2 focus-visible:outline-primary">{presentation ? <X size={18}/> : <Expand size={18}/>} {presentation ? 'Exit Presentation' : 'Full Screen Lot Draw'}</button>}
+        {state && !isCancelledWithNoSelections && <button type="button" onClick={() => setPresentation(!presentation)} className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 font-semibold focus-visible:outline-2 focus-visible:outline-primary">{presentation ? <X size={18}/> : <Expand size={18}/>} {presentation ? 'Exit Presentation' : 'Full Screen Lot Draw'}</button>}
       </div>
       {error && <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
+
+      {/* ── Cancelled dead-end banner ── */}
+      {isCancelledWithNoSelections && (
+        <section aria-label="Cancelled lot session" className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <Ban size={22} className="shrink-0 text-red-400" />
+            <div>
+              <p className="font-bold text-red-300">{lotLabel(activeType)} — Session Cancelled</p>
+              {state.session.cancellation_reason && (
+                <p className="mt-1 text-sm text-text-secondary">Reason: {state.session.cancellation_reason}</p>
+              )}
+            </div>
+          </div>
+          <p className="text-sm text-text-secondary">The cancelled session is preserved for audit history. A brand-new session will be created.</p>
+        </section>
+      )}
+
       {activeTurn && <section className="rounded-2xl border border-primary/30 bg-primary/10 p-5 text-center"><p className="text-xs font-black tracking-[.25em] text-primary">NOW PICKING</p><h2 className="mt-2 text-3xl font-black sm:text-5xl">{currentTeam?.name ?? 'Team'}</h2><p className="mt-2 text-text-secondary">Round {activeTurn.round_number} · Pick {selectedCount + 1}</p></section>}
-      {!state && <section className="grid gap-6 lg:grid-cols-[1fr_.8fr]"><div className="rounded-2xl border border-border bg-surface p-5"><h2 className="text-xl font-bold">Confirm team order</h2><p className="mt-1 text-sm text-text-secondary">This order repeats across capacity-safe rounds.</p><ol className="mt-4 space-y-2">{teamOrder.map((id, index) => { const team = teams.find((item) => item.id === id)!; return <li key={id} className="flex items-center gap-3 rounded-xl bg-surface-muted p-3"><span className="w-7 font-bold text-primary">{index + 1}</span><span className="min-w-0 flex-1 truncate font-semibold">{team.name}</span><button aria-label={`Move ${team.name} up`} disabled={index === 0} onClick={() => moveTeam(index, -1)} className="rounded-lg p-2 focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-30"><ArrowUp size={18}/></button><button aria-label={`Move ${team.name} down`} disabled={index === teamOrder.length - 1} onClick={() => moveTeam(index, 1)} className="rounded-lg p-2 focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-30"><ArrowDown size={18}/></button></li>; })}</ol></div><div className="rounded-2xl border border-border bg-surface p-5"><h2 className="text-xl font-bold">Readiness</h2><p className={`mt-3 font-bold ${ready?.status === 'READY' ? 'text-emerald-400' : 'text-amber-400'}`}>{ready?.status ?? 'BLOCKED'}</p>{ready?.issues?.map((issue) => <p key={issue} className="mt-2 text-sm text-text-secondary">• {issue}</p>)}<button onClick={prepare} disabled={busy || ready?.status !== 'READY' || !teamOrder.length} className="mt-6 w-full rounded-xl bg-primary px-5 py-3 font-bold text-white disabled:opacity-40">{busy ? 'Preparing…' : 'Prepare Lot'}</button></div></section>}
+
+      {/* ── Prepare form: shown for brand-new (no session) OR cancelled-with-no-selections ── */}
+      {showPrepareForm && (
+        <section className="grid gap-6 lg:grid-cols-[1fr_.8fr]">
+          <div className="rounded-2xl border border-border bg-surface p-5">
+            <h2 className="text-xl font-bold">Confirm team order</h2>
+            <p className="mt-1 text-sm text-text-secondary">This order repeats across capacity-safe rounds.</p>
+            <ol className="mt-4 space-y-2">{teamOrder.map((id, index) => { const team = teams.find((item) => item.id === id)!; return <li key={id} className="flex items-center gap-3 rounded-xl bg-surface-muted p-3"><span className="w-7 font-bold text-primary">{index + 1}</span><span className="min-w-0 flex-1 truncate font-semibold">{team.name}</span><button aria-label={`Move ${team.name} up`} disabled={index === 0} onClick={() => moveTeam(index, -1)} className="rounded-lg p-2 focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-30"><ArrowUp size={18}/></button><button aria-label={`Move ${team.name} down`} disabled={index === teamOrder.length - 1} onClick={() => moveTeam(index, 1)} className="rounded-lg p-2 focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-30"><ArrowDown size={18}/></button></li>; })}</ol>
+          </div>
+          <div className="rounded-2xl border border-border bg-surface p-5">
+            <h2 className="text-xl font-bold">Readiness</h2>
+            <p className={`mt-3 font-bold ${ready?.status === 'READY' ? 'text-emerald-400' : 'text-amber-400'}`}>{ready?.status ?? 'BLOCKED'}</p>
+            {ready?.issues?.map((issue) => <p key={issue} className="mt-2 text-sm text-text-secondary">• {issue}</p>)}
+            <button
+              id={`start-new-lot-${activeType.toLowerCase()}`}
+              onClick={prepare}
+              disabled={busy || ready?.status !== 'READY' || !teamOrder.length}
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 font-bold text-white disabled:opacity-40"
+            >
+              <Plus size={18}/>
+              {busy ? 'Preparing…' : isCancelledWithNoSelections ? `Start New ${activeType === 'ICON' ? 'Icon' : 'Setter'} Lot` : 'Prepare Lot'}
+            </button>
+          </div>
+        </section>
+      )}
+
       {state?.session.status === 'PREPARING' && <section className="space-y-5"><div className="rounded-2xl border border-amber-400/25 bg-amber-400/10 p-4 text-sm"><LockKeyhole className="mr-2 inline" size={18}/>Once shuffled, the card mapping is locked. Restarting requires cancellation with a reason.</div><div><h2 className="text-xl font-bold">Eligible player pool</h2><div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{state.eligible_players.map((player) => <PlayerCard key={player.id} player={player} classification={activeType === 'ICON' ? 'ICON_LOT' : 'SETTER_LOT'} />)}</div></div><button onClick={shuffle} disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold text-white"><Shuffle size={18}/>{countdown ? `Shuffling in ${countdown}` : 'Confirm & Shuffle'}</button></section>}
       {state?.session.status === 'SHUFFLED' && <section className="text-center"><p className="mb-5 text-text-secondary">Cards are anonymously shuffled and locked.</p><button onClick={() => run(async () => await supabase.rpc('start_lot_session', { p_lot_session_id: state.session.id }), () => refresh(activeType, state.session.id))} disabled={busy} className="rounded-xl bg-primary px-8 py-4 text-lg font-black text-white">Start Lot Draw</button></section>}
       {state && ['SHUFFLED','LIVE','COMPLETED'].includes(state.session.status) && <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-8">{state.cards.map((card) => <button key={card.lot_number} type="button" aria-label={`Card ${card.lot_number}, ${card.status.toLowerCase()}`} disabled={card.status !== 'AVAILABLE' || state.session.status !== 'LIVE' || busy || !!reveal} onClick={() => selectCard(card.lot_number)} className="aspect-[3/4] rounded-xl border border-primary/30 bg-linear-to-br from-primary/25 to-violet-950 p-2 text-2xl font-black shadow-lg transition hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-45">{card.status === 'SELECTED' ? '✓' : card.lot_number}</button>)}</div>}

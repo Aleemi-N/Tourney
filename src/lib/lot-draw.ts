@@ -29,6 +29,7 @@ export type LotSession = {
   tournament_id: string;
   lot_type: LotType;
   status: string;
+  cancellation_reason?: string | null;
 };
 
 export type OrganizerLotState = {

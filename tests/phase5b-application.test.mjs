@@ -22,6 +22,10 @@ test('all method combinations are represented by strict LOT_DRAW checks', () => 
   assert.match(rules, /leagueMode === 'AUCTION'/);
 });
 
+test('LotSession type includes cancellation_reason for cancelled state display', () => {
+  assert.match(rules, /cancellation_reason/);
+});
+
 test('route independently validates availability and uses authoritative readiness', () => {
   assert.match(organizerPage, /isLotDrawEnabled/);
   assert.match(organizerPage, /get_tournament_phase5a_configuration/);
@@ -70,4 +74,38 @@ test('organizer and public experiences support reduced motion and safe late join
   assert.match(publicLive, /useReducedMotion/);
   assert.match(publicLive, /get_lot_public_state/);
   assert.match(publicLive, /Nothing is live right now/);
+});
+
+test('cancelled lot session dead-end shows banner and Start New Lot action, not only Full Screen button', () => {
+  // Must detect cancelled state with zero selections
+  assert.match(organizer, /isCancelledWithNoSelections/);
+  // Must show the cancellation reason
+  assert.match(organizer, /cancellation_reason/);
+  assert.match(organizer, /Session Cancelled/);
+  assert.match(organizer, /preserved for audit history/);
+  // Start New Lot button uses prepare_lot_session (same RPC, new session)
+  assert.match(organizer, /Start New.*Lot/);
+  assert.match(organizer, /start-new-lot-/);
+  // The button label differs for cancelled vs brand-new
+  assert.match(organizer, /isCancelledWithNoSelections.*Start New/);
+  // Full Screen button is hidden when session is in cancelled dead-end
+  assert.match(organizer, /isCancelledWithNoSelections.*Full Screen/);
+});
+
+test('cancelled session does NOT subscribe to realtime — no unnecessary channel for dead sessions', () => {
+  // The subscription useEffect must guard against CANCELLED status
+  assert.match(organizer, /session\.status === 'CANCELLED'/);
+});
+
+test('new lot after cancel uses prepare_lot_session — never reopens, resets, or deletes old session', () => {
+  // Must not contain any direct status update or delete of lot_sessions
+  assert.doesNotMatch(organizer, /status.*PREPARING.*CANCELLED|CANCELLED.*PREPARING/);
+  assert.doesNotMatch(organizer, /delete.*lot_session|reset.*lot_session/);
+  // Must call prepare_lot_session to create a new session
+  assert.match(organizer, /prepare_lot_session/);
+});
+
+test('showPrepareForm covers both brand-new and cancelled-with-no-selections cases', () => {
+  assert.match(organizer, /showPrepareForm/);
+  assert.match(organizer, /!state \|\| isCancelledWithNoSelections/);
 });
