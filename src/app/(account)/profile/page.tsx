@@ -100,16 +100,20 @@ export default async function ProfilePage() {
     playerRegistrations = data || [];
   }
 
-  // 3. Team Owner relationships
-  const { data: ownerApplications } = await supabase
-    .from('team_owner_applications')
+  // 3. Team Owner relationships. Active assignments are authoritative; an
+  // approved application alone does not grant access to an owner team.
+  const { data: ownerTeams } = await supabase
+    .from('team_owners')
     .select(`
-      tournament_id,
-      status,
-      tournaments!inner (id, name, slug, status, format, start_date, end_date, venue, tournament_branding (logo_path))
+      team_id,
+      teams!inner (
+        id,
+        tournament_id,
+        tournaments!inner (id, name, slug, status, format, start_date, end_date, venue, tournament_branding (logo_path))
+      )
     `)
     .eq('user_id', user.id)
-    .eq('status', 'APPROVED');
+    .eq('status', 'ACTIVE');
 
   // Merge distinct tournaments
   const participationMap = new Map<string, any>();
@@ -140,15 +144,18 @@ export default async function ProfilePage() {
     }
   });
 
-  ownerApplications?.forEach((a: any) => {
-    if (a.tournaments) {
-      const existing = participationMap.get(a.tournament_id);
+  ownerTeams?.forEach((assignment: any) => {
+    const team = assignment.teams;
+    if (team?.tournaments) {
+      const existing = participationMap.get(team.tournament_id);
       if (existing) {
         if (!existing.roles.includes('Team Owner')) existing.roles.push('Team Owner');
+        existing.ownerTeamIds = [...(existing.ownerTeamIds ?? []), assignment.team_id];
       } else {
-        participationMap.set(a.tournament_id, {
-          tournament: a.tournaments,
-          roles: ['Team Owner']
+        participationMap.set(team.tournament_id, {
+          tournament: team.tournaments,
+          roles: ['Team Owner'],
+          ownerTeamIds: [assignment.team_id],
         });
       }
     }
@@ -209,6 +216,11 @@ export default async function ProfilePage() {
                 Go to Organizer Dashboard &rarr;
               </Link>
             )}
+            {ownerTeams && ownerTeams.length > 0 && (
+              <Link href="/owner/dashboard" className="text-primary hover:text-primary-hover font-medium text-sm transition-colors">
+                Go to Team Portal &rarr;
+              </Link>
+            )}
           </div>
         </div>
 
@@ -216,11 +228,11 @@ export default async function ProfilePage() {
         <div id="my-tournaments" className="relative w-full scroll-mt-24 md:w-2/3">
           <span id="tournament-history" className="absolute -top-24" aria-hidden="true" />
           <h2 className="text-xl font-bold text-text-primary">My Tournaments</h2>
-          <p className="mb-6 mt-1 text-sm text-text-secondary">Your player registrations and organizer relationships.</p>
+          <p className="mb-6 mt-1 text-sm text-text-secondary">Your player registrations, organizer access, and team-owner relationships.</p>
           
           {participations.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-surface-raised p-6 text-center sm:p-8">
-              <p className="text-text-secondary mb-4">You don&apos;t have any tournament registrations or organizer access yet.</p>
+              <p className="text-text-secondary mb-4">You don&apos;t have any player, organizer, or team-owner relationships yet.</p>
               <Link
                 href="/#tournaments"
                 className="inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary-hover transition-colors"
@@ -277,6 +289,7 @@ export default async function ProfilePage() {
                       <Link href={`/t/${p.tournament.slug}`} className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">View Tournament</Link>
                       {p.playerRegistration && <Link href="/player/profile" className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-3 py-2 text-sm font-semibold text-text-secondary hover:bg-surface-muted hover:text-text-primary">View / Edit Profile</Link>}
                       {p.roles.includes('Organizer') && <Link href={`/organizer/tournaments/${p.tournament.id}`} className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-3 py-2 text-sm font-semibold text-text-secondary hover:bg-surface-muted hover:text-text-primary">Open Dashboard</Link>}
+                      {p.ownerTeamIds?.length > 0 && <Link href={p.ownerTeamIds.length === 1 ? `/owner/teams/${p.ownerTeamIds[0]}` : '/owner/dashboard'} className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-3 py-2 text-sm font-semibold text-text-secondary hover:bg-surface-muted hover:text-text-primary">Open Team Portal</Link>}
                     </div>
                   </div>
                 </article>

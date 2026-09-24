@@ -1,18 +1,23 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from '@/lib/supabase/server';
 import { ParticipantManager } from './ParticipantManager';
 
-export async function ParticipantListServer({ 
-  tournament 
-}: { 
-  tournament: any 
+export async function ParticipantListServer({
+  tournament
+}: {
+  tournament: any
 }) {
   const supabase = await createClient();
 
-  // Fetch player registrations and team owner applications concurrently
+  const isAuctionLeague =
+    tournament.format === 'LEAGUE' && tournament.league_mode === 'AUCTION';
+
+  // Fetch player registrations, team owner applications, and (for auction) categories + settings
   const [
     { data: players },
-    { data: teamOwners }
+    { data: teamOwners },
+    auctionCategoriesResult,
+    settingsResult,
   ] = await Promise.all([
     supabase
       .from('player_tournament_registrations')
@@ -20,6 +25,7 @@ export async function ParticipantListServer({
         id,
         status,
         auction_category,
+        auction_price_category_id,
         player_profiles (
           id,
           display_name,
@@ -46,14 +52,47 @@ export async function ParticipantListServer({
         )
       `)
       .eq('tournament_id', tournament.id)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false }),
+    isAuctionLeague
+      ? supabase
+        .from('tournament_auction_categories')
+        .select('id,category_code,display_name,base_price,display_order')
+        .eq('tournament_id', tournament.id)
+        .order('display_order')
+      : Promise.resolve({ data: null }),
+    isAuctionLeague
+      ? supabase
+        .from('tournament_settings')
+        .select('icon_selection_method,setter_selection_method')
+        .eq('tournament_id', tournament.id)
+        .single()
+      : Promise.resolve({ data: null }),
   ]);
 
   return (
-    <ParticipantManager 
-      tournament={tournament} 
-      players={players || []} 
-      teamOwners={teamOwners || []} 
+    <ParticipantManager
+      tournament={tournament}
+      players={players || []}
+      teamOwners={teamOwners || []}
+      auctionCategories={
+        isAuctionLeague && auctionCategoriesResult.data
+          ? (auctionCategoriesResult.data as any[]).map((c) => ({
+            id: c.id as string,
+            code: c.category_code as string,
+            display_name: c.display_name as string,
+            base_price: c.base_price as number,
+            display_order: c.display_order as number,
+          }))
+          : []
+      }
+      tournamentSettings={
+        isAuctionLeague && settingsResult.data
+          ? {
+            icon_selection_method: (settingsResult.data as any).icon_selection_method as string,
+            setter_selection_method: (settingsResult.data as any).setter_selection_method as string,
+          }
+          : null
+      }
     />
   );
 }

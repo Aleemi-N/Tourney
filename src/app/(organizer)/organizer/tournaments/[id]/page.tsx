@@ -28,7 +28,7 @@ async function TournamentOverviewContent({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  
+
   // Use cached tournament lookup (shared with layout)
   const { data: tournament } = await getTournament(id);
 
@@ -45,21 +45,21 @@ async function TournamentOverviewContent({
       <Link href="/organizer/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors mb-6">
         <ArrowLeftIcon className="w-4 h-4" /> Back to Dashboard <OrganizerLinkPending />
       </Link>
-      
+
       <div className="bg-surface rounded-2xl border border-border p-8">
         <div className="flex justify-between items-start mb-6">
           <div className="flex min-w-0 items-center gap-4">
             {logoUrl && <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-border bg-background"><Image src={logoUrl} alt="" fill sizes="56px" className="object-contain p-1.5" unoptimized /></div>}
             <div className="min-w-0">
-            <h1 className="text-3xl font-bold text-text-primary tracking-tight">{tournament.name as string}</h1>
-            <p className="text-text-secondary">/{tournament.slug as string}</p>
+              <h1 className="text-3xl font-bold text-text-primary tracking-tight">{tournament.name as string}</h1>
+              <p className="text-text-secondary">/{tournament.slug as string}</p>
             </div>
           </div>
           <span className="px-3 py-1 bg-primary/10 text-primary font-bold tracking-wider text-xs uppercase rounded">
             {tournament.status as string}
           </span>
         </div>
-        
+
         <p className="text-text-secondary mb-8">
           Manage your tournament settings, participants, and live action from this dashboard.
         </p>
@@ -69,12 +69,37 @@ async function TournamentOverviewContent({
         </Suspense>
       </div>
 
-      <RegistrationLinks 
-        slug={tournament.slug as string} 
-        isLeague={tournament.format === 'LEAGUE'} 
+      <RegistrationLinks
+        slug={tournament.slug as string}
+        isLeague={tournament.format === 'LEAGUE'}
         status={tournament.status as string}
       />
+
+      {tournament.format === 'LEAGUE' && tournament.league_mode === 'AUCTION' && (
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold text-text-primary mb-4">Live Operations</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Link
+              href={`/organizer/tournaments/${id}/lot`}
+              className="group flex flex-col gap-2 rounded-xl border border-border bg-surface p-5 transition-colors hover:border-primary/50 hover:bg-primary/5"
+            >
+              <span className="text-2xl">🎴</span>
+              <h3 className="font-semibold text-text-primary">Lot Draw</h3>
+              <p className="text-sm text-text-secondary">Run Icon and Setter Lot Draw sessions.</p>
+            </Link>
+            <Link
+              href={`/organizer/tournaments/${id}/auction`}
+              className="group flex flex-col gap-2 rounded-xl border border-border bg-surface p-5 transition-colors hover:border-primary/50 hover:bg-primary/5"
+            >
+              <span className="text-2xl">🔨</span>
+              <h3 className="font-semibold text-text-primary">Auction Control</h3>
+              <p className="text-sm text-text-secondary">Prepare and run the live player auction.</p>
+            </Link>
+          </div>
+        </div>
+      )}
     </main>
+
   );
 }
 
