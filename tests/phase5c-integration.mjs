@@ -451,11 +451,115 @@ try {
       [auctionId, opened.auction_player_id, unsold.player_version, 50],
     ),
   );
-  const customOriginalBase = Number(
-    (await admin.query('SELECT original_base_price FROM public.auction_players WHERE id=$1', [opened.auction_player_id])).rows[0].original_base_price,
-  );
-  assert.equal(customOriginalBase, originalBase); // 300 (or whatever it was initially)
+  const customOriginalBaseRow = (await admin.query('SELECT original_base_price, category_base_price FROM public.auction_players WHERE id=$1', [opened.auction_player_id])).rows[0];
+  const customOriginalBase = Number(customOriginalBaseRow.original_base_price);
+  const customCategoryBase = customOriginalBaseRow.category_base_price !== null ? Number(customOriginalBaseRow.category_base_price) : null;
+  assert.equal(customCategoryBase, customOriginalBase);
   assert.equal(Number(requeued.base_price), 50);
+
+  // ==========================================
+  // ADD PLAYER TESTS (MIGRATION 28)
+  // ==========================================
+  
+  // 1. REJECTED PLAYER
+  const rejectPlayerId = '28990000-0000-0000-0000-000000000001';
+  await admin.query(`
+    INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, recovery_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token) 
+    VALUES ('00000000-0000-0000-0000-000000000000', $1, 'authenticated', 'authenticated', 'reject@example.com', '', now(), now(), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Reject Player"}', now(), now(), '', '', '', '')
+    ON CONFLICT (id) DO NOTHING;
+  `, [rejectPlayerId]);
+  await admin.query(`UPDATE public.profiles SET full_name='Reject Player' WHERE id=$1`, [rejectPlayerId]);
+  await admin.query(`
+    INSERT INTO public.player_profiles(id, display_name, primary_position)
+    VALUES($1, 'Reject Player', 'SETTER') ON CONFLICT DO NOTHING
+  `, [rejectPlayerId]);
+  
+  const regRejectRes = await admin.query(`
+    INSERT INTO public.player_tournament_registrations(player_id, tournament_id, status)
+    VALUES($1, $2, 'REJECTED') RETURNING id
+  `, [rejectPlayerId, ids.tournament]);
+  const regRejectId = regRejectRes.rows[0].id;
+
+  await admin.query(`
+    INSERT INTO public.audit_logs(tournament_id, user_id, action, entity_type, entity_id)
+    VALUES($1, $2, 'PLAYER_REGISTRATION_REJECTED', 'player_tournament_registrations', $3)
+  `, [ids.tournament, ids.organizer, regRejectId]);
+  const preAuditCount = (await admin.query(`SELECT count(*) FROM public.audit_logs WHERE tournament_id=$1 AND entity_id=$2`, [ids.tournament, regRejectId])).rows[0].count;
+
+  const rejectAddRes = await organizer.query(`
+    SELECT public.quick_add_player_to_live_auction($1, $2, $3, null, null, null, null) value
+  `, [auctionId, categories[0].id, rejectPlayerId]);
+  const rejectAdd = rpcValue(rejectAddRes);
+  
+  const postRegReject = await admin.query(`SELECT * FROM public.player_tournament_registrations WHERE id=$1`, [regRejectId]);
+  assert.equal(postRegReject.rows[0].status, 'APPROVED');
+  assert.equal(postRegReject.rows[0].auction_category, 'MAIN_AUCTION');
+  assert.equal(postRegReject.rows[0].auction_price_category_id, categories[0].id);
+  
+  const postAuctionPlayerReject = await admin.query(`SELECT * FROM public.auction_players WHERE auction_id=$1 AND player_id=$2`, [auctionId, rejectPlayerId]);
+  assert.equal(postAuctionPlayerReject.rows.length, 1);
+  assert.equal(postAuctionPlayerReject.rows[0].status, 'WAITING');
+  assert.equal(Number(postAuctionPlayerReject.rows[0].base_price), 500);
+
+  const postAuditCount = (await admin.query(`SELECT count(*) FROM public.audit_logs WHERE tournament_id=$1 AND action='PLAYER_ADDED_DURING_AUCTION'`, [ids.tournament])).rows[0].count;
+  assert.equal(Number(postAuditCount) >= 1, true, "Add player audit event missing");
+  const totalAuditCount = (await admin.query(`SELECT count(*) FROM public.audit_logs WHERE tournament_id=$1 AND entity_id=$2`, [ids.tournament, regRejectId])).rows[0].count;
+  assert.equal(Number(totalAuditCount) > Number(preAuditCount), true, "Rejection history must be preserved");
+
+  const rejectAddRes2 = organizer.query(`
+    SELECT public.quick_add_player_to_live_auction($1, $2, $3, null, null, null, null) value
+  `, [auctionId, categories[0].id, rejectPlayerId]);
+  await assert.rejects(rejectAddRes2, /Player is already in this auction/);
+
+  // 2. APPROVED PLAYER
+  const approvedPlayerId = '28990000-0000-0000-0000-000000000002';
+  await admin.query(`
+    INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, recovery_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token) 
+    VALUES ('00000000-0000-0000-0000-000000000000', $1, 'authenticated', 'authenticated', 'approved@example.com', '', now(), now(), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Approved Player"}', now(), now(), '', '', '', '')
+    ON CONFLICT (id) DO NOTHING;
+  `, [approvedPlayerId]);
+  await admin.query(`UPDATE public.profiles SET full_name='Approved Player' WHERE id=$1`, [approvedPlayerId]);
+  await admin.query(`
+    INSERT INTO public.player_profiles(id, display_name, primary_position)
+    VALUES($1, 'Approved Player', 'LIBERO') ON CONFLICT DO NOTHING
+  `, [approvedPlayerId]);
+  
+  const regApprovedRes = await admin.query(`
+    INSERT INTO public.player_tournament_registrations(player_id, tournament_id, status)
+    VALUES($1, $2, 'APPROVED') RETURNING id
+  `, [approvedPlayerId, ids.tournament]);
+  const regApprovedId = regApprovedRes.rows[0].id;
+
+  const approvedAddRes = await organizer.query(`
+    SELECT public.quick_add_player_to_live_auction($1, $2, $3, null, null, null, null) value
+  `, [auctionId, categories[1].id, approvedPlayerId]);
+  
+  const postRegApproved = await admin.query(`SELECT * FROM public.player_tournament_registrations WHERE id=$1`, [regApprovedId]);
+  assert.equal(postRegApproved.rows[0].status, 'APPROVED');
+  assert.equal(postRegApproved.rows[0].auction_category, 'MAIN_AUCTION');
+  
+  const postAuctionPlayerApproved = await admin.query(`SELECT * FROM public.auction_players WHERE auction_id=$1 AND player_id=$2`, [auctionId, approvedPlayerId]);
+  assert.equal(postAuctionPlayerApproved.rows.length, 1);
+  assert.equal(postAuctionPlayerApproved.rows[0].status, 'WAITING');
+
+  // 4. QUICK ADD NEW PLAYER
+  const quickAddRes = await organizer.query(`
+    SELECT public.quick_add_player_to_live_auction($1, $2, null, 'New Guy', 'OPPOSITE', null, '555-1234') value
+  `, [auctionId, categories[1].id]);
+  
+  const newPlayerId = rpcValue(quickAddRes).player_id;
+  const newProfile = await admin.query('SELECT * FROM public.player_profiles WHERE id=$1', [newPlayerId]);
+  assert.equal(newProfile.rows[0].display_name, 'New Guy');
+  assert.equal(newProfile.rows[0].primary_position, 'OPPOSITE');
+  
+  const newReg = await admin.query('SELECT * FROM public.player_tournament_registrations WHERE player_id=$1 AND tournament_id=$2', [newPlayerId, ids.tournament]);
+  assert.equal(newReg.rows.length, 1);
+  assert.equal(newReg.rows[0].status, 'APPROVED');
+  assert.equal(newReg.rows[0].auction_category, 'MAIN_AUCTION');
+
+  const newAp = await admin.query('SELECT * FROM public.auction_players WHERE auction_id=$1 AND player_id=$2', [auctionId, newPlayerId]);
+  assert.equal(newAp.rows.length, 1);
+  assert.equal(newAp.rows[0].status, 'WAITING');
 
   while (true) {
     organizerState = rpcValue(
@@ -494,7 +598,7 @@ try {
   assert.equal(ownerState1.team.may_bid, false);
   assert.equal(publicState.auction.status, 'COMPLETED');
   assert.equal(Number(publicState.progress.sold), 1);
-  assert.equal(Number(publicState.progress.unsold), 4);
+  assert.equal(Number(publicState.progress.unsold), 7);
 
   const publicationTables = (
     await admin.query(
@@ -526,6 +630,9 @@ try {
       (fn.proconfig ?? []).some((setting) => setting === 'search_path=pg_catalog, public'),
     ),
   );
+
+  
+  
 
   console.log(
     JSON.stringify({

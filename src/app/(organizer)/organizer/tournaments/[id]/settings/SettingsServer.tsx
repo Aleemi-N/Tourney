@@ -22,7 +22,7 @@ export async function SettingsServer({ tournament }: { tournament: any }) {
       isAuctionLeague
         ? supabase
           .from('tournament_auction_categories')
-          .select('category_code,display_name,base_price,display_order')
+          .select('id,category_code,display_name,base_price,display_order')
           .eq('tournament_id', tournament.id)
           .order('display_order')
         : Promise.resolve({ data: null }),
@@ -45,16 +45,18 @@ export async function SettingsServer({ tournament }: { tournament: any }) {
 
   // Map DB rows to typed categories
   const rawCategories = (auctionCategoriesResult.data ?? []) as {
+    id: string;
     category_code: string;
     display_name: string;
     base_price: number;
     display_order: number;
   }[];
   const categories: AuctionCategory[] = rawCategories.map((r) => ({
+    id: r.id,
     code: r.category_code as 'A' | 'B' | 'C',
     display_name: r.display_name,
     base_price: r.base_price,
-    display_order: r.display_order as 1 | 2 | 3,
+    display_order: r.display_order,
   }));
 
   const auctionRecord = auctionStatusResult.data as { id: string; prepared_at: string | null } | null;

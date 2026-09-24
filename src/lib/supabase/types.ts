@@ -2759,6 +2759,10 @@ export type Database = {
       }
     }
     Functions: {
+      add_existing_player_to_live_auction: {
+        Args: { p_auction_id: string; p_registration_id: string }
+        Returns: Json
+      }
       add_tournament_staff_role: {
         Args: { p_email: string; p_role: string; p_tournament_id: string }
         Returns: Json
@@ -2919,6 +2923,14 @@ export type Database = {
       is_assigned_scorer: { Args: { m_id: string }; Returns: boolean }
       is_org_member: { Args: { org_id: string }; Returns: boolean }
       is_organization_admin: { Args: { org_id: string }; Returns: boolean }
+      is_player_in_public_tournament: {
+        Args: { p_id: string }
+        Returns: boolean
+      }
+      is_player_registered_in_member_tournament: {
+        Args: { p_id: string }
+        Returns: boolean
+      }
       is_player_registered_in_organizer_tournament: {
         Args: { p_id: string }
         Returns: boolean
@@ -2964,6 +2976,19 @@ export type Database = {
         }
         Returns: string
       }
+      quick_add_player_to_live_auction: {
+        Args: {
+          p_auction_id: string
+          p_auction_price_category_id: string
+          p_display_name?: string
+          p_existing_player_id?: string
+          p_phone?: string
+          p_photo_path?: string
+          p_primary_position?: string
+          p_secondary_position?: string
+        }
+        Returns: Json
+      }
       reject_player_registration: {
         Args: { p_notes?: string; p_registration_id: string }
         Returns: undefined
@@ -2989,6 +3014,7 @@ export type Database = {
           p_auction_id: string
           p_auction_player_id: string
           p_expected_player_version: number
+          p_new_price?: number
           p_request_key: string
         }
         Returns: Json
@@ -3002,7 +3028,7 @@ export type Database = {
           p_name: string
           p_qualification_count?: number
           p_sequence: number
-          p_stage_id: string | null
+          p_stage_id: string
           p_stage_type: string
           p_tournament_id: string
         }
@@ -3012,7 +3038,7 @@ export type Database = {
         Args: {
           p_set_rules: Json
           p_sets_to_win: number
-          p_stage_id: string | null
+          p_stage_id: string
           p_tournament_id: string
           p_win_by_two: boolean
         }
@@ -3170,37 +3196,37 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-  ? R
-  : never
+    ? R
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])
-  ? (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-      Row: infer R
-    }
-  ? R
-  : never
-  : never
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
@@ -3210,22 +3236,22 @@ export type TablesInsert<
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
+      Insert: infer I
+    }
+    ? I
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
@@ -3235,22 +3261,22 @@ export type TablesUpdate<
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Update: infer U
-  }
-  ? U
-  : never
+      Update: infer U
+    }
+    ? U
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Update: infer U
-  }
-  ? U
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-  | keyof DefaultSchema["Enums"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
@@ -3261,13 +3287,13 @@ export type Enums<
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-  : never
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-  | keyof DefaultSchema["CompositeTypes"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
@@ -3278,8 +3304,8 @@ export type CompositeTypes<
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
   graphql_public: {
@@ -3289,3 +3315,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

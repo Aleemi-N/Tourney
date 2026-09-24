@@ -21,8 +21,10 @@ import {
   Trophy,
   Users,
   List,
+  UserPlus
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { OrganizerAddPlayerModal } from '@/components/organizer/OrganizerAddPlayerModal';
 import Image from 'next/image';
 import {
   formatMoney,
@@ -574,6 +576,7 @@ export function OrganizerAuctionClient({
   const [showRequeueModal, setShowRequeueModal] = useState<{
     playerId: string; playerVersion: number; categoryBase: number; currentPrice: number;
   } | null>(null);
+  const [showAddPlayerModal, setShowAddPlayerModal] = useState(false);
 
   // Stable Supabase client — created once per component mount
   const supabase = useMemo(() => createClient(), []);
@@ -797,6 +800,17 @@ export function OrganizerAuctionClient({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {(currentStatus === 'LIVE' || currentStatus === 'PAUSED' || currentStatus === 'READY') && (
+            <button
+              type="button"
+              onClick={() => setShowAddPlayerModal(true)}
+              disabled={busy}
+              className="flex items-center gap-2 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50 transition-colors"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add Player</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => (auctionId ? refreshSnapshot(auctionId) : refreshReadiness())}
@@ -1124,6 +1138,17 @@ export function OrganizerAuctionClient({
             )
           }
           onCancel={() => setShowRequeueModal(null)}
+        />
+      )}
+
+      {/* Add Player Modal */}
+      {showAddPlayerModal && auctionId && (
+        <OrganizerAddPlayerModal
+          tournamentId={tournamentId}
+          auctionId={auctionId}
+          categories={categories}
+          onClose={() => setShowAddPlayerModal(false)}
+          onSuccess={() => refreshSnapshot(auctionId)}
         />
       )}
     </div>

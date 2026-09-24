@@ -223,3 +223,96 @@ export type CategoryClassification = {
   priceCategoryId: string | null;
   priceCategoryCode: AuctionCategoryCode | null;
 };
+
+export async function quickAddPlayerToAuctionAction(
+  auctionId: string,
+  priceCategoryId: string,
+  existingPlayerId?: string,
+  displayName?: string,
+  primaryPosition?: string,
+  secondaryPosition?: string,
+  phone?: string
+) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('quick_add_player_to_live_auction', {
+    p_auction_id: auctionId,
+    p_auction_price_category_id: priceCategoryId,
+    p_existing_player_id: existingPlayerId || undefined,
+    p_display_name: displayName || undefined,
+    p_primary_position: primaryPosition || undefined,
+    p_secondary_position: secondaryPosition || undefined,
+    p_phone: phone || undefined,
+  });
+  if (error) {
+    return { error: error.message };
+  }
+  return { ok: true, data };
+}
+
+export type EligiblePlayerResult = {
+  id: string;
+  display_name: string;
+  primary_position: string;
+  photo_path: string | null;
+  registration_status: string;
+  allocation_route: string | null;
+};
+
+export async function getEligiblePlayersAction(tournamentId: string) {
+  const supabase = await createClient();
+
+  // 1. Get all registrations for this tournament that are APPROVED or REJECTED/REVOKED
+  const { data: regs, error: regError } = await supabase
+    .from('player_tournament_registrations')
+    .select(`
+      player_id,
+      status,
+      auction_category,
+      player_profiles (
+        id,
+        display_name,
+        primary_position,
+        photo_path
+      )
+    `)
+    .eq('tournament_id', tournamentId)
+    .in('status', ['APPROVED', 'REJECTED', 'REVOKED']);
+
+  if (regError) {
+    return { error: regError.message };
+  }
+
+  // 2. Get existing auction players
+  const { data: auctionPlayers, error: auctionError } = await supabase
+    .from('auctions')
+    .select(`
+      id,
+      auction_players (
+        player_id
+      )
+    `)
+    .eq('tournament_id', tournamentId)
+    .maybeSingle();
+
+  if (auctionError) {
+    return { error: auctionError.message };
+  }
+
+  const existingPlayerIds = new Set(
+    (auctionPlayers?.auction_players || []).map((ap) => ap.player_id)
+  );
+
+  // 3. Filter out players already in the auction
+  const eligible = (regs || [])
+    .filter((r) => r.player_profiles && !existingPlayerIds.has(r.player_id))
+    .map((r) => ({
+      id: r.player_profiles.id,
+      display_name: r.player_profiles.display_name,
+      primary_position: r.player_profiles.primary_position,
+      photo_path: r.player_profiles.photo_path,
+      registration_status: r.status,
+      allocation_route: r.auction_category,
+    }));
+
+  return { ok: true, data: eligible };
+}

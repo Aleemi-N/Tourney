@@ -11,7 +11,11 @@ import {
   Squares2X2Icon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  BanknotesIcon,
+  ShieldCheckIcon,
+  CalendarIcon,
+  PlayIcon
 } from '@heroicons/react/24/outline';
 import { VolleyballIcon } from '../landing/VolleyballIcon';
 import { OrganizerLinkPending } from './OrganizerLinkPending';
@@ -43,6 +47,10 @@ export function DashboardShell({ children, user, lotEnabledTournamentIds = [] }:
     { name: 'Participants', href: `/organizer/tournaments/${tournamentId}/participants`, icon: UsersIcon },
     { name: 'Staff', href: `/organizer/tournaments/${tournamentId}/staff`, icon: UserGroupIcon, disabled: false },
     ...(lotEnabledTournamentIds.includes(tournamentId) ? [{ name: 'Lot Draw', href: `/organizer/tournaments/${tournamentId}/lot`, icon: Squares2X2Icon, disabled: false }] : []),
+    { name: 'Auction', href: `/organizer/tournaments/${tournamentId}/auction`, icon: BanknotesIcon, disabled: false },
+    { name: 'Teams & Squads', href: `/organizer/tournaments/${tournamentId}/teams`, icon: ShieldCheckIcon, disabled: false },
+    { name: 'Fixtures', href: `/organizer/tournaments/${tournamentId}/fixtures`, icon: CalendarIcon, disabled: false },
+    { name: 'Live', href: `/organizer/tournaments/${tournamentId}/live`, icon: PlayIcon, disabled: false },
     { name: 'Settings', href: `/organizer/tournaments/${tournamentId}/settings`, icon: Cog6ToothIcon, disabled: false },
   ] : [];
 

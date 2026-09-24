@@ -22,10 +22,11 @@
 export type AuctionCategoryCode = 'A' | 'B' | 'C';
 
 export interface AuctionCategory {
+  id: string;
   code: AuctionCategoryCode;
   display_name: string;
   base_price: number;
-  display_order: 1 | 2 | 3;
+  display_order: number;
 }
 
 // ─── Auction core ─────────────────────────────────────────────────────────────

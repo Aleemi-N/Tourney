@@ -35,13 +35,14 @@ export function OwnerPortalShell({
                                 <Link href={`/owner/teams/${activeTeam.id}`} className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white">
                                     My Squad
                                 </Link>
-                                <Link href={`/owner/teams/${activeTeam.id}/auction`} className="block shrink-0 rounded-xl bg-fuchsia-300 px-4 py-3 text-sm font-bold text-[#211334] shadow-[0_10px_30px_rgba(232,121,249,0.18)] transition hover:bg-fuchsia-200">
+                                <Link href={`/owner/teams/${activeTeam.id}/auction`} className="block shrink-0 rounded-xl px-4 py-3 text-sm font-bold text-fuchsia-300 transition hover:bg-white/10 hover:text-fuchsia-200">
                                     Live Auction
                                 </Link>
                             </>
                         ) : null}
                         {activeTeam ? <Link href={`/owner/teams/${activeTeam.id}/fixtures`} className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white">Fixtures</Link> : <span className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/30">Fixtures</span>}
-                        <span className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/30">Results</span>
+                        {activeTeam ? <Link href={`/owner/teams/${activeTeam.id}/results`} className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white">Results</Link> : <span className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/30">Results</span>}
+                        <span className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/30">More</span>
                     </nav>
 
                     {teams.length > 1 ? (
