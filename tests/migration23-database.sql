@@ -20,6 +20,10 @@ INSERT INTO public.tournament_members (tournament_id, user_id, role) VALUES
 INSERT INTO public.tournament_settings (tournament_id, min_squad_size, max_squad_size, auction_starting_purse, auction_base_price, auction_bid_increment) VALUES
   ('23200000-0000-0000-0000-000000000001', 6, 12, 5000, 100, 50),
   ('23200000-0000-0000-0000-000000000002', 6, 12, 5000, 100, 50);
+INSERT INTO public.tournament_auction_categories(tournament_id,category_code,display_name,base_price,display_order)
+SELECT tournament_id,x.code,'Category '||x.code,100,x.ord FROM (VALUES
+  ('23200000-0000-0000-0000-000000000001'::uuid),('23200000-0000-0000-0000-000000000002'::uuid)
+) t(tournament_id) CROSS JOIN (VALUES('A',1),('B',2),('C',3)) x(code,ord);
 INSERT INTO public.teams (id, tournament_id, name) VALUES
   ('23300000-0000-0000-0000-000000000001', '23200000-0000-0000-0000-000000000001', 'Phase Team'),
   ('23300000-0000-0000-0000-000000000002', '23200000-0000-0000-0000-000000000001', 'Phase Team Two');
@@ -30,16 +34,16 @@ INSERT INTO public.player_profiles (id, user_id, display_name, primary_position)
   ('23400000-0000-0000-0000-000000000001', '23000000-0000-0000-0000-000000000004', 'Icon', 'OUTSIDE_HITTER'),
   ('23400000-0000-0000-0000-000000000002', '23000000-0000-0000-0000-000000000005', 'Setter', 'SETTER'),
   ('23400000-0000-0000-0000-000000000003', '23000000-0000-0000-0000-000000000006', 'Main', 'LIBERO');
-INSERT INTO public.player_tournament_registrations (tournament_id, player_id, status, auction_category) VALUES
-  ('23200000-0000-0000-0000-000000000001', '23400000-0000-0000-0000-000000000001', 'APPROVED', 'ICON_LOT'),
-  ('23200000-0000-0000-0000-000000000001', '23400000-0000-0000-0000-000000000002', 'APPROVED', 'SETTER_LOT'),
-  ('23200000-0000-0000-0000-000000000001', '23400000-0000-0000-0000-000000000003', 'APPROVED', 'MAIN_AUCTION');
+INSERT INTO public.player_tournament_registrations (tournament_id, player_id, status, auction_category,auction_price_category_id) VALUES
+  ('23200000-0000-0000-0000-000000000001', '23400000-0000-0000-0000-000000000001', 'APPROVED', 'ICON_LOT',NULL),
+  ('23200000-0000-0000-0000-000000000001', '23400000-0000-0000-0000-000000000002', 'APPROVED', 'SETTER_LOT',NULL),
+  ('23200000-0000-0000-0000-000000000001', '23400000-0000-0000-0000-000000000003', 'APPROVED', 'MAIN_AUCTION',(SELECT id FROM public.tournament_auction_categories WHERE tournament_id='23200000-0000-0000-0000-000000000001' AND category_code='C'));
 INSERT INTO public.player_tournament_registrations (tournament_id, player_id, status, auction_category)
 VALUES ('23200000-0000-0000-0000-000000000002', '23400000-0000-0000-0000-000000000001', 'APPROVED', 'ICON_LOT');
 INSERT INTO public.auctions (id, tournament_id, starting_purse, minimum_bid_increment, status)
 VALUES ('23700000-0000-0000-0000-000000000001', '23200000-0000-0000-0000-000000000002', 5000, 50, 'READY');
-INSERT INTO public.auction_players (auction_id, player_id, base_price)
-VALUES ('23700000-0000-0000-0000-000000000001', '23400000-0000-0000-0000-000000000001', 100);
+INSERT INTO public.auction_players (auction_id, player_id, base_price,original_base_price,auction_order)
+VALUES ('23700000-0000-0000-0000-000000000001', '23400000-0000-0000-0000-000000000001', 100,100,1);
 
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', '23000000-0000-0000-0000-000000000001', true);

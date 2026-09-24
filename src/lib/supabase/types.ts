@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -7,30 +7,10 @@
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -40,8 +20,9 @@ export type Database = {
           auction_id: string
           auction_player_id: string
           created_at: string
+          expected_player_version: number
           id: string
-          idempotency_key: string | null
+          idempotency_key: string
           source: string
           submitted_by: string
           team_id: string
@@ -51,8 +32,9 @@ export type Database = {
           auction_id: string
           auction_player_id: string
           created_at?: string
+          expected_player_version?: number
           id?: string
-          idempotency_key?: string | null
+          idempotency_key: string
           source: string
           submitted_by: string
           team_id: string
@@ -62,8 +44,9 @@ export type Database = {
           auction_id?: string
           auction_player_id?: string
           created_at?: string
+          expected_player_version?: number
           id?: string
-          idempotency_key?: string | null
+          idempotency_key?: string
           source?: string
           submitted_by?: string
           team_id?: string
@@ -106,35 +89,117 @@ export type Database = {
           },
         ]
       }
-      auction_players: {
+      auction_operation_requests: {
         Row: {
           auction_id: string
-          auction_order: number | null
-          base_price: number
           created_at: string
+          created_by: string
           id: string
-          player_id: string
-          status: string
+          operation: string
+          request_fingerprint: Json
+          request_key: string
+          result: Json | null
         }
         Insert: {
           auction_id: string
-          auction_order?: number | null
-          base_price: number
           created_at?: string
+          created_by: string
           id?: string
-          player_id: string
-          status?: string
+          operation: string
+          request_fingerprint: Json
+          request_key: string
+          result?: Json | null
         }
         Update: {
           auction_id?: string
-          auction_order?: number | null
-          base_price?: number
           created_at?: string
+          created_by?: string
           id?: string
-          player_id?: string
-          status?: string
+          operation?: string
+          request_fingerprint?: Json
+          request_key?: string
+          result?: Json | null
         }
         Relationships: [
+          {
+            foreignKeyName: "auction_operation_requests_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_operation_requests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auction_players: {
+        Row: {
+          attempt_number: number
+          auction_id: string
+          auction_order: number
+          auction_price_category_id: string | null
+          base_price: number
+          category_base_price: number | null
+          category_code: string | null
+          category_label: string | null
+          created_at: string
+          id: string
+          live_started_at: string | null
+          original_base_price: number
+          player_id: string
+          state_version: number
+          status: string
+          terminal_at: string | null
+        }
+        Insert: {
+          attempt_number?: number
+          auction_id: string
+          auction_order: number
+          auction_price_category_id?: string | null
+          base_price: number
+          category_base_price?: number | null
+          category_code?: string | null
+          category_label?: string | null
+          created_at?: string
+          id?: string
+          live_started_at?: string | null
+          original_base_price: number
+          player_id: string
+          state_version?: number
+          status?: string
+          terminal_at?: string | null
+        }
+        Update: {
+          attempt_number?: number
+          auction_id?: string
+          auction_order?: number
+          auction_price_category_id?: string | null
+          base_price?: number
+          category_base_price?: number | null
+          category_code?: string | null
+          category_label?: string | null
+          created_at?: string
+          id?: string
+          live_started_at?: string | null
+          original_base_price?: number
+          player_id?: string
+          state_version?: number
+          status?: string
+          terminal_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_player_category_same_tournament_fk"
+            columns: ["auction_price_category_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_auction_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "auction_players_auction_id_fkey"
             columns: ["auction_id"]
@@ -154,6 +219,58 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "public_player_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auction_public_events: {
+        Row: {
+          auction_id: string
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          sequence_number: number
+          tournament_id: string
+        }
+        Insert: {
+          auction_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          sequence_number: number
+          tournament_id: string
+        }
+        Update: {
+          auction_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          sequence_number?: number
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_public_events_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_public_events_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "public_tournament_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_public_events_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
             referencedColumns: ["id"]
           },
         ]
@@ -280,30 +397,45 @@ export type Database = {
         Row: {
           completed_at: string | null
           created_at: string
+          event_sequence: number
           id: string
+          minimum_acquisition_reserve_price: number | null
           minimum_bid_increment: number
+          paused_at: string | null
+          prepared_at: string | null
           started_at: string | null
           starting_purse: number
+          state_version: number
           status: string
           tournament_id: string
         }
         Insert: {
           completed_at?: string | null
           created_at?: string
+          event_sequence?: number
           id?: string
+          minimum_acquisition_reserve_price?: number | null
           minimum_bid_increment: number
+          paused_at?: string | null
+          prepared_at?: string | null
           started_at?: string | null
           starting_purse: number
+          state_version?: number
           status?: string
           tournament_id: string
         }
         Update: {
           completed_at?: string | null
           created_at?: string
+          event_sequence?: number
           id?: string
+          minimum_acquisition_reserve_price?: number | null
           minimum_bid_increment?: number
+          paused_at?: string | null
+          prepared_at?: string | null
           started_at?: string | null
           starting_purse?: number
+          state_version?: number
           status?: string
           tournament_id?: string
         }
@@ -462,10 +594,85 @@ export type Database = {
         ]
       }
       lot_public_events: {
-        Row: { card_number: number | null; created_at: string; event_type: string; id: string; lot_session_id: string; lot_type: string; payload: Json; sequence_number: number; session_status: string; team_id: string | null; tournament_id: string; turn_id: string | null }
-        Insert: { card_number?: number | null; created_at?: string; event_type: string; id?: string; lot_session_id: string; lot_type: string; payload?: Json; sequence_number: number; session_status: string; team_id?: string | null; tournament_id: string; turn_id?: string | null }
-        Update: { card_number?: number | null; created_at?: string; event_type?: string; id?: string; lot_session_id?: string; lot_type?: string; payload?: Json; sequence_number?: number; session_status?: string; team_id?: string | null; tournament_id?: string; turn_id?: string | null }
-        Relationships: []
+        Row: {
+          card_number: number | null
+          created_at: string
+          event_type: string
+          id: string
+          lot_session_id: string
+          lot_type: string
+          payload: Json
+          sequence_number: number
+          session_status: string
+          team_id: string | null
+          tournament_id: string
+          turn_id: string | null
+        }
+        Insert: {
+          card_number?: number | null
+          created_at?: string
+          event_type: string
+          id?: string
+          lot_session_id: string
+          lot_type: string
+          payload?: Json
+          sequence_number: number
+          session_status: string
+          team_id?: string | null
+          tournament_id: string
+          turn_id?: string | null
+        }
+        Update: {
+          card_number?: number | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          lot_session_id?: string
+          lot_type?: string
+          payload?: Json
+          sequence_number?: number
+          session_status?: string
+          team_id?: string | null
+          tournament_id?: string
+          turn_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lot_public_events_lot_session_id_fkey"
+            columns: ["lot_session_id"]
+            isOneToOne: false
+            referencedRelation: "lot_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lot_public_events_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "public_team_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lot_public_events_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lot_public_events_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "public_tournament_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lot_public_events_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lot_sessions: {
         Row: {
@@ -541,8 +748,8 @@ export type Database = {
           id: string
           lot_session_id: string
           round_number: number
-          selection_request_key: string | null
           selected_entry_id: string | null
+          selection_request_key: string | null
           started_at: string | null
           status: string
           team_id: string
@@ -553,8 +760,8 @@ export type Database = {
           id?: string
           lot_session_id: string
           round_number?: number
-          selection_request_key?: string | null
           selected_entry_id?: string | null
+          selection_request_key?: string | null
           started_at?: string | null
           status?: string
           team_id: string
@@ -565,8 +772,8 @@ export type Database = {
           id?: string
           lot_session_id?: string
           round_number?: number
-          selection_request_key?: string | null
           selected_entry_id?: string | null
+          selection_request_key?: string | null
           started_at?: string | null
           status?: string
           team_id?: string
@@ -1054,6 +1261,7 @@ export type Database = {
       player_tournament_registrations: {
         Row: {
           auction_category: string | null
+          auction_price_category_id: string | null
           created_at: string
           id: string
           player_id: string
@@ -1067,6 +1275,7 @@ export type Database = {
         }
         Insert: {
           auction_category?: string | null
+          auction_price_category_id?: string | null
           created_at?: string
           id?: string
           player_id: string
@@ -1080,6 +1289,7 @@ export type Database = {
         }
         Update: {
           auction_category?: string | null
+          auction_price_category_id?: string | null
           created_at?: string
           id?: string
           player_id?: string
@@ -1126,6 +1336,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tournaments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_auction_price_category_fk"
+            columns: ["tournament_id", "auction_price_category_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_auction_categories"
+            referencedColumns: ["tournament_id", "id"]
           },
         ]
       }
@@ -1854,6 +2071,54 @@ export type Database = {
           },
         ]
       }
+      tournament_auction_categories: {
+        Row: {
+          base_price: number
+          category_code: string
+          created_at: string
+          display_name: string
+          display_order: number
+          id: string
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          base_price: number
+          category_code: string
+          created_at?: string
+          display_name: string
+          display_order: number
+          id?: string
+          tournament_id: string
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          category_code?: string
+          created_at?: string
+          display_name?: string
+          display_order?: number
+          id?: string
+          tournament_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_auction_categories_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "public_tournament_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_auction_categories_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournament_branding: {
         Row: {
           background_path: string | null
@@ -2481,6 +2746,7 @@ export type Database = {
       approve_player_registration: {
         Args: {
           p_auction_category?: string
+          p_auction_price_category_id?: string
           p_notes?: string
           p_registration_id: string
         }
@@ -2489,6 +2755,32 @@ export type Database = {
       approve_team_owner_application: {
         Args: { p_application_id: string; p_notes?: string }
         Returns: undefined
+      }
+      auction_player_is_eligible: {
+        Args: { p_player_id: string; p_tournament_id: string }
+        Returns: boolean
+      }
+      auction_request_begin: {
+        Args: {
+          p_auction_id: string
+          p_fingerprint: Json
+          p_operation: string
+          p_request_key: string
+        }
+        Returns: Json
+      }
+      auction_request_finish: {
+        Args: {
+          p_auction_id: string
+          p_operation: string
+          p_request_key: string
+          p_result: Json
+        }
+        Returns: Json
+      }
+      auction_team_finance: {
+        Args: { p_auction_id: string; p_purchase?: number; p_team_id: string }
+        Returns: Json
       }
       award_point: {
         Args: {
@@ -2502,12 +2794,12 @@ export type Database = {
         Args: { p_lot_session_id: string; p_reason: string }
         Returns: undefined
       }
-      get_lot_organizer_state: {
-        Args: { p_lot_session_id: string }
-        Returns: Json
-      }
-      get_lot_public_state: {
-        Args: { p_lot_session_id: string }
+      complete_auction: {
+        Args: {
+          p_auction_id: string
+          p_expected_version: number
+          p_request_key: string
+        }
         Returns: Json
       }
       create_tournament_draft: {
@@ -2522,8 +2814,58 @@ export type Database = {
         }
         Returns: Json
       }
+      emit_auction_event: {
+        Args: { p_auction_id: string; p_event_type: string; p_payload?: Json }
+        Returns: number
+      }
+      emit_lot_event: {
+        Args: {
+          p_card?: number
+          p_event_type: string
+          p_payload?: Json
+          p_session_id: string
+          p_status: string
+          p_team?: string
+          p_turn?: string
+        }
+        Returns: undefined
+      }
       finalize_auction_sale: {
-        Args: { p_auction_id: string; p_auction_player_id: string }
+        Args: {
+          p_auction_id: string
+          p_auction_player_id: string
+          p_expected_player_version: number
+          p_expected_winning_bid_id: string
+          p_request_key: string
+        }
+        Returns: Json
+      }
+      get_auction_organizer_state: {
+        Args: { p_auction_id: string }
+        Returns: Json
+      }
+      get_auction_owner_state: {
+        Args: { p_auction_id: string; p_team_id: string }
+        Returns: Json
+      }
+      get_auction_public_state: {
+        Args: { p_auction_id: string }
+        Returns: Json
+      }
+      get_auction_readiness: {
+        Args: { p_tournament_id: string }
+        Returns: Json
+      }
+      get_lot_organizer_state: {
+        Args: { p_lot_session_id: string }
+        Returns: Json
+      }
+      get_lot_public_state: {
+        Args: { p_lot_session_id: string }
+        Returns: Json
+      }
+      get_public_live_state: {
+        Args: { p_tournament_id: string }
         Returns: Json
       }
       get_tournament_phase5a_configuration: {
@@ -2533,9 +2875,9 @@ export type Database = {
       get_tournament_staff: {
         Args: { p_tournament_id: string }
         Returns: {
-          avatar_path: string | null
+          avatar_path: string
           display_name: string
-          email: string | null
+          email: string
           is_primary_organizer: boolean
           membership_status: string
           roles: string[]
@@ -2557,18 +2899,42 @@ export type Database = {
       is_tournament_member: { Args: { tourn_id: string }; Returns: boolean }
       is_tournament_organizer: { Args: { tourn_id: string }; Returns: boolean }
       mark_auction_player_unsold: {
-        Args: { p_auction_id: string; p_auction_player_id: string }
-        Returns: undefined
+        Args: {
+          p_auction_id: string
+          p_auction_player_id: string
+          p_expected_player_version: number
+          p_request_key: string
+        }
+        Returns: Json
+      }
+      open_next_auction_player: {
+        Args: {
+          p_auction_id: string
+          p_expected_version: number
+          p_request_key: string
+        }
+        Returns: Json
       }
       place_auction_bid: {
         Args: {
           p_amount: number
           p_auction_id: string
           p_auction_player_id: string
-          p_idempotency_key?: string
+          p_expected_highest_bid: number
+          p_expected_player_version: number
+          p_request_key: string
           p_team_id: string
         }
-        Returns: undefined
+        Returns: Json
+      }
+      prepare_auction: { Args: { p_tournament_id: string }; Returns: Json }
+      prepare_lot_session: {
+        Args: {
+          p_lot_type: string
+          p_team_order: string[]
+          p_tournament_id: string
+        }
+        Returns: string
       }
       reject_player_registration: {
         Args: { p_notes?: string; p_registration_id: string }
@@ -2578,25 +2944,51 @@ export type Database = {
         Args: { p_application_id: string; p_notes?: string }
         Returns: undefined
       }
+      remove_tournament_staff_role: {
+        Args: {
+          p_role: string
+          p_target_user_id: string
+          p_tournament_id: string
+        }
+        Returns: Json
+      }
       reopen_player_registration: {
         Args: { p_reason?: string; p_registration_id: string }
         Returns: Json
       }
-      prepare_lot_session: {
+      requeue_auction_player: {
         Args: {
-          p_lot_type: string
-          p_team_order: string[]
-          p_tournament_id: string
+          p_auction_id: string
+          p_auction_player_id: string
+          p_expected_player_version: number
+          p_request_key: string
         }
-        Returns: string
-      }
-      remove_tournament_staff_role: {
-        Args: { p_role: string; p_target_user_id: string; p_tournament_id: string }
         Returns: Json
       }
       revoke_player_approval: {
         Args: { p_reason?: string; p_registration_id: string }
         Returns: Json
+      }
+      save_tournament_stage: {
+        Args: {
+          p_name: string
+          p_qualification_count?: number
+          p_sequence: number
+          p_stage_id: string | null
+          p_stage_type: string
+          p_tournament_id: string
+        }
+        Returns: string
+      }
+      save_volleyball_rule: {
+        Args: {
+          p_set_rules: Json
+          p_sets_to_win: number
+          p_stage_id: string | null
+          p_tournament_id: string
+          p_win_by_two: boolean
+        }
+        Returns: string
       }
       select_lot: {
         Args: {
@@ -2607,9 +2999,32 @@ export type Database = {
         }
         Returns: Json
       }
+      set_auction_lifecycle: {
+        Args: {
+          p_action: string
+          p_auction_id: string
+          p_expected_version: number
+          p_request_key: string
+        }
+        Returns: Json
+      }
+      set_reauction_price: {
+        Args: {
+          p_auction_id: string
+          p_auction_player_id: string
+          p_expected_player_version: number
+          p_new_price: number
+          p_request_key: string
+        }
+        Returns: Json
+      }
       shuffle_lot_session: {
         Args: { p_lot_session_id: string }
         Returns: undefined
+      }
+      special_allocation_lock: {
+        Args: { p_classification: string; p_tournament_id: string }
+        Returns: Json
       }
       start_lot_session: {
         Args: { p_lot_session_id: string }
@@ -2643,6 +3058,18 @@ export type Database = {
         Returns: string
       }
       undo_last_score_event: { Args: { p_match_id: string }; Returns: Json }
+      update_auction_price_categories: {
+        Args: {
+          p_a_name: string
+          p_a_price: number
+          p_b_name: string
+          p_b_price: number
+          p_c_name: string
+          p_c_price: number
+          p_tournament_id: string
+        }
+        Returns: Json
+      }
       update_player_profile: {
         Args: {
           p_date_of_birth?: string
@@ -2654,27 +3081,6 @@ export type Database = {
           p_playing_history?: string
           p_primary_position: string
           p_secondary_position?: string
-        }
-        Returns: string
-      }
-      save_tournament_stage: {
-        Args: {
-          p_name: string
-          p_qualification_count?: number
-          p_sequence: number
-          p_stage_id: string | null
-          p_stage_type: string
-          p_tournament_id: string
-        }
-        Returns: string
-      }
-      save_volleyball_rule: {
-        Args: {
-          p_set_rules: Json
-          p_sets_to_win: number
-          p_stage_id: string | null
-          p_tournament_id: string
-          p_win_by_two: boolean
         }
         Returns: string
       }
@@ -2709,14 +3115,14 @@ export type Database = {
           p_auction_bid_increment?: number
           p_auction_starting_purse?: number
           p_icon_selection_method?: string
-          p_min_squad_size?: number
           p_max_squad_size?: number
           p_max_teams?: number
+          p_min_squad_size?: number
           p_player_registration_enabled: boolean
-          p_team_registration_enabled: boolean
-          p_tournament_id: string
           p_reauction_price_rule?: string
           p_setter_selection_method?: string
+          p_team_registration_enabled: boolean
+          p_tournament_id: string
         }
         Returns: Json
       }
@@ -2736,37 +3142,37 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-    ? R
-    : never
+  ? R
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
-    : never
+    DefaultSchema["Views"])
+  ? (DefaultSchema["Tables"] &
+    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R
+    }
+  ? R
+  : never
+  : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Tables"]
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
@@ -2776,22 +3182,22 @@ export type TablesInsert<
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
+    Insert: infer I
+  }
+  ? I
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
-    : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    Insert: infer I
+  }
+  ? I
+  : never
+  : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Tables"]
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
@@ -2801,22 +3207,22 @@ export type TablesUpdate<
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
+    Update: infer U
+  }
+  ? U
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
-    : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    Update: infer U
+  }
+  ? U
+  : never
+  : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Enums"]
+  | { schema: keyof DatabaseWithoutInternals },
   EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
@@ -2827,13 +3233,13 @@ export type Enums<
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["CompositeTypes"]
+  | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
@@ -2844,15 +3250,11 @@ export type CompositeTypes<
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
 } as const
-
