@@ -1,8 +1,9 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { AssignPlayerButton } from '@/components/organizer/AssignPlayerButton';
+import type { EligiblePlayer } from '@/components/organizer/AssignPlayerModal';
 
 export const metadata: Metadata = {
     title: 'Teams & Squads | Organizer',
@@ -37,17 +38,45 @@ export default async function OrganizerTeamsPage({
         { data: teamsData },
         { data: wallets },
         { data: playersData },
-        { data: salesData }
+        { data: salesData },
+        { data: approvedRegs },
+        { data: liveAuctionPlayers }
     ] = await Promise.all([
         supabase.from('tournaments').select('id, name, status').eq('id', id).single(),
         supabase.from('tournament_settings').select('min_squad_size, max_squad_size').eq('tournament_id', id).single(),
         supabase.from('teams').select('id, name, short_name, logo_path, status').eq('tournament_id', id).order('name'),
         auction ? supabase.from('auction_team_wallets').select('team_id, starting_balance, spent_amount, remaining_balance').eq('auction_id', auction.id) : Promise.resolve({ data: [] }),
         supabase.from('team_players').select('id, team_id, player_id, acquisition_type, acquisition_amount, player_profiles(display_name, photo_path, primary_position, secondary_position)').eq('tournament_id', id).eq('status', 'ACTIVE'),
-        auction ? supabase.from('auction_sales').select('team_id, auction_players!inner(player_id, attempt_number)') : Promise.resolve({ data: [] })
+        auction ? supabase.from('auction_sales').select('team_id, auction_players!inner(player_id, attempt_number)') : Promise.resolve({ data: [] }),
+        supabase.from('player_tournament_registrations').select('id, player_id, status, player_profiles(id, display_name, primary_position, secondary_position, photo_path)').eq('tournament_id', id).eq('status', 'APPROVED'),
+        auction ? supabase.from('auction_players').select('player_id').eq('auction_id', auction.id).eq('status', 'LIVE') : Promise.resolve({ data: [] })
     ]);
 
     if (!tournament) notFound();
+
+    const assignedPlayerIds = new Set((playersData ?? []).map(p => p.player_id));
+    const livePlayerIds = new Set((liveAuctionPlayers ?? []).map(p => p.player_id));
+
+    const eligiblePlayers: EligiblePlayer[] = (approvedRegs ?? [])
+        .filter(r => r.player_profiles && !assignedPlayerIds.has(r.player_id) && !livePlayerIds.has(r.player_id))
+        .map(r => {
+            const prof = r.player_profiles as unknown as {
+                id: string;
+                display_name: string;
+                primary_position: string;
+                secondary_position: string | null;
+                photo_path: string | null;
+            };
+            return {
+                id: r.player_id,
+                registrationId: r.id,
+                displayName: prof.display_name,
+                primaryPosition: prof.primary_position,
+                secondaryPosition: prof.secondary_position,
+                photoPath: prof.photo_path,
+                status: r.status,
+            };
+        });
 
     const teams = (teamsData ?? []).map((t) => {
         const wallet = wallets?.find(w => w.team_id === t.id);
@@ -61,6 +90,8 @@ export default async function OrganizerTeamsPage({
                 } else {
                     label = 'MAIN AUCTION';
                 }
+            } else if (p.acquisition_type === 'MANUAL' || p.acquisition_type === 'MANUAL_ASSIGNMENT') {
+                label = 'MANUAL ASSIGNMENT';
             }
             return {
                 id: p.id,
@@ -113,7 +144,17 @@ export default async function OrganizerTeamsPage({
                         <div key={team.id} className="rounded-2xl border border-border bg-surface shadow-sm overflow-hidden flex flex-col">
                             <div className="p-6 border-b border-border bg-surface-muted/30 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
                                 <div>
-                                    <h2 className="text-xl font-bold text-text-primary">{team.name}</h2>
+                                    <div className="flex items-center gap-4">
+                                        <h2 className="text-xl font-bold text-text-primary">{team.name}</h2>
+                                        <AssignPlayerButton
+                                            tournamentId={id}
+                                            teamId={team.id}
+                                            teamName={team.name}
+                                            currentSquadCount={team.count}
+                                            maxSquadSize={team.max}
+                                            eligiblePlayers={eligiblePlayers}
+                                        />
+                                    </div>
                                     <div className="flex items-center gap-3 mt-2">
                                         <span className="text-sm font-semibold text-text-secondary">{team.count} / {team.max} players</span>
                                         <span className={`px-2.5 py-0.5 rounded-full border text-xs font-bold uppercase tracking-wider ${team.statusColor}`}>

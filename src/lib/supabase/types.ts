@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -2759,6 +2759,14 @@ export type Database = {
       }
     }
     Functions: {
+      assign_player_manually: {
+        Args: {
+          p_tournament_id: string
+          p_team_id: string
+          p_player_id: string
+        }
+        Returns: Json
+      }
       add_existing_player_to_live_auction: {
         Args: { p_auction_id: string; p_registration_id: string }
         Returns: Json

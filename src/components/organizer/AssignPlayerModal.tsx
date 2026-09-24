@@ -1,0 +1,285 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { assignPlayerManuallyAction } from '@/app/actions/squad';
+import {
+    MagnifyingGlassIcon,
+    XMarkIcon,
+    UserIcon,
+    CheckCircleIcon,
+    ExclamationTriangleIcon,
+    ArrowLeftIcon,
+} from '@heroicons/react/24/outline';
+
+export type EligiblePlayer = {
+    id: string; // player_profiles.id
+    registrationId: string;
+    displayName: string;
+    primaryPosition: string;
+    secondaryPosition?: string | null;
+    photoPath?: string | null;
+    status: string;
+};
+
+type AssignPlayerModalProps = {
+    isOpen: boolean;
+    onClose: () => void;
+    tournamentId: string;
+    teamId: string;
+    teamName: string;
+    currentSquadCount: number;
+    maxSquadSize: number;
+    eligiblePlayers: EligiblePlayer[];
+};
+
+export function AssignPlayerModal({
+    isOpen,
+    onClose,
+    tournamentId,
+    teamId,
+    teamName,
+    currentSquadCount,
+    maxSquadSize,
+    eligiblePlayers,
+}: AssignPlayerModalProps) {
+    const router = useRouter();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedPlayer, setSelectedPlayer] = useState<EligiblePlayer | null>(null);
+    const [step, setStep] = useState<'SELECT' | 'CONFIRM'>('SELECT');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+    if (!isOpen) return null;
+
+    const filteredPlayers = eligiblePlayers.filter((p) => {
+        const q = searchQuery.toLowerCase().trim();
+        if (!q) return true;
+        const nameMatch = p.displayName.toLowerCase().includes(q);
+        const posMatch = p.primaryPosition.toLowerCase().includes(q) || (p.secondaryPosition?.toLowerCase().includes(q) ?? false);
+        return nameMatch || posMatch;
+    });
+
+    const handleSelectPlayer = (player: EligiblePlayer) => {
+        setSelectedPlayer(player);
+        setStep('CONFIRM');
+        setErrorMsg(null);
+    };
+
+    const handleConfirmAssignment = async () => {
+        if (!selectedPlayer) return;
+
+        setIsSubmitting(true);
+        setErrorMsg(null);
+
+        const res = await assignPlayerManuallyAction(tournamentId, teamId, selectedPlayer.id);
+
+        setIsSubmitting(false);
+
+        if (!res.success) {
+            setErrorMsg(res.error || 'Failed to complete manual player assignment.');
+            return;
+        }
+
+        // Reset and close
+        setSelectedPlayer(null);
+        setStep('SELECT');
+        onClose();
+        router.refresh();
+    };
+
+    const handleClose = () => {
+        if (isSubmitting) return;
+        setSelectedPlayer(null);
+        setStep('SELECT');
+        setErrorMsg(null);
+        setSearchQuery('');
+        onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm sm:p-6 overflow-y-auto">
+            <div
+                className="relative w-full max-w-xl rounded-3xl border border-white/15 bg-[#17132a] p-6 shadow-2xl text-white my-8 max-h-[90vh] flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                    <div className="flex items-center gap-3">
+                        {step === 'CONFIRM' && (
+                            <button
+                                onClick={() => setStep('SELECT')}
+                                disabled={isSubmitting}
+                                className="rounded-xl p-1.5 text-white/60 hover:bg-white/10 hover:text-white transition"
+                                title="Back to player search"
+                            >
+                                <ArrowLeftIcon className="w-5 h-5" />
+                            </button>
+                        )}
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-300">
+                                Organizer Action
+                            </p>
+                            <h2 className="text-xl font-black tracking-tight text-white">
+                                {step === 'SELECT' ? `Assign Player to ${teamName}` : 'Confirm Manual Assignment'}
+                            </h2>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleClose}
+                        disabled={isSubmitting}
+                        className="rounded-xl p-2 text-white/50 hover:bg-white/10 hover:text-white transition"
+                    >
+                        <XMarkIcon className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {errorMsg && (
+                    <div className="mt-4 rounded-2xl border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-200 flex items-start gap-3">
+                        <ExclamationTriangleIcon className="w-5 h-5 shrink-0 text-rose-300 mt-0.5" />
+                        <div>{errorMsg}</div>
+                    </div>
+                )}
+
+                {/* STEP 1: Search and Select Player */}
+                {step === 'SELECT' && (
+                    <div className="mt-4 flex-1 flex flex-col min-h-0">
+                        <div className="relative">
+                            <MagnifyingGlassIcon className="absolute left-4 top-3.5 h-5 w-5 text-white/40" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search player by name or position..."
+                                className="w-full rounded-2xl border border-white/15 bg-white/5 py-3 pl-11 pr-4 text-sm font-medium text-white placeholder-white/35 focus:border-fuchsia-400 focus:outline-none focus:ring-1 focus:ring-fuchsia-400"
+                            />
+                        </div>
+
+                        <div className="mt-4 flex-1 overflow-y-auto space-y-2 pr-1 max-h-[350px]">
+                            {filteredPlayers.length === 0 ? (
+                                <div className="rounded-2xl border border-dashed border-white/10 bg-white/3 p-8 text-center text-sm text-white/50">
+                                    {searchQuery ? 'No matching eligible players found.' : 'No eligible unassigned players available.'}
+                                </div>
+                            ) : (
+                                filteredPlayers.map((player) => (
+                                    <button
+                                        key={player.id}
+                                        onClick={() => handleSelectPlayer(player)}
+                                        className="w-full flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/3 p-3.5 text-left transition hover:border-fuchsia-400/50 hover:bg-fuchsia-400/10 group"
+                                    >
+                                        <div className="flex items-center gap-3.5 min-w-0">
+                                            {player.photoPath ? (
+                                                <img
+                                                    src={player.photoPath}
+                                                    alt={player.displayName}
+                                                    className="h-11 w-11 shrink-0 rounded-xl object-cover border border-white/10"
+                                                />
+                                            ) : (
+                                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-fuchsia-400/10 text-fuchsia-300 border border-fuchsia-400/20">
+                                                    <UserIcon className="h-6 w-6" />
+                                                </div>
+                                            )}
+                                            <div className="min-w-0">
+                                                <p className="truncate font-bold text-white text-sm group-hover:text-fuchsia-200">
+                                                    {player.displayName}
+                                                </p>
+                                                <p className="truncate text-xs text-white/50">
+                                                    {player.primaryPosition.replaceAll('_', ' ')}
+                                                    {player.secondaryPosition ? ` · ${player.secondaryPosition.replaceAll('_', ' ')}` : ''}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span className="shrink-0 rounded-xl border border-fuchsia-400/30 bg-fuchsia-400/10 px-3 py-1.5 text-xs font-bold text-fuchsia-200 group-hover:bg-fuchsia-400 group-hover:text-[#17132a] transition">
+                                            Select
+                                        </span>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* STEP 2: Review and Confirm */}
+                {step === 'CONFIRM' && selectedPlayer && (
+                    <div className="mt-4 flex-1 space-y-5">
+                        <div className="rounded-2xl border border-white/10 bg-black/20 p-5 space-y-4">
+                            <div className="flex items-center gap-4">
+                                {selectedPlayer.photoPath ? (
+                                    <img
+                                        src={selectedPlayer.photoPath}
+                                        alt={selectedPlayer.displayName}
+                                        className="h-14 w-14 shrink-0 rounded-2xl object-cover border border-white/10"
+                                    />
+                                ) : (
+                                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-fuchsia-400/10 text-fuchsia-300 border border-fuchsia-400/20">
+                                        <UserIcon className="h-8 w-8" />
+                                    </div>
+                                )}
+                                <div>
+                                    <h3 className="text-lg font-bold text-white">{selectedPlayer.displayName}</h3>
+                                    <p className="text-xs text-fuchsia-300/90 font-semibold">
+                                        {selectedPlayer.primaryPosition.replaceAll('_', ' ')}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 text-xs pt-2 border-t border-white/10">
+                                <div>
+                                    <p className="text-white/40 uppercase font-bold tracking-wider text-[10px]">Target Team</p>
+                                    <p className="mt-1 font-bold text-white text-sm">{teamName}</p>
+                                </div>
+                                <div>
+                                    <p className="text-white/40 uppercase font-bold tracking-wider text-[10px]">Assignment Type</p>
+                                    <p className="mt-1 font-bold text-emerald-300 text-sm">Manual Assignment</p>
+                                </div>
+                                <div>
+                                    <p className="text-white/40 uppercase font-bold tracking-wider text-[10px]">Cost / Purse Impact</p>
+                                    <p className="mt-1 font-bold text-white text-sm">₹0 / No purse deduction</p>
+                                </div>
+                                <div>
+                                    <p className="text-white/40 uppercase font-bold tracking-wider text-[10px]">Squad Expansion</p>
+                                    <p className="mt-1 font-bold text-white text-sm">
+                                        {currentSquadCount} / {maxSquadSize} → <span className="text-fuchsia-300">{currentSquadCount + 1} / {maxSquadSize}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-xs text-emerald-200 flex items-start gap-3">
+                            <CheckCircleIcon className="w-5 h-5 shrink-0 text-emerald-300 mt-0.5" />
+                            <p className="leading-relaxed">
+                                This assignment does not use the team&apos;s auction purse. The player will be placed directly into {teamName}&apos;s squad under <strong className="text-white">Manual Assignment</strong>.
+                            </p>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setStep('SELECT')}
+                                disabled={isSubmitting}
+                                className="rounded-2xl border border-white/15 px-5 py-3 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white transition"
+                            >
+                                Change Player
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleConfirmAssignment}
+                                disabled={isSubmitting}
+                                className="rounded-2xl bg-fuchsia-400 px-6 py-3 text-sm font-black text-[#17132a] hover:bg-fuchsia-300 transition disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#17132a] border-t-transparent" />
+                                        Assigning...
+                                    </>
+                                ) : (
+                                    'Confirm Assignment'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
