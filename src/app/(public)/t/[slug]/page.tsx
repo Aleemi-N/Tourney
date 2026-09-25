@@ -281,24 +281,21 @@ export default async function TournamentPublicPage({ params }: Props) {
         )}
 
         {/* Live hub CTA */}
-        {(tournament.status === 'LIVE' || tournament.status === 'PREPARATION') && (
-          <Link
+        <Link
             href={`/t/${slug}/live`}
             className="mb-6 flex items-center gap-4 rounded-xl p-5 transition-colors hover:bg-white/[0.05]"
             style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}
           >
             <Radio className="h-7 w-7 shrink-0 text-red-400 animate-pulse" aria-hidden="true" />
             <div className="min-w-0">
-              <p className="font-bold text-text-primary">Live Now</p>
+              <p className="font-bold text-text-primary">{tournament.status === 'LIVE' ? 'Live Now' : 'Live Hub'}</p>
               <p className="mt-0.5 text-text-secondary text-sm truncate">Watch live matches, auction, and lot draw</p>
             </div>
             <span className="ml-auto text-sm text-text-muted shrink-0">→</span>
           </Link>
-        )}
 
         {/* Navigation tiles */}
-        {(tournament.status === 'LIVE' || tournament.status === 'COMPLETED') && (
-          <section className="mb-10" aria-labelledby="explore-heading">
+        <section className="mb-10" aria-labelledby="explore-heading">
             <h2 id="explore-heading" className="text-xl font-bold text-text-primary mb-4">Explore</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[
@@ -321,7 +318,6 @@ export default async function TournamentPublicPage({ params }: Props) {
               ))}
             </div>
           </section>
-        )}
       </main>
 
       <LandingFooter />

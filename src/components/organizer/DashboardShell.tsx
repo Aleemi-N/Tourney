@@ -14,7 +14,8 @@ import {
   ArrowLeftIcon,
   BanknotesIcon,
   ShieldCheckIcon,
-  CalendarIcon
+  CalendarIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 import { VolleyballIcon } from '../landing/VolleyballIcon';
 import { OrganizerLinkPending } from './OrganizerLinkPending';
@@ -49,6 +50,7 @@ export function DashboardShell({ children, user, lotEnabledTournamentIds = [] }:
     { name: 'Auction', href: `/organizer/tournaments/${tournamentId}/auction`, icon: BanknotesIcon, disabled: false },
     { name: 'Teams & Squads', href: `/organizer/tournaments/${tournamentId}/teams`, icon: ShieldCheckIcon, disabled: false },
     { name: 'Fixtures', href: `/organizer/tournaments/${tournamentId}/fixtures`, icon: CalendarIcon, disabled: false },
+    { name: 'Standings', href: `/organizer/tournaments/${tournamentId}/standings`, icon: ChartBarIcon, disabled: false },
     { name: 'Settings', href: `/organizer/tournaments/${tournamentId}/settings`, icon: Cog6ToothIcon, disabled: false },
   ] : [];
 

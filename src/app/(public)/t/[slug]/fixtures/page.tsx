@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { getTournamentHeader } from '@/lib/tournament-header';
 import { PublicTournamentFrame } from '@/components/public/PublicTournamentFrame';
 import { TournamentNotFound, EmptyState } from '@/components/public/TournamentNotFound';
 import { TOURNY_PRODUCTION_ORIGIN } from '@/lib/public-tournament-metadata';
-import { MapPin, Clock } from 'lucide-react';
+import { MapPin, Clock, ExternalLink, Tv } from 'lucide-react';
 
 
 type Props = { params: Promise<{ slug: string }> };
@@ -47,13 +48,15 @@ export default async function PublicFixturesPage({ params }: Props) {
 
   const supabase = await createClient();
 
-  const { data: fixtures } = await supabase
+  const { data: fixtureRows } = await supabase
     .from('public_fixture_view')
-    .select('id,match_number,scheduled_at,venue,court,status,home_team_id,away_team_id,total_home_score,total_away_score,home_sets_won,away_sets_won,winner_team_id')
+    .select('id,match_number,round_number,bracket_position,program_order,bracket_match_type,scheduled_at,venue,court,status,home_team_id,away_team_id')
     .eq('tournament_id', tournament.id)
     .neq('status', 'COMPLETED')
-    .order('scheduled_at', { ascending: true, nullsFirst: false })
-    .order('match_number', { ascending: true });
+    .order('round_number', { ascending: true, nullsFirst: false })
+    .order('program_order', { ascending: true });
+
+  const fixtures = fixtureRows ?? [];
 
   const teamIds = [...new Set(
     (fixtures ?? []).flatMap((f) => [f.home_team_id, f.away_team_id]).filter(Boolean)
@@ -64,6 +67,12 @@ export default async function PublicFixturesPage({ params }: Props) {
 
   const teamName = (id: string | null) => teams?.find((t) => t.id === id)?.name ?? 'TBD';
   const teamShort = (id: string | null) => teams?.find((t) => t.id === id)?.short_name ?? null;
+  const fixturesByRound = new Map<number, NonNullable<typeof fixtures>>();
+  for (const fixture of fixtures ?? []) {
+    const round = fixture.round_number ?? 0;
+    fixturesByRound.set(round, [...(fixturesByRound.get(round) ?? []), fixture]);
+  }
+  const rounds = [...fixturesByRound.entries()].sort(([a], [b]) => a - b);
 
   return (
     <PublicTournamentFrame slug={slug} name={tournament.name} logoUrl={tournament.logoUrl} status={tournament.status}>
@@ -75,8 +84,14 @@ export default async function PublicFixturesPage({ params }: Props) {
       {(!fixtures || fixtures.length === 0) ? (
         <EmptyState text="Fixtures will appear once the organizer generates the schedule." />
       ) : (
-        <div className="space-y-3">
-          {fixtures.map((fixture) => {
+        <div className="space-y-8">
+          {rounds.map(([round, roundFixtures]) => (
+            <section key={round} aria-labelledby={`round-${round}`}>
+              <h2 id={`round-${round}`} className="mb-3 text-lg font-bold text-text-primary">
+                {Number(round) > 0 ? `Round ${round}` : 'Fixtures'}
+              </h2>
+              <div className="space-y-3">
+          {roundFixtures.map((fixture) => {
             const statusCfg = STATUS_STYLE[fixture.status ?? 'SCHEDULED'] ?? STATUS_STYLE.SCHEDULED;
             const home = teamName(fixture.home_team_id);
             const away = teamName(fixture.away_team_id);
@@ -97,7 +112,7 @@ export default async function PublicFixturesPage({ params }: Props) {
                   {/* Match label + status */}
                   <div className="flex items-center gap-2">
                     <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                      Match {fixture.match_number ?? '—'}
+                      #{fixture.program_order} · Match {fixture.match_number ?? '—'} · {(fixture.bracket_match_type ?? 'STANDARD').replace('_', ' ')}
                     </p>
                     <span
                       className="rounded-full px-2 py-0.5 text-xs font-bold"
@@ -150,9 +165,23 @@ export default async function PublicFixturesPage({ params }: Props) {
                     <span>{[fixture.venue, fixture.court].filter(Boolean).join(' · ')}</span>
                   </div>
                 )}
+
+                {fixture.home_team_id && fixture.away_team_id && (
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-white/[0.07] pt-4">
+                    <Link href={`/t/${slug}/match/${fixture.id}`} className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-3 py-2 text-xs font-semibold hover:bg-white/[0.1]">
+                      <ExternalLink className="h-3.5 w-3.5" /> Match view
+                    </Link>
+                    <Link href={`/t/${slug}/match/${fixture.id}/tv`} className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-3 py-2 text-xs font-semibold hover:bg-white/[0.1]">
+                      <Tv className="h-3.5 w-3.5" /> TV scoreboard
+                    </Link>
+                  </div>
+                )}
               </article>
             );
           })}
+              </div>
+            </section>
+          ))}
         </div>
       )}
     </PublicTournamentFrame>

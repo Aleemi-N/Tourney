@@ -173,6 +173,13 @@ export default async function ProfilePage() {
     supabase.from('tournaments').select('id').eq('created_by', user.id).limit(1).maybeSingle(),
   ]);
   const isGlobalOrganizer = Boolean(organizerAccessMemberships?.length || createdTournament);
+  const { data: scorerAccess } = await supabase
+    .from('tournament_members')
+    .select('tournament_id')
+    .eq('user_id', user.id)
+    .eq('role', 'SCORER')
+    .eq('status', 'ACTIVE')
+    .limit(1);
 
   const participations = Array.from(participationMap.values());
   const accountPhotoUrl = resolvePublicStorageUrl(
@@ -221,6 +228,11 @@ export default async function ProfilePage() {
                 Go to Team Portal &rarr;
               </Link>
             )}
+            {scorerAccess?.length ? (
+              <Link href="/scorer" className="text-primary hover:text-primary-hover font-medium text-sm transition-colors">
+                Open Scorer Workspace &rarr;
+              </Link>
+            ) : null}
           </div>
         </div>
 

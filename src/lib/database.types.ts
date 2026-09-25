@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       auction_bids: {
@@ -815,13 +790,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "lot_turns_selected_entry_id_fkey"
-            columns: ["selected_entry_id"]
-            isOneToOne: false
-            referencedRelation: "public_revealed_lot_state"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "lot_turns_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
@@ -833,6 +801,65 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_order_scopes: {
+        Row: {
+          id: string
+          revision: number
+          round_number: number | null
+          stage_id: string | null
+          tournament_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          revision?: number
+          round_number?: number | null
+          stage_id?: string | null
+          tournament_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          revision?: number
+          round_number?: number | null
+          stage_id?: string | null
+          tournament_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_order_scopes_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_order_scopes_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "public_tournament_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_order_scopes_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_order_scopes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -958,14 +985,18 @@ export type Database = {
       matches: {
         Row: {
           away_team_id: string | null
+          bracket_match_type: string
           bracket_position: number | null
           court: string | null
           created_at: string
           home_team_id: string | null
           id: string
+          loser_next_match_id: string | null
+          loser_next_match_slot: string | null
           match_number: number | null
           next_match_id: string | null
           next_match_slot: string | null
+          program_order: number
           round_number: number | null
           scheduled_at: string | null
           stage_id: string | null
@@ -977,14 +1008,18 @@ export type Database = {
         }
         Insert: {
           away_team_id?: string | null
+          bracket_match_type?: string
           bracket_position?: number | null
           court?: string | null
           created_at?: string
           home_team_id?: string | null
           id?: string
+          loser_next_match_id?: string | null
+          loser_next_match_slot?: string | null
           match_number?: number | null
           next_match_id?: string | null
           next_match_slot?: string | null
+          program_order: number
           round_number?: number | null
           scheduled_at?: string | null
           stage_id?: string | null
@@ -996,14 +1031,18 @@ export type Database = {
         }
         Update: {
           away_team_id?: string | null
+          bracket_match_type?: string
           bracket_position?: number | null
           court?: string | null
           created_at?: string
           home_team_id?: string | null
           id?: string
+          loser_next_match_id?: string | null
+          loser_next_match_slot?: string | null
           match_number?: number | null
           next_match_id?: string | null
           next_match_slot?: string | null
+          program_order?: number
           round_number?: number | null
           scheduled_at?: string | null
           stage_id?: string | null
@@ -1040,6 +1079,20 @@ export type Database = {
             columns: ["home_team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_loser_next_match_id_fkey"
+            columns: ["loser_next_match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_loser_next_match_id_fkey"
+            columns: ["loser_next_match_id"]
+            isOneToOne: false
+            referencedRelation: "public_fixture_view"
             referencedColumns: ["id"]
           },
           {
@@ -1404,6 +1457,46 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      progression_plan_seeds: {
+        Row: {
+          plan_id: string
+          seed: number
+          team_id: string
+        }
+        Insert: {
+          plan_id: string
+          seed: number
+          team_id: string
+        }
+        Update: {
+          plan_id?: string
+          seed?: number
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progression_plan_seeds_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_progression_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "progression_plan_seeds_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "public_team_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "progression_plan_seeds_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       purse_transactions: {
         Row: {
@@ -2253,6 +2346,87 @@ export type Database = {
           },
         ]
       }
+      tournament_progression_plans: {
+        Row: {
+          applied_at: string
+          created_at: string
+          created_by: string
+          decision: string
+          id: string
+          idempotency_key: string
+          include_third_place: boolean
+          source_stage_id: string
+          standings_revision: Json
+          status: string
+          target_stage_id: string | null
+          tournament_id: string
+        }
+        Insert: {
+          applied_at?: string
+          created_at?: string
+          created_by: string
+          decision: string
+          id?: string
+          idempotency_key: string
+          include_third_place?: boolean
+          source_stage_id: string
+          standings_revision: Json
+          status?: string
+          target_stage_id?: string | null
+          tournament_id: string
+        }
+        Update: {
+          applied_at?: string
+          created_at?: string
+          created_by?: string
+          decision?: string
+          id?: string
+          idempotency_key?: string
+          include_third_place?: boolean
+          source_stage_id?: string
+          standings_revision?: Json
+          status?: string
+          target_stage_id?: string | null
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_progression_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_progression_plans_source_stage_id_fkey"
+            columns: ["source_stage_id"]
+            isOneToOne: true
+            referencedRelation: "tournament_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_progression_plans_target_stage_id_fkey"
+            columns: ["target_stage_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_progression_plans_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "public_tournament_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_progression_plans_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournament_settings: {
         Row: {
           auction_base_price: number | null
@@ -2541,12 +2715,15 @@ export type Database = {
         Row: {
           away_sets_won: number | null
           away_team_id: string | null
+          bracket_match_type: string | null
+          bracket_position: number | null
           court: string | null
           home_sets_won: number | null
           home_team_id: string | null
           id: string | null
           match_number: number | null
-          next_match_id: string | null
+          program_order: number | null
+          round_number: number | null
           scheduled_at: string | null
           stage_id: string | null
           status: string | null
@@ -2583,20 +2760,6 @@ export type Database = {
             columns: ["home_team_id"]
             isOneToOne: false
             referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "matches_next_match_id_fkey"
-            columns: ["next_match_id"]
-            isOneToOne: false
-            referencedRelation: "matches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "matches_next_match_id_fkey"
-            columns: ["next_match_id"]
-            isOneToOne: false
-            referencedRelation: "public_fixture_view"
             referencedColumns: ["id"]
           },
           {
@@ -2679,41 +2842,6 @@ export type Database = {
           },
         ]
       }
-      public_revealed_lot_state: {
-        Row: {
-          id: string | null
-          lot_number: number | null
-          lot_session_id: string | null
-          player_id: string | null
-          player_name: string | null
-          selected_at: string | null
-          selected_by_team_id: string | null
-          status: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "lot_entries_lot_session_id_fkey"
-            columns: ["lot_session_id"]
-            isOneToOne: false
-            referencedRelation: "lot_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lot_entries_selected_by_team_id_fkey"
-            columns: ["selected_by_team_id"]
-            isOneToOne: false
-            referencedRelation: "public_team_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lot_entries_selected_by_team_id_fkey"
-            columns: ["selected_by_team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       public_team_view: {
         Row: {
           id: string | null
@@ -2765,20 +2893,21 @@ export type Database = {
       }
     }
     Functions: {
-      assign_player_manually: {
-        Args: {
-          p_tournament_id: string
-          p_team_id: string
-          p_player_id: string
-        }
-        Returns: Json
-      }
       add_existing_player_to_live_auction: {
         Args: { p_auction_id: string; p_registration_id: string }
         Returns: Json
       }
       add_tournament_staff_role: {
         Args: { p_email: string; p_role: string; p_tournament_id: string }
+        Returns: Json
+      }
+      apply_league_progression: {
+        Args: {
+          p_decision: string
+          p_idempotency_key: string
+          p_include_third_place: boolean
+          p_stage_id: string
+        }
         Returns: Json
       }
       approve_player_registration: {
@@ -2796,6 +2925,14 @@ export type Database = {
       }
       assign_match_scorer: {
         Args: { p_match_id: string; p_scorer_user_id: string }
+        Returns: Json
+      }
+      assign_player_manually: {
+        Args: {
+          p_player_id: string
+          p_team_id: string
+          p_tournament_id: string
+        }
         Returns: Json
       }
       auction_player_is_eligible: {
@@ -2883,7 +3020,6 @@ export type Database = {
         Returns: Json
       }
       generate_stage_fixtures: { Args: { p_stage_id: string }; Returns: Json }
-      get_stage_standings: { Args: { p_stage_id: string }; Returns: Json }
       get_auction_organizer_state: {
         Args: { p_auction_id: string }
         Returns: Json
@@ -2915,6 +3051,7 @@ export type Database = {
       get_public_match_state: { Args: { p_match_id: string }; Returns: Json }
       get_public_standings: { Args: { p_tournament_id: string }; Returns: Json }
       get_scorer_match_state: { Args: { p_match_id: string }; Returns: Json }
+      get_stage_standings: { Args: { p_stage_id: string }; Returns: Json }
       get_tournament_phase5a_configuration: {
         Args: { p_tournament_id: string }
         Returns: Json
@@ -2931,6 +3068,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      initialize_match_sets: {
+        Args: { p_match_id: string }
+        Returns: undefined
+      }
       initialize_organizer_onboarding: {
         Args: { p_full_name: string; p_org_name: string; p_org_slug: string }
         Returns: Json
@@ -2938,7 +3079,6 @@ export type Database = {
       is_assigned_scorer: { Args: { m_id: string }; Returns: boolean }
       is_org_member: { Args: { org_id: string }; Returns: boolean }
       is_organization_admin: { Args: { org_id: string }; Returns: boolean }
-      is_primary_tournament_organizer: { Args: { tourn_id: string }; Returns: boolean }
       is_player_in_public_tournament: {
         Args: { p_id: string }
         Returns: boolean
@@ -2949,6 +3089,10 @@ export type Database = {
       }
       is_player_registered_in_organizer_tournament: {
         Args: { p_id: string }
+        Returns: boolean
+      }
+      is_primary_tournament_organizer: {
+        Args: { tourn_id: string }
         Returns: boolean
       }
       is_team_owner: { Args: { t_id: string }; Returns: boolean }
@@ -2992,6 +3136,14 @@ export type Database = {
         }
         Returns: string
       }
+      preview_league_progression: {
+        Args: {
+          p_decision: string
+          p_include_third_place?: boolean
+          p_stage_id: string
+        }
+        Returns: Json
+      }
       quick_add_player_to_live_auction: {
         Args: {
           p_auction_id: string
@@ -3025,12 +3177,18 @@ export type Database = {
         Args: { p_name: string; p_team_id: string }
         Returns: Json
       }
-      save_standings_rules: {
-        Args: { p_loss_points: number; p_stage_id: string; p_tie_break_rules: Json; p_win_points: number }
-        Returns: Json
-      }
       reopen_player_registration: {
         Args: { p_reason?: string; p_registration_id: string }
+        Returns: Json
+      }
+      reorder_matches: {
+        Args: {
+          p_expected_revision: number
+          p_ordered_match_ids: string[]
+          p_round_number: number | null
+          p_stage_id: string | null
+          p_tournament_id: string
+        }
         Returns: Json
       }
       requeue_auction_player: {
@@ -3047,12 +3205,21 @@ export type Database = {
         Args: { p_reason?: string; p_registration_id: string }
         Returns: Json
       }
+      save_standings_rules: {
+        Args: {
+          p_loss_points: number
+          p_stage_id: string
+          p_tie_break_rules: Json
+          p_win_points: number
+        }
+        Returns: Json
+      }
       save_tournament_stage: {
         Args: {
           p_name: string
           p_qualification_count?: number
           p_sequence: number
-          p_stage_id: string
+          p_stage_id: string | null
           p_stage_type: string
           p_tournament_id: string
         }
@@ -3148,6 +3315,16 @@ export type Database = {
         }
         Returns: Json
       }
+      update_match_schedule: {
+        Args: {
+          p_court?: string
+          p_match_id: string
+          p_scheduled_at: string | null
+          p_status?: string
+          p_venue?: string
+        }
+        Returns: Json
+      }
       update_player_profile: {
         Args: {
           p_date_of_birth?: string
@@ -3172,10 +3349,6 @@ export type Database = {
           p_tournament_id: string
           p_venue?: string
         }
-        Returns: Json
-      }
-      update_match_schedule: {
-        Args: { p_court?: string | null; p_match_id: string; p_scheduled_at?: string | null; p_status?: string | null; p_venue?: string | null }
         Returns: Json
       }
       update_tournament_draft: {
@@ -3336,9 +3509,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
