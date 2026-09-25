@@ -333,7 +333,10 @@ AS $$
 DECLARE v_team_id uuid; v_win_points integer:=2; v_loss_points integer:=0;
 BEGIN
   IF NEW.stage_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.tournament_stages WHERE id=NEW.stage_id AND stage_type='LEAGUE') THEN RETURN NEW; END IF;
-  SELECT COALESCE(win_points,2),COALESCE(loss_points,0) INTO v_win_points,v_loss_points FROM public.standings_rules WHERE stage_id=NEW.stage_id;
+  SELECT
+    COALESCE((SELECT win_points FROM public.standings_rules WHERE stage_id=NEW.stage_id),2),
+    COALESCE((SELECT loss_points FROM public.standings_rules WHERE stage_id=NEW.stage_id),0)
+  INTO v_win_points,v_loss_points;
   FOR v_team_id IN SELECT id FROM public.teams WHERE tournament_id=NEW.tournament_id AND status='ACTIVE' LOOP
     INSERT INTO public.standings(tournament_id,stage_id,team_id,played,won,lost,league_points,sets_won,sets_lost,points_for,points_against)
     SELECT NEW.tournament_id,NEW.stage_id,v_team_id,
