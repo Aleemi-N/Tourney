@@ -3,7 +3,7 @@
 /**
  * PublicMatchLive — Client component for live match spectating.
  *
- * Subscribes to the score_events table via Supabase Realtime to receive
+ * Subscribes to the match_sets table via Supabase Realtime to receive
  * live score updates. On each event it re-fetches the authoritative state
  * from get_public_match_state (never trusts event payloads for score values).
  *
@@ -88,7 +88,7 @@ export function PublicMatchLive({ matchId, initialState, tvMode = false }: Props
       .channel(`public-match-${matchId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'score_events', filter: `match_id=eq.${matchId}` },
+        { event: '*', schema: 'public', table: 'match_sets', filter: `match_id=eq.${matchId}` },
         () => { void refresh(); }
       )
       .on(
@@ -265,8 +265,8 @@ export function PublicMatchLive({ matchId, initialState, tvMode = false }: Props
               isCompleted
                 ? { background: 'rgba(34,197,94,0.12)', color: '#4ade80' }
                 : match.status === 'LIVE'
-                ? { background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }
-                : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.55)' }
+                  ? { background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }
+                  : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.55)' }
             }
           >
             {isCompleted ? '✓ Completed' : match.status === 'LIVE' ? '● Live' : match.status}
