@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { PublicLandingNav } from '@/components/landing/PublicLandingNav';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { VolleyballIcon } from '@/components/landing/VolleyballIcon';
-import { CalendarDays, MapPin, Users, Trophy, Clock, Radio } from 'lucide-react';
+import { CalendarDays, MapPin, Users, Trophy, Clock, Radio, BarChart2, List } from 'lucide-react';
 import { buildTournamentMetadata } from '@/lib/public-tournament-metadata';
 
 type Props = {
@@ -280,17 +280,47 @@ export default async function TournamentPublicPage({ params }: Props) {
           </section>
         )}
 
-        {/* Live hub */}
-        {(tournament.status === 'LIVE' || tournament.status === 'COMPLETED') && (
+        {/* Live hub CTA */}
+        {(tournament.status === 'LIVE' || tournament.status === 'PREPARATION') && (
           <Link
             href={`/t/${slug}/live`}
-            className="block rounded-xl p-6 text-center transition-colors hover:bg-white/[0.06]"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+            className="mb-6 flex items-center gap-4 rounded-xl p-5 transition-colors hover:bg-white/[0.05]"
+            style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}
           >
-            <Radio className="h-8 w-8 text-primary mx-auto mb-3" aria-hidden="true" />
-            <p className="font-bold text-text-primary">Open Live Tournament</p>
-            <p className="mt-1 text-text-secondary text-sm">Watch the current Lot Draw and revealed selections.</p>
+            <Radio className="h-7 w-7 shrink-0 text-red-400 animate-pulse" aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="font-bold text-text-primary">Live Now</p>
+              <p className="mt-0.5 text-text-secondary text-sm truncate">Watch live matches, auction, and lot draw</p>
+            </div>
+            <span className="ml-auto text-sm text-text-muted shrink-0">→</span>
           </Link>
+        )}
+
+        {/* Navigation tiles */}
+        {(tournament.status === 'LIVE' || tournament.status === 'COMPLETED') && (
+          <section className="mb-10" aria-labelledby="explore-heading">
+            <h2 id="explore-heading" className="text-xl font-bold text-text-primary mb-4">Explore</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {[
+                { label: 'Fixtures',  path: 'fixtures', icon: CalendarDays, desc: 'Upcoming matches' },
+                { label: 'Results',   path: 'results',  icon: List,         desc: 'Completed scores' },
+                { label: 'Table',     path: 'table',    icon: BarChart2,    desc: 'League standings' },
+                { label: 'Teams',     path: 'teams',    icon: Users,        desc: 'All teams' },
+                { label: 'Players',   path: 'players',  icon: Users,        desc: 'Player roster' },
+              ].map(({ label, path, icon: Icon, desc }) => (
+                <Link
+                  key={path}
+                  href={`/t/${slug}/${path}`}
+                  className="flex flex-col gap-2 rounded-xl p-4 transition-colors hover:bg-white/[0.05]"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
+                  <p className="font-bold text-text-primary text-sm">{label}</p>
+                  <p className="text-xs text-text-muted">{desc}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
       </main>
 
