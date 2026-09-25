@@ -1,4 +1,122 @@
+import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
+import { getTournamentHeader } from '@/lib/tournament-header';
 import { PublicTournamentFrame } from '@/components/public/PublicTournamentFrame';
+import { TournamentNotFound, EmptyState } from '@/components/public/TournamentNotFound';
+import { TOURNY_PRODUCTION_ORIGIN } from '@/lib/public-tournament-metadata';
+import Image from 'next/image';
+import { MapPin } from 'lucide-react';
 
-export default async function PublicTeamsPage({ params }: { params: Promise<{ slug: string }> }) { const { slug } = await params; const supabase = await createClient(); const { data: tournament } = await supabase.from('tournaments').select('id,name').eq('slug', slug).eq('is_public', true).maybeSingle(); if (!tournament) return <div className="p-10 text-white">Tournament not found.</div>; const { data: teams } = await supabase.from('public_team_view').select('id,name,short_name,place').eq('tournament_id', tournament.id).order('name'); return <PublicTournamentFrame slug={slug} name={tournament.name}><p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-200/70">Tournament teams</p><h1 className="mt-3 text-4xl font-black">Teams</h1><div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{teams?.map((team) => <article key={team.id} className="rounded-2xl border border-white/10 bg-white/3 p-5"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-fuchsia-300/10 text-sm font-black text-fuchsia-100">{(team.short_name ?? team.name ?? 'TM').slice(0, 3).toUpperCase()}</div><h2 className="mt-5 text-xl font-black">{team.name}</h2><p className="mt-1 text-sm text-white/45">{team.place ?? 'Tournament team'}</p></article>)}</div>{(!teams || teams.length === 0) && <p className="mt-8 text-sm text-white/55">Teams will appear after registration.</p>}</PublicTournamentFrame>; }
+type Props = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const t = await getTournamentHeader(slug);
+  if (!t) return { title: 'Tournament Not Found | Tourny', robots: { index: false, follow: false } };
+  const title = `${t.name} — Teams`;
+  const description = `All teams competing in ${t.name}.`;
+  const canonical = new URL(`/t/${slug}/teams`, TOURNY_PRODUCTION_ORIGIN);
+  return {
+    title: { absolute: title },
+    description,
+    alternates: { canonical },
+    openGraph: { title: { absolute: title }, description, url: canonical, siteName: 'Tourny' },
+  };
+}
+
+export default async function PublicTeamsPage({ params }: Props) {
+  const { slug } = await params;
+  const tournament = await getTournamentHeader(slug);
+  if (!tournament) return <TournamentNotFound />;
+
+  const supabase = await createClient();
+  const { data: teams } = await supabase
+    .from('public_team_view')
+    .select('id,name,short_name,place,logo_path,primary_color,secondary_color')
+    .eq('tournament_id', tournament.id)
+    .order('name');
+
+  return (
+    <PublicTournamentFrame slug={slug} name={tournament.name} logoUrl={tournament.logoUrl} status={tournament.status}>
+      <div className="mb-8">
+        <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(165,180,252,0.7)' }}>
+          Tournament teams
+        </p>
+        <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Teams</h1>
+        {teams && teams.length > 0 && (
+          <p className="mt-1.5 text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            {teams.length} team{teams.length === 1 ? '' : 's'} registered
+          </p>
+        )}
+      </div>
+
+      {(!teams || teams.length === 0) ? (
+        <EmptyState text="Teams will appear here once registrations are approved." />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {teams.map((team) => {
+            const initials = (team.short_name ?? team.name ?? 'TM').slice(0, 3).toUpperCase();
+            const accent = team.primary_color ?? '#6366f1';
+
+            // Resolve logo URL if available
+            const logoUrl = team.logo_path
+              ? supabase.storage.from('logos').getPublicUrl(team.logo_path).data.publicUrl
+              : null;
+
+            return (
+              <article
+                key={team.id}
+                className="group rounded-2xl p-5 transition-colors"
+                style={{
+                  background: 'rgba(255,255,255,0.025)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                }}
+              >
+                {/* Team badge */}
+                {logoUrl ? (
+                  <div
+                    className="relative mb-4 h-14 w-14 overflow-hidden rounded-2xl"
+                    style={{ border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)' }}
+                  >
+                    <Image
+                      src={logoUrl}
+                      alt={`${team.name} logo`}
+                      fill
+                      sizes="56px"
+                      className="object-contain p-2"
+                      unoptimized
+                    />
+                  </div>
+                ) : (
+                  <div
+                    className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-base font-black"
+                    style={{
+                      background: `${accent}22`,
+                      color: accent,
+                      border: `1px solid ${accent}44`,
+                    }}
+                  >
+                    {initials}
+                  </div>
+                )}
+
+                <h2 className="text-lg font-black leading-tight">{team.name}</h2>
+                {team.short_name && team.short_name !== team.name && (
+                  <p className="mt-0.5 text-xs font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                    {team.short_name}
+                  </p>
+                )}
+                {team.place && (
+                  <div className="mt-3 flex items-center gap-1.5 text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    <MapPin className="h-3.5 w-3.5 shrink-0" />
+                    <span>{team.place}</span>
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </PublicTournamentFrame>
+  );
+}

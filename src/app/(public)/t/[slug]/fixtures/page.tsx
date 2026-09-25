@@ -1,15 +1,160 @@
+import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
+import { getTournamentHeader } from '@/lib/tournament-header';
 import { PublicTournamentFrame } from '@/components/public/PublicTournamentFrame';
+import { TournamentNotFound, EmptyState } from '@/components/public/TournamentNotFound';
+import { TOURNY_PRODUCTION_ORIGIN } from '@/lib/public-tournament-metadata';
+import { MapPin, Clock } from 'lucide-react';
 
-export default async function PublicFixturesPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params; const supabase = await createClient();
-  const { data: tournament } = await supabase.from('tournaments').select('id,name').eq('slug', slug).eq('is_public', true).maybeSingle();
-  if (!tournament) return <div className="p-10 text-white">Tournament not found.</div>;
-  const { data: fixtures } = await supabase.from('public_fixture_view').select('id,match_number,scheduled_at,venue,court,status,home_team_id,away_team_id,total_home_score,total_away_score').eq('tournament_id', tournament.id).order('scheduled_at', { ascending: true, nullsFirst: false }).order('match_number', { ascending: true });
-  const teamIds = [...new Set((fixtures ?? []).flatMap((fixture) => [fixture.home_team_id, fixture.away_team_id]).filter(Boolean))];
-  const { data: teams } = teamIds.length ? await supabase.from('public_team_view').select('id,name,short_name').in('id', teamIds) : { data: [] };
-  const teamName = (id: string | null) => teams?.find((team) => team.id === id)?.name ?? 'TBD';
-  return <PublicTournamentFrame slug={slug} name={tournament.name}><p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-200/70">Schedule</p><h1 className="mt-3 text-4xl font-black">Fixtures</h1><div className="mt-8 space-y-3">{fixtures?.map((fixture) => <article key={fixture.id} className="rounded-2xl border border-white/10 bg-white/3 p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wider text-white/40">Match {fixture.match_number ?? '—'} · {fixture.status}</p><h2 className="mt-2 text-xl font-black">{teamName(fixture.home_team_id)} <span className="text-white/35">vs</span> {teamName(fixture.away_team_id)}</h2></div><p className="text-sm text-white/50">{fixture.scheduled_at ? new Date(fixture.scheduled_at).toLocaleString('en-IN') : 'Time TBC'}</p></div><p className="mt-3 text-sm text-white/45">{fixture.venue ?? 'Venue TBC'}{fixture.court ? ` · ${fixture.court}` : ''}</p></article>)}{(!fixtures || fixtures.length === 0) && <Empty text="Fixtures will appear when the organizer generates the stage schedule." />}</div></PublicTournamentFrame>;
+
+type Props = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const t = await getTournamentHeader(slug);
+  if (!t) return { title: 'Tournament Not Found | Tourny', robots: { index: false, follow: false } };
+  const title = `${t.name} — Fixtures`;
+  const description = `Upcoming and scheduled matches for ${t.name}.`;
+  const canonical = new URL(`/t/${slug}/fixtures`, TOURNY_PRODUCTION_ORIGIN);
+  return {
+    title: { absolute: title },
+    description,
+    alternates: { canonical },
+    openGraph: { title: { absolute: title }, description, url: canonical, siteName: 'Tourny' },
+  };
 }
 
-function Empty({ text }: { text: string }) { return <div className="rounded-3xl border border-dashed border-white/15 bg-white/3 p-8 text-sm text-white/55">{text}</div>; }
+const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
+  SCHEDULED:  { label: 'Scheduled',  color: '#a5b4fc', bg: 'rgba(99,102,241,0.12)' },
+  LIVE:       { label: 'Live',       color: '#f87171', bg: 'rgba(239,68,68,0.12)' },
+  COMPLETED:  { label: 'Completed',  color: '#4ade80', bg: 'rgba(34,197,94,0.12)' },
+  POSTPONED:  { label: 'Postponed',  color: '#fbbf24', bg: 'rgba(245,158,11,0.12)' },
+};
+
+function fmtDate(d: string | null) {
+  if (!d) return null;
+  return new Date(d).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+function fmtTime(d: string | null) {
+  if (!d) return null;
+  return new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+}
+
+export default async function PublicFixturesPage({ params }: Props) {
+  const { slug } = await params;
+  const tournament = await getTournamentHeader(slug);
+  if (!tournament) return <TournamentNotFound />;
+
+  const supabase = await createClient();
+
+  const { data: fixtures } = await supabase
+    .from('public_fixture_view')
+    .select('id,match_number,scheduled_at,venue,court,status,home_team_id,away_team_id,total_home_score,total_away_score,home_sets_won,away_sets_won,winner_team_id')
+    .eq('tournament_id', tournament.id)
+    .neq('status', 'COMPLETED')
+    .order('scheduled_at', { ascending: true, nullsFirst: false })
+    .order('match_number', { ascending: true });
+
+  const teamIds = [...new Set(
+    (fixtures ?? []).flatMap((f) => [f.home_team_id, f.away_team_id]).filter(Boolean)
+  )];
+  const { data: teams } = teamIds.length
+    ? await supabase.from('public_team_view').select('id,name,short_name').in('id', teamIds)
+    : { data: [] };
+
+  const teamName = (id: string | null) => teams?.find((t) => t.id === id)?.name ?? 'TBD';
+  const teamShort = (id: string | null) => teams?.find((t) => t.id === id)?.short_name ?? null;
+
+  return (
+    <PublicTournamentFrame slug={slug} name={tournament.name} logoUrl={tournament.logoUrl} status={tournament.status}>
+      <div className="mb-8">
+        <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(165,180,252,0.7)' }}>Schedule</p>
+        <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Fixtures</h1>
+      </div>
+
+      {(!fixtures || fixtures.length === 0) ? (
+        <EmptyState text="Fixtures will appear once the organizer generates the schedule." />
+      ) : (
+        <div className="space-y-3">
+          {fixtures.map((fixture) => {
+            const statusCfg = STATUS_STYLE[fixture.status ?? 'SCHEDULED'] ?? STATUS_STYLE.SCHEDULED;
+            const home = teamName(fixture.home_team_id);
+            const away = teamName(fixture.away_team_id);
+            const homeShort = teamShort(fixture.home_team_id) ?? home.slice(0, 3).toUpperCase();
+            const awayShort = teamShort(fixture.away_team_id) ?? away.slice(0, 3).toUpperCase();
+            const isLiveMatch = fixture.status === 'LIVE';
+
+            return (
+              <article
+                key={fixture.id}
+                className="rounded-2xl p-5 transition-colors"
+                style={{
+                  background: isLiveMatch ? 'rgba(239,68,68,0.07)' : 'rgba(255,255,255,0.025)',
+                  border: isLiveMatch ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(255,255,255,0.07)',
+                }}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  {/* Match label + status */}
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                      Match {fixture.match_number ?? '—'}
+                    </p>
+                    <span
+                      className="rounded-full px-2 py-0.5 text-xs font-bold"
+                      style={{ background: statusCfg.bg, color: statusCfg.color }}
+                    >
+                      {statusCfg.label}
+                    </span>
+                  </div>
+
+                  {/* Date/time */}
+                  {fixture.scheduled_at && (
+                    <div className="flex items-center gap-1.5 text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>{fmtDate(fixture.scheduled_at)} · {fmtTime(fixture.scheduled_at)}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Teams */}
+                <div className="mt-4 flex items-center gap-3">
+                  {/* Home */}
+                  <div className="flex flex-1 items-center gap-2.5">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black"
+                      style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc' }}
+                    >
+                      {homeShort.slice(0, 3)}
+                    </div>
+                    <span className="font-bold text-sm leading-tight">{home}</span>
+                  </div>
+
+                  <span className="text-xs font-bold px-2" style={{ color: 'rgba(255,255,255,0.25)' }}>vs</span>
+
+                  {/* Away */}
+                  <div className="flex flex-1 flex-row-reverse items-center gap-2.5">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black"
+                      style={{ background: 'rgba(168,85,247,0.15)', color: '#c4b5fd' }}
+                    >
+                      {awayShort.slice(0, 3)}
+                    </div>
+                    <span className="font-bold text-sm leading-tight text-right">{away}</span>
+                  </div>
+                </div>
+
+                {/* Venue */}
+                {(fixture.venue || fixture.court) && (
+                  <div className="mt-3 flex items-center gap-1.5 text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                    <MapPin className="h-3.5 w-3.5" />
+                    <span>{[fixture.venue, fixture.court].filter(Boolean).join(' · ')}</span>
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </PublicTournamentFrame>
+  );
+}
