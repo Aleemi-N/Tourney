@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { AssignPlayerButton } from '@/components/organizer/AssignPlayerButton';
 import type { EligiblePlayer } from '@/components/organizer/AssignPlayerModal';
+import { TeamRenameForm } from '@/components/organizer/TeamRenameForm';
 
 export const metadata: Metadata = {
     title: 'Teams & Squads | Organizer',
@@ -145,7 +146,7 @@ export default async function OrganizerTeamsPage({
                             <div className="p-6 border-b border-border bg-surface-muted/30 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
                                 <div>
                                     <div className="flex items-center gap-4">
-                                        <h2 className="text-xl font-bold text-text-primary">{team.name}</h2>
+                                        <TeamRenameForm teamId={team.id} currentName={team.name} />
                                         <AssignPlayerButton
                                             tournamentId={id}
                                             teamId={team.id}

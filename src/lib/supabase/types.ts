@@ -957,14 +957,16 @@ export type Database = {
       }
       matches: {
         Row: {
-          away_team_id: string
+          away_team_id: string | null
+          bracket_position: number | null
           court: string | null
           created_at: string
-          home_team_id: string
+          home_team_id: string | null
           id: string
           match_number: number | null
           next_match_id: string | null
           next_match_slot: string | null
+          round_number: number | null
           scheduled_at: string | null
           stage_id: string | null
           status: string
@@ -974,14 +976,16 @@ export type Database = {
           winner_team_id: string | null
         }
         Insert: {
-          away_team_id: string
+          away_team_id?: string | null
+          bracket_position?: number | null
           court?: string | null
           created_at?: string
-          home_team_id: string
+          home_team_id?: string | null
           id?: string
           match_number?: number | null
           next_match_id?: string | null
           next_match_slot?: string | null
+          round_number?: number | null
           scheduled_at?: string | null
           stage_id?: string | null
           status?: string
@@ -991,14 +995,16 @@ export type Database = {
           winner_team_id?: string | null
         }
         Update: {
-          away_team_id?: string
+          away_team_id?: string | null
+          bracket_position?: number | null
           court?: string | null
           created_at?: string
-          home_team_id?: string
+          home_team_id?: string | null
           id?: string
           match_number?: number | null
           next_match_id?: string | null
           next_match_slot?: string | null
+          round_number?: number | null
           scheduled_at?: string | null
           stage_id?: string | null
           status?: string
@@ -2877,6 +2883,7 @@ export type Database = {
         Returns: Json
       }
       generate_stage_fixtures: { Args: { p_stage_id: string }; Returns: Json }
+      get_stage_standings: { Args: { p_stage_id: string }; Returns: Json }
       get_auction_organizer_state: {
         Args: { p_auction_id: string }
         Returns: Json
@@ -2931,6 +2938,7 @@ export type Database = {
       is_assigned_scorer: { Args: { m_id: string }; Returns: boolean }
       is_org_member: { Args: { org_id: string }; Returns: boolean }
       is_organization_admin: { Args: { org_id: string }; Returns: boolean }
+      is_primary_tournament_organizer: { Args: { tourn_id: string }; Returns: boolean }
       is_player_in_public_tournament: {
         Args: { p_id: string }
         Returns: boolean
@@ -3013,6 +3021,8 @@ export type Database = {
         }
         Returns: Json
       }
+      rename_tournament_team: { Args: { p_name: string; p_team_id: string }; Returns: Json }
+      save_standings_rules: { Args: { p_loss_points: number; p_stage_id: string; p_tie_break_rules: Json; p_win_points: number }; Returns: Json }
       reopen_player_registration: {
         Args: { p_reason?: string; p_registration_id: string }
         Returns: Json
@@ -3158,6 +3168,7 @@ export type Database = {
         }
         Returns: Json
       }
+      update_match_schedule: { Args: { p_court?: string | null; p_match_id: string; p_scheduled_at?: string | null; p_status?: string | null; p_venue?: string | null }; Returns: Json }
       update_tournament_draft: {
         Args: {
           p_description?: string
