@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getTournamentHeader } from '@/lib/tournament-header';
 import { PublicTournamentFrame } from '@/components/public/PublicTournamentFrame';
 import { TournamentNotFound, EmptyState } from '@/components/public/TournamentNotFound';
-import { TOURNY_PRODUCTION_ORIGIN } from '@/lib/public-tournament-metadata';
+import { buildTournamentMetadata, TOURNY_PRODUCTION_ORIGIN } from '@/lib/public-tournament-metadata';
 import { formatVolleyballPosition } from '@/lib/volleyball-positions';
 import Image from 'next/image';
 
@@ -11,16 +11,22 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const t = await getTournamentHeader(slug);
-  if (!t) return { title: 'Tournament Not Found | Tourny', robots: { index: false, follow: false } };
-  const title = `${t.name} — Players`;
-  const description = `All approved players in ${t.name}.`;
+  const meta = await buildTournamentMetadata(slug, 'players');
+  const title = (meta.title as { absolute: string })?.absolute ?? 'Players';
+  const description = meta.description ?? 'All approved players.';
   const canonical = new URL(`/t/${slug}/players`, TOURNY_PRODUCTION_ORIGIN);
   return {
+    ...meta,
     title: { absolute: title },
     description,
     alternates: { canonical },
-    openGraph: { title: { absolute: title }, description, url: canonical, siteName: 'Tourny' },
+    openGraph: {
+      ...meta.openGraph,
+      title: { absolute: title },
+      description,
+      url: canonical,
+      siteName: 'Tourny',
+    },
   };
 }
 

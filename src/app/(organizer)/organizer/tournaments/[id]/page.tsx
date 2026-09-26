@@ -71,6 +71,7 @@ async function TournamentOverviewContent({
 
       <RegistrationLinks
         slug={tournament.slug as string}
+        tournamentName={tournament.name as string}
         isLeague={tournament.format === 'LEAGUE'}
         status={tournament.status as string}
       />

@@ -1,3 +1,4 @@
+import { buildTournamentMetadata } from '@/lib/public-tournament-metadata';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { getTournamentHeader } from '@/lib/tournament-header';
@@ -13,13 +14,11 @@ export const dynamic = 'force-dynamic';
 type Props = { params: Promise<{ slug: string; matchId: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
-  const t = await getTournamentHeader(slug);
-  if (!t) return { title: 'Tournament Not Found | Tourny', robots: { index: false, follow: false } };
+  const { slug, matchId } = await params;
+  const meta = await buildTournamentMetadata(slug, 'match', { matchId });
   return {
-    title: { absolute: `${t.name} — Live Match` },
-    description: `Follow this live match from ${t.name} in real time.`,
-    robots: { index: false }, // don't index transient match pages
+    ...meta,
+    robots: { index: false },
   };
 }
 

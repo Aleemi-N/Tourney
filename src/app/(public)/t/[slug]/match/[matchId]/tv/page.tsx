@@ -1,3 +1,4 @@
+import { buildTournamentMetadata } from '@/lib/public-tournament-metadata';
 /**
  * /t/[slug]/match/[matchId]/tv — TV / Projector presentation mode.
  *
@@ -19,10 +20,10 @@ export const dynamic = 'force-dynamic';
 type Props = { params: Promise<{ slug: string; matchId: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
-  const t = await getTournamentHeader(slug);
+  const { slug, matchId } = await params;
+  const meta = await buildTournamentMetadata(slug, 'match', { matchId, subtitle: 'Scoreboard' });
   return {
-    title: { absolute: `${t?.name ?? 'Match'} — Scoreboard` },
+    ...meta,
     robots: { index: false },
   };
 }

@@ -47,7 +47,7 @@ export default async function TeamOwnerRegistrationPage({ params }: { params: Pr
         <div className={registrationCardClass}>
           <h2 className="text-lg font-semibold text-text-primary">Sign in required</h2>
           <p className="mt-2 text-sm text-text-secondary">Sign in to your Tourny account to apply as a team owner.</p>
-          <Link href={`/login?next=/t/${slug}/register/owner`} className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+          <Link href={`/login?next=/t/${slug}/register/team`} className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
             Sign in to continue
           </Link>
         </div>
@@ -68,15 +68,14 @@ export default async function TeamOwnerRegistrationPage({ params }: { params: Pr
       {application ? (
         <div className={registrationCardClass}>
           <h2 className="mb-4 text-lg font-semibold text-text-primary">Application Status</h2>
-          
+
           <div className={`${registrationStatusClass} flex items-center justify-between gap-4`}>
             <span className="font-medium text-text-secondary">Status</span>
-            <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-              application.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-              application.status === 'REJECTED' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-              application.status === 'CHANGES_REQUESTED' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-              'bg-primary/15 text-tournament-accent'
-            }`}>
+            <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${application.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                application.status === 'REJECTED' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                  application.status === 'CHANGES_REQUESTED' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                    'bg-primary/15 text-tournament-accent'
+              }`}>
               {application.status}
             </span>
           </div>
@@ -93,8 +92,8 @@ export default async function TeamOwnerRegistrationPage({ params }: { params: Pr
           </div>
         </div>
       ) : (
-        <TeamOwnerRegistrationForm 
-          userId={user.id} 
+        <TeamOwnerRegistrationForm
+          userId={user.id}
           tournamentId={tournament.id}
         />
       )}
