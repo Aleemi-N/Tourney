@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       auction_bids: {
@@ -1281,6 +1306,42 @@ export type Database = {
           },
         ]
       }
+      platform_super_admins: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_super_admins_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_super_admins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_profiles: {
         Row: {
           created_at: string
@@ -2190,6 +2251,55 @@ export type Database = {
           },
         ]
       }
+      tournament_approval_history: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event: string
+          id: string
+          reason: string | null
+          tournament_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event: string
+          id?: string
+          reason?: string | null
+          tournament_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event?: string
+          id?: string
+          reason?: string | null
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_approval_history_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_approval_history_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "public_tournament_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_approval_history_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournament_auction_categories: {
         Row: {
           base_price: number
@@ -2552,6 +2662,11 @@ export type Database = {
       }
       tournaments: {
         Row: {
+          approval_rejection_reason: string | null
+          approval_reviewed_at: string | null
+          approval_reviewed_by: string | null
+          approval_status: string
+          approval_submitted_at: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -2572,6 +2687,11 @@ export type Database = {
           venue: string | null
         }
         Insert: {
+          approval_rejection_reason?: string | null
+          approval_reviewed_at?: string | null
+          approval_reviewed_by?: string | null
+          approval_status?: string
+          approval_submitted_at?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -2592,6 +2712,11 @@ export type Database = {
           venue?: string | null
         }
         Update: {
+          approval_rejection_reason?: string | null
+          approval_reviewed_at?: string | null
+          approval_reviewed_by?: string | null
+          approval_status?: string
+          approval_submitted_at?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -2612,6 +2737,13 @@ export type Database = {
           venue?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tournaments_approval_reviewed_by_fkey"
+            columns: ["approval_reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tournaments_created_by_fkey"
             columns: ["created_by"]
@@ -2923,6 +3055,7 @@ export type Database = {
         Args: { p_application_id: string; p_notes?: string }
         Returns: undefined
       }
+      approve_tournament: { Args: { p_tournament_id: string }; Returns: Json }
       assign_match_scorer: {
         Args: { p_match_id: string; p_scorer_user_id: string }
         Returns: Json
@@ -3079,6 +3212,7 @@ export type Database = {
       is_assigned_scorer: { Args: { m_id: string }; Returns: boolean }
       is_org_member: { Args: { org_id: string }; Returns: boolean }
       is_organization_admin: { Args: { org_id: string }; Returns: boolean }
+      is_platform_super_admin: { Args: never; Returns: boolean }
       is_player_in_public_tournament: {
         Args: { p_id: string }
         Returns: boolean
@@ -3127,6 +3261,7 @@ export type Database = {
         }
         Returns: Json
       }
+      platform_dashboard_metrics: { Args: never; Returns: Json }
       prepare_auction: { Args: { p_tournament_id: string }; Returns: Json }
       prepare_lot_session: {
         Args: {
@@ -3144,6 +3279,10 @@ export type Database = {
         }
         Returns: Json
       }
+      preview_tournament_stage_removal: {
+        Args: { p_stage_id: string }
+        Returns: Json
+      }
       quick_add_player_to_live_auction: {
         Args: {
           p_auction_id: string
@@ -3157,6 +3296,7 @@ export type Database = {
         }
         Returns: Json
       }
+      reactivate_organizer: { Args: { p_user_id: string }; Returns: Json }
       reject_player_registration: {
         Args: { p_notes?: string; p_registration_id: string }
         Returns: undefined
@@ -3164,6 +3304,10 @@ export type Database = {
       reject_team_owner_application: {
         Args: { p_application_id: string; p_notes?: string }
         Returns: undefined
+      }
+      reject_tournament: {
+        Args: { p_reason: string; p_tournament_id: string }
+        Returns: Json
       }
       remove_tournament_staff_role: {
         Args: {
@@ -3189,18 +3333,8 @@ export type Database = {
         Args: { p_reason?: string; p_registration_id: string }
         Returns: Json
       }
-      reorder_matches: {
-        Args: {
-          p_expected_revision: number
-          p_ordered_match_ids: string[]
-          p_round_number: number | null
-          p_stage_id: string | null
-          p_tournament_id: string
+      reorder_matches: { Args: { p_expected_revision: number; p_ordered_match_ids: string[]; p_round_number: number | null; p_stage_id: string | null; p_tournament_id: string
         }
-        Returns: Json
-      }
-      preview_tournament_stage_removal: {
-        Args: { p_stage_id: string }
         Returns: Json
       }
       requeue_auction_player: {
@@ -3226,13 +3360,7 @@ export type Database = {
         }
         Returns: Json
       }
-      save_tournament_stage: {
-        Args: {
-          p_name: string
-          p_qualification_count?: number
-          p_sequence: number
-          p_stage_id: string | null
-          p_stage_type: string
+      save_tournament_stage: { Args: { p_name: string; p_qualification_count?: number; p_sequence: number; p_stage_id: string | null; p_stage_type: string
           p_tournament_id: string
         }
         Returns: string
@@ -3314,6 +3442,14 @@ export type Database = {
         }
         Returns: string
       }
+      submit_tournament_for_approval: {
+        Args: { p_tournament_id: string }
+        Returns: Json
+      }
+      suspend_organizer: {
+        Args: { p_reason?: string; p_user_id: string }
+        Returns: Json
+      }
       undo_last_score_event: { Args: { p_match_id: string }; Returns: Json }
       update_auction_price_categories: {
         Args: {
@@ -3327,12 +3463,7 @@ export type Database = {
         }
         Returns: Json
       }
-      update_match_schedule: {
-        Args: {
-          p_court?: string
-          p_match_id: string
-          p_scheduled_at: string | null
-          p_status?: string
+      update_match_schedule: { Args: { p_court?: string; p_match_id: string; p_scheduled_at: string | null; p_status?: string
           p_venue?: string
         }
         Returns: Json
@@ -3521,6 +3652,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
