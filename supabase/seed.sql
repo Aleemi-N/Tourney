@@ -11,7 +11,8 @@ VALUES
   ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'organizer@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"QA Organizer"}', now(), now(), false, false),
   ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'owner@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"QA Team Owner"}', now(), now(), false, false),
   ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'player@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"QA Player"}', now(), now(), false, false),
-  ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'scorer@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"QA Scorer"}', now(), now(), false, false)
+  ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'scorer@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"QA Scorer"}', now(), now(), false, false),
+  ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000005', 'authenticated', 'authenticated', 'super-admin@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"QA Super Admin"}', now(), now(), false, false)
 ON CONFLICT (id) DO UPDATE SET
   email = EXCLUDED.email,
   instance_id = EXCLUDED.instance_id,
@@ -20,10 +21,22 @@ ON CONFLICT (id) DO UPDATE SET
   raw_user_meta_data = EXCLUDED.raw_user_meta_data,
   updated_at = now();
 
+-- GoTrue v2.197+ scans legacy token columns as strings during password login.
+-- Keep local QA identities compatible even when auth.users defaults are NULL.
+UPDATE auth.users
+SET confirmation_token = COALESCE(confirmation_token, ''),
+    recovery_token = COALESCE(recovery_token, ''),
+    email_change_token_new = COALESCE(email_change_token_new, ''),
+    email_change = COALESCE(email_change, ''),
+    phone_change_token = COALESCE(phone_change_token, ''),
+    email_change_token_current = COALESCE(email_change_token_current, ''),
+    reauthentication_token = COALESCE(reauthentication_token, '')
+WHERE email IN ('organizer@tourny.local', 'owner@tourny.local', 'player@tourny.local', 'scorer@tourny.local', 'super-admin@tourny.local');
+
 INSERT INTO auth.identities (provider_id, user_id, identity_data, provider, created_at, updated_at)
 SELECT u.id::text, u.id, jsonb_build_object('sub', u.id::text, 'email', u.email), 'email', now(), now()
 FROM auth.users u
-WHERE u.email IN ('organizer@tourny.local', 'owner@tourny.local', 'player@tourny.local', 'scorer@tourny.local')
+WHERE u.email IN ('organizer@tourny.local', 'owner@tourny.local', 'player@tourny.local', 'scorer@tourny.local', 'super-admin@tourny.local')
 ON CONFLICT (provider_id, provider) DO NOTHING;
 
 INSERT INTO public.organizations (id, name, slug, created_by)
@@ -101,5 +114,9 @@ ON CONFLICT (match_id, set_number) DO NOTHING;
 INSERT INTO public.match_scorers (match_id, user_id, assigned_by)
 VALUES ('90700000-0000-0000-0000-000000000001', '90000000-0000-0000-0000-000000000004', '90000000-0000-0000-0000-000000000001')
 ON CONFLICT (match_id, user_id) DO NOTHING;
+
+INSERT INTO public.platform_super_admins (user_id, granted_by, note)
+VALUES ('90000000-0000-0000-0000-000000000005', '90000000-0000-0000-0000-000000000001', 'Local QA super admin')
+ON CONFLICT (user_id) DO NOTHING;
 
 COMMIT;

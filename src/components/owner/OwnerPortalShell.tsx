@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { logout } from '@/app/actions/auth';
 import type { OwnerTeam } from '@/lib/owner/owner-team';
 
@@ -11,7 +14,12 @@ export function OwnerPortalShell({
     activeTeamId?: string;
     children: React.ReactNode;
 }) {
+    const pathname = usePathname();
     const activeTeam = teams.find((team) => team.id === activeTeamId) ?? teams[0];
+    const navClass = (href: string, accent = false) => {
+        const active = pathname === href;
+        return `block min-h-11 shrink-0 rounded-xl border px-4 py-3 text-sm font-semibold transition ${active ? 'border-fuchsia-300/35 bg-fuchsia-300/10 text-fuchsia-100' : `border-transparent ${accent ? 'text-fuchsia-300' : 'text-white/70'} hover:bg-white/10 hover:text-white`}`;
+    };
 
     return (
         <div className="min-h-screen bg-[#100d1c] text-white">
@@ -29,13 +37,13 @@ export function OwnerPortalShell({
                     <nav aria-label="Owner navigation" className="flex gap-2 overflow-x-auto px-4 pb-4 lg:block lg:space-y-2 lg:px-4 lg:py-4">
                         {activeTeam ? (
                             <>
-                                <Link href={`/owner/teams/${activeTeam.id}`} className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white">
+                                <Link href={`/owner/teams/${activeTeam.id}`} aria-current={pathname === `/owner/teams/${activeTeam.id}` ? 'page' : undefined} className={navClass(`/owner/teams/${activeTeam.id}`)}>
                                     Overview
                                 </Link>
-                                <Link href={`/owner/teams/${activeTeam.id}/squad`} className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white">
+                                <Link href={`/owner/teams/${activeTeam.id}/squad`} aria-current={pathname.endsWith('/squad') ? 'page' : undefined} className={navClass(`/owner/teams/${activeTeam.id}/squad`)}>
                                     My Squad
                                 </Link>
-                                <Link href={`/owner/teams/${activeTeam.id}/auction`} className="block shrink-0 rounded-xl px-4 py-3 text-sm font-bold text-fuchsia-300 transition hover:bg-white/10 hover:text-fuchsia-200">
+                                <Link href={`/owner/teams/${activeTeam.id}/auction`} aria-current={pathname.endsWith('/auction') ? 'page' : undefined} className={navClass(`/owner/teams/${activeTeam.id}/auction`, true)}>
                                     Live Auction
                                 </Link>
                             </>
@@ -44,8 +52,8 @@ export function OwnerPortalShell({
                                 Dashboard
                             </Link>
                         )}
-                        {activeTeam ? <Link href={`/owner/teams/${activeTeam.id}/fixtures`} className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white">Fixtures</Link> : <span className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/30">Fixtures</span>}
-                        {activeTeam ? <Link href={`/owner/teams/${activeTeam.id}/results`} className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white">Results</Link> : <span className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/30">Results</span>}
+                        {activeTeam ? <Link href={`/owner/teams/${activeTeam.id}/fixtures`} aria-current={pathname.endsWith('/fixtures') ? 'page' : undefined} className={navClass(`/owner/teams/${activeTeam.id}/fixtures`)}>Fixtures</Link> : <span className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/30">Fixtures</span>}
+                        {activeTeam ? <Link href={`/owner/teams/${activeTeam.id}/results`} aria-current={pathname.endsWith('/results') ? 'page' : undefined} className={navClass(`/owner/teams/${activeTeam.id}/results`)}>Results</Link> : <span className="block shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-white/30">Results</span>}
                     </nav>
 
                     {teams.length > 1 ? (

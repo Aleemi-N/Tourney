@@ -85,6 +85,7 @@ export function DashboardShell({ children, user, lotEnabledTournamentIds = [] }:
                         prefetch={item.disabled ? false : undefined}
                         aria-disabled={item.disabled ? true : undefined}
                         tabIndex={item.disabled ? -1 : undefined}
+                        aria-current={isActive ? 'page' : undefined}
                         className={`
                           group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-medium
                           ${item.disabled 
@@ -139,12 +140,12 @@ export function DashboardShell({ children, user, lotEnabledTournamentIds = [] }:
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+      <main className="app-shell-content flex-1 overflow-y-auto">
         {children}
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border px-2 pb-safe flex justify-between items-center h-16 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] overflow-x-auto">
+      <nav aria-label="Organizer mobile navigation" className="mobile-safe-nav md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border px-2 flex justify-between items-start shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] overflow-x-auto">
         <Link
           href="/"
           className="flex flex-col items-center gap-1 p-2 text-text-secondary shrink-0"
@@ -165,7 +166,8 @@ export function DashboardShell({ children, user, lotEnabledTournamentIds = [] }:
               onClick={(e) => {
                 if (item.disabled) e.preventDefault();
               }}
-              className={`flex flex-col items-center gap-1 p-2 shrink-0 ${
+              aria-current={isActive ? 'page' : undefined}
+              className={`flex min-h-14 min-w-14 flex-col items-center justify-center gap-1 p-2 shrink-0 ${
                 item.disabled
                   ? 'text-text-muted cursor-not-allowed opacity-50 pointer-events-none'
                   : isActive
@@ -191,7 +193,7 @@ export function DashboardShell({ children, user, lotEnabledTournamentIds = [] }:
             <span className="text-[10px] font-medium">Out</span>
           </button>
         </form>
-      </div>
+      </nav>
     </div>
   );
 }

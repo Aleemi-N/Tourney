@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { CourtLineBackground } from './CourtLineBackground';
+import { PwaInstallAction } from '@/components/pwa/PwaInstallAction';
 
 export function CtaSection() {
   return (
@@ -26,7 +27,9 @@ export function CtaSection() {
           >
             Explore Tournaments
           </Link>
+          <PwaInstallAction className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-8 py-4 text-center font-bold text-primary-foreground transition-colors hover:bg-primary/20" />
         </div>
+        <p className="mx-auto mt-5 max-w-xl text-sm leading-6 text-text-secondary">Install Tourny for quicker access on supported Android and desktop browsers. On iPhone and iPad, use Share → Add to Home Screen.</p>
       </div>
     </section>
   );

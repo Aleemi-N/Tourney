@@ -1,15 +1,17 @@
+import { PlayerShell } from '@/components/player/PlayerShell';
+
 /**
  * Player route group layout.
  *
  * Wraps all player portal pages.
  * Requires authenticated Player role.
  * Significantly simpler than Organizer — profile-centric experience.
- * Placeholder shell — navigation to be built in the player phase.
+ * Uses a deliberately simple, role-specific shell.
  */
 export default function PlayerLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="min-h-screen bg-background text-text-primary">{children}</div>;
+  return <PlayerShell>{children}</PlayerShell>;
 }

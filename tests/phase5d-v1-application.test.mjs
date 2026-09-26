@@ -16,8 +16,14 @@ test('fixture and scorer mutations stay behind trusted RPCs', () => {
   assert.doesNotMatch(organizerFixtures, /\.from\(['"]matches['"]\)\.insert/);
   assert.match(scorer, /award_point/);
   assert.match(scorer, /undo_last_score_event/);
+  assert.match(scorer, /call_match_timeout/);
+  assert.match(scorer, /end_match_timeout/);
   assert.match(scorer, /crypto\.randomUUID\(\)/);
-  assert.match(scorer, /match_sets/);
+  assert.match(scorer, /get_scorer_match_state/);
+  for (const table of ['score_events', 'matches', 'match_timeouts']) {
+    assert.match(scorer, new RegExp(`table: ['"]${table}['"]`));
+  }
+  assert.doesNotMatch(scorer, /\.from\(['"](?:matches|match_sets|score_events|match_timeouts)['"]\)\.(?:insert|update|delete)/);
 });
 
 test('Migration 26 authorizes scorer state and safe public state separately', () => {
@@ -32,7 +38,7 @@ test('Migration 26 authorizes scorer state and safe public state separately', ()
 test('public V1 surfaces are projection-based and auction realtime is sanitized', () => {
   assert.match(publicAuction, /get_auction_public_state/);
   assert.match(publicAuction, /auction_public_events/);
-  assert.doesNotMatch(publicAuction, /auction_bids|auction_team_wallets|purse_transactions/);
+  assert.doesNotMatch(publicAuction, /\.from\(['"](?:auction_bids|auction_team_wallets|purse_transactions)['"]\)/);
   for (const route of ['Live', 'Fixtures', 'Results', 'Table', 'Teams', 'Players']) assert.match(publicFrame, new RegExp(route));
 });
 

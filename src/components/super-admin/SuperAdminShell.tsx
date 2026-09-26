@@ -85,6 +85,7 @@ export function SuperAdminShell({ children, user, pendingApprovals = 0 }: SuperA
                 <li key={item.name}>
                   <Link
                     href={item.href}
+                    aria-current={active ? 'page' : undefined}
                     className={`
                       group flex items-center gap-x-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all
                       ${active
@@ -134,18 +135,19 @@ export function SuperAdminShell({ children, user, pendingApprovals = 0 }: SuperA
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto pb-20 md:pb-0 min-w-0">
+      <main className="app-shell-content flex-1 overflow-y-auto min-w-0">
         {children}
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border px-1 pb-safe flex justify-around items-center h-16 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+      <nav aria-label="Super admin mobile navigation" className="mobile-safe-nav md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border px-1 flex justify-around items-start shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
         {navigation.map((item) => {
           const active = isActive(item);
           return (
             <Link
               key={item.name}
               href={item.href}
+              aria-current={active ? 'page' : undefined}
               className={`relative flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg min-w-[52px] transition-colors
                 ${active ? 'text-violet-400' : 'text-text-muted'}`}
             >
@@ -172,7 +174,7 @@ export function SuperAdminShell({ children, user, pendingApprovals = 0 }: SuperA
             <span className="text-[9px] font-medium">Out</span>
           </button>
         </form>
-      </div>
+      </nav>
     </div>
   );
 }

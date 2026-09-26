@@ -281,6 +281,11 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
   const awaySetsWon = state.sets.filter((s) => s.winner_team_id === state.away_team.id).length;
 
   const isCompleted = state.match.status === 'COMPLETED';
+  const matchStatusStyle = isCompleted
+    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+    : state.match.status === 'LIVE'
+      ? 'animate-pulse border-red-500/30 bg-red-500/10 text-red-400'
+      : 'border-violet-400/30 bg-violet-400/10 text-violet-200';
   const showUndo = !isCompleted && state.sets.some((s) => s.home_score > 0 || s.away_score > 0);
 
   const activeTimeout = state.timeouts?.active && countdown > 0 ? state.timeouts.active : null;
@@ -293,10 +298,10 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
   const awayTimeoutsUsed = state.timeouts?.away_used ?? 0;
 
   return (
-    <div className="space-y-6 select-none lg:space-y-8">
+    <div className="space-y-5 select-none sm:space-y-6 lg:space-y-8" aria-busy={pending}>
       {/* HEADER */}
-      <header className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6 lg:p-8">
-        <div>
+      <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:rounded-3xl sm:p-6 lg:p-8">
+        <div className="min-w-0">
           <div className="mb-2 flex items-center gap-3">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-300">
               Match {state.match.match_number ?? '—'}
@@ -312,7 +317,7 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
               {conn === 'live' ? 'Live' : 'Reconnecting'}
             </span>
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-white lg:text-4xl">
+          <h1 className="break-words text-2xl font-black tracking-tight text-white sm:text-3xl lg:text-4xl">
             {state.home_team.short_name ?? state.home_team.name} <span className="mx-1 text-2xl text-white/30">vs</span> {state.away_team.short_name ?? state.away_team.name}
           </h1>
           <p className="mt-2 flex items-center gap-2 text-sm font-medium text-white/50">
@@ -323,7 +328,7 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
         <div className="text-center">
           <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Status</p>
           <span className={`inline-block rounded-xl border px-4 py-2 text-sm font-black uppercase tracking-widest
-            ${isCompleted ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'animate-pulse border-red-500/30 bg-red-500/10 text-red-400'}`}>
+            ${matchStatusStyle}`}>
             {state.match.status}
           </span>
         </div>
@@ -337,6 +342,7 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-center text-sm font-semibold text-red-200"
+            role="alert"
           >
             {errorMsg}
           </motion.div>
@@ -350,7 +356,9 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="rounded-3xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-amber-600/20 to-amber-500/20 p-6 text-center shadow-[0_0_40px_rgba(245,158,11,0.2)]"
+            className="rounded-3xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-amber-600/20 to-amber-500/20 p-5 text-center shadow-[0_0_40px_rgba(245,158,11,0.2)] sm:p-6"
+            role="status"
+            aria-live="polite"
           >
             <div className="flex flex-col items-center justify-center gap-2">
               <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-amber-300">
@@ -366,7 +374,7 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
                 type="button"
                 disabled={pending}
                 onClick={() => void handleEndTimeout()}
-                className="mt-3 inline-flex items-center rounded-xl border border-amber-400/40 bg-amber-400/20 px-5 py-2 text-xs font-bold uppercase tracking-wider text-amber-200 transition hover:bg-amber-400/30 disabled:opacity-50"
+                className="mt-3 inline-flex min-h-12 items-center rounded-xl border border-amber-400/40 bg-amber-400/20 px-5 py-2 text-xs font-bold uppercase tracking-wider text-amber-200 transition hover:bg-amber-400/30 disabled:opacity-50"
               >
                 End Timeout
               </button>
@@ -376,9 +384,9 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
       </AnimatePresence>
 
       {/* MATCH SCORE / LIVE CONTROLS */}
-      <section className="rounded-[2rem] border border-white/10 bg-gradient-to-b from-[#1c1533] to-[#120e21] p-4 sm:p-8">
+      <section className="rounded-3xl border border-white/10 bg-gradient-to-b from-[#1c1533] to-[#120e21] p-3 min-[360px]:p-4 sm:rounded-[2rem] sm:p-8">
         {/* Set Score Banner */}
-        <div className="mb-8 flex items-center justify-center gap-6">
+        <div className="mb-6 flex items-center justify-center gap-4 sm:mb-8 sm:gap-6">
           <div className="text-right">
             <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">{state.home_team.short_name ?? state.home_team.name}</p>
             <p className="text-4xl font-black text-white">{homeSetsWon}</p>
@@ -403,7 +411,7 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
         </div>
 
         {/* Big Scoring Buttons */}
-        <div className="relative grid grid-cols-2 gap-4 lg:gap-8">
+        <div className="relative grid grid-cols-2 gap-2 min-[390px]:gap-4 lg:gap-8">
           <ScoreButton
             teamName={state.home_team.short_name ?? state.home_team.name}
             score={activeSet?.home_score ?? 0}
@@ -428,7 +436,7 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
                 type="button"
                 disabled={pending || Boolean(activeTimeout)}
                 onClick={() => void undo()}
-                className="group flex h-14 w-14 items-center justify-center rounded-full border-4 border-[#120e21] bg-white/10 text-white/60 backdrop-blur-xl transition hover:bg-white/20 active:scale-95 disabled:opacity-50"
+              className="group flex h-12 w-12 items-center justify-center rounded-full border-4 border-[#120e21] bg-[#282136] text-white/80 shadow-xl transition hover:bg-[#352d45] active:scale-95 disabled:opacity-50 sm:h-14 sm:w-14"
                 aria-label="Undo last point"
               >
                 <Undo2 className="h-6 w-6 transition-transform group-hover:-rotate-45" />
@@ -448,7 +456,7 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
               type="button"
               disabled={pending || isCompleted || Boolean(activeTimeout) || homeTimeoutsUsed >= maxTimeouts}
               onClick={() => void handleCallTimeout(state.home_team.id)}
-              className="rounded-xl border border-fuchsia-400/30 bg-fuchsia-400/10 px-4 py-2 text-xs font-bold tracking-wider text-fuchsia-200 uppercase transition hover:bg-fuchsia-400/20 disabled:cursor-not-allowed disabled:opacity-30"
+              className="min-h-11 rounded-xl border border-fuchsia-400/30 bg-fuchsia-400/10 px-3 py-2 text-xs font-bold tracking-wider text-fuchsia-200 uppercase transition hover:bg-fuchsia-400/20 disabled:cursor-not-allowed disabled:opacity-30 sm:px-4"
             >
               Timeout
             </button>
@@ -463,7 +471,7 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
               type="button"
               disabled={pending || isCompleted || Boolean(activeTimeout) || awayTimeoutsUsed >= maxTimeouts}
               onClick={() => void handleCallTimeout(state.away_team.id)}
-              className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-xs font-bold tracking-wider text-cyan-200 uppercase transition hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-30"
+              className="min-h-11 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-3 py-2 text-xs font-bold tracking-wider text-cyan-200 uppercase transition hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-30 sm:px-4"
             >
               Timeout
             </button>
@@ -550,11 +558,12 @@ function ScoreButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`group relative flex flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/5 bg-white/5 py-12 transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:py-16 ${activeGlow}`}
+      aria-label={`Award point to ${teamName}. Current score ${score}`}
+      className={`group relative flex min-h-52 min-w-0 flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/5 bg-white/5 px-1 py-8 transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 min-[390px]:px-2 sm:min-h-72 sm:rounded-3xl sm:py-16 ${activeGlow}`}
     >
       <div className={`absolute inset-0 opacity-0 transition-opacity group-hover:opacity-10 group-active:opacity-20 ${color === 'fuchsia' ? 'bg-fuchsia-500' : 'bg-cyan-500'}`} />
 
-      <p className="relative z-10 mb-4 text-xs font-bold uppercase tracking-[0.2em] text-white/50 lg:text-sm">
+      <p className="relative z-10 mb-3 max-w-full break-words text-center text-[10px] font-bold uppercase tracking-[0.12em] text-white/60 min-[390px]:text-xs min-[390px]:tracking-[0.16em] lg:text-sm">
         {teamName}
       </p>
 
@@ -562,13 +571,13 @@ function ScoreButton({
         key={score}
         initial={{ scale: 1.1, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="relative z-10 text-[5rem] font-black leading-none tracking-tighter text-white sm:text-[7rem] lg:text-[9rem]"
+        className="relative z-10 text-6xl font-black leading-none tracking-tighter text-white min-[390px]:text-7xl sm:text-[7rem] lg:text-[9rem]"
       >
         {score}
       </motion.p>
 
-      <div className="relative z-10 mt-6 md:mt-8">
-        <span className={`inline-flex items-center rounded-full border px-6 py-3 text-xs font-black uppercase tracking-widest transition-colors ${bgColors} ${borderColors}`}>
+      <div className="relative z-10 mt-5 md:mt-8">
+        <span className={`inline-flex min-h-11 items-center rounded-full border px-3 py-2 text-[10px] font-black uppercase tracking-wider transition-colors min-[390px]:px-5 min-[390px]:text-xs sm:px-6 sm:py-3 ${bgColors} ${borderColors}`}>
           Award Point
         </span>
       </div>
