@@ -3173,6 +3173,14 @@ export type Database = {
         }
         Returns: Json
       }
+      remove_tournament_stage: {
+        Args: {
+          p_confirmation: string
+          p_expected_snapshot: string
+          p_stage_id: string
+        }
+        Returns: Json
+      }
       rename_tournament_team: {
         Args: { p_name: string; p_team_id: string }
         Returns: Json
@@ -3189,6 +3197,10 @@ export type Database = {
           p_stage_id: string | null
           p_tournament_id: string
         }
+        Returns: Json
+      }
+      preview_tournament_stage_removal: {
+        Args: { p_stage_id: string }
         Returns: Json
       }
       requeue_auction_player: {
