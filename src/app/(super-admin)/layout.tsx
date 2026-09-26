@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Super Admin route group layout.
  *
@@ -9,9 +8,6 @@
  *
  * Authorization is NOT based on email alone or client-side state.
  * The RPC itself enforces the check at the DB level.
- *
- * NOTE: New RPCs use `any` casts until the Database type is regenerated
- * after the migration is applied to Supabase.
  */
 
 import { redirect } from 'next/navigation';
@@ -31,9 +27,8 @@ export default async function SuperAdminLayout({
   }
 
   // 2. Platform super admin check — authoritative DB query
-  // Cast through `any` because is_platform_super_admin is a new RPC not yet in types.
   const supabase = await createClient();
-  const { data: isSuperAdmin, error: rpcError } = await (supabase.rpc as any)('is_platform_super_admin') as { data: boolean | null; error: any };
+  const { data: isSuperAdmin, error: rpcError } = await supabase.rpc('is_platform_super_admin');
 
   if (rpcError || !isSuperAdmin) {
     // Redirect non-super-admins — do NOT reveal whether the route exists
@@ -47,10 +42,10 @@ export default async function SuperAdminLayout({
   };
 
   // 4. Load pending approval count for badge
-  const { count } = await (supabase
-    .from('tournaments') as any)
+  const { count } = await supabase
+    .from('tournaments')
     .select('*', { count: 'exact', head: true })
-    .eq('approval_status', 'PENDING_APPROVAL') as { count: number | null };
+    .eq('approval_status', 'PENDING_APPROVAL');
 
   return (
     <SuperAdminShell user={profile} pendingApprovals={count ?? 0}>

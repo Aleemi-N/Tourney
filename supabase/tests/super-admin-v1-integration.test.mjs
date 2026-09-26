@@ -133,27 +133,27 @@ async function setup() {
     await client.query(`DELETE FROM public.organization_members WHERE organization_id = $1`, [IDS.org1]);
     await client.query(`DELETE FROM public.organizations WHERE id = $1`, [IDS.org1]);
     await client.query(`DELETE FROM public.platform_super_admins WHERE user_id = $1`, [IDS.superAdmin]);
-    await client.query(`DELETE FROM public.profiles WHERE id = ANY($1::uuid[])`, [[IDS.superAdmin, IDS.organizer1, IDS.organizer2, IDS.player1, IDS.unrelated]]);
+    await client.query(`DELETE FROM public.profiles WHERE id IN ($1, $2, $3, $4, $5)`, [IDS.superAdmin, IDS.organizer1, IDS.organizer2, IDS.player1, IDS.unrelated]);
 
     // Seed auth.users (needed for FK from profiles)
     for (const [key, uid] of Object.entries(IDS)) {
-      if (!key.startsWith('org') && !key.startsWith('tournament')) {
+      if (!key.startsWith('org1') && !key.startsWith('tournament')) {
         await client.query(`
           INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at, aud, role)
-          VALUES ($1, $1 || '@test.example', 'x', now(), now(), now(), 'authenticated', 'authenticated')
+          VALUES ($1, $2, 'x', now(), now(), now(), 'authenticated', 'authenticated')
           ON CONFLICT (id) DO NOTHING
-        `, [uid]);
+        `, [uid, `${uid}@test.example`]);
       }
     }
 
     // Seed profiles
     for (const [key, uid] of Object.entries(IDS)) {
-      if (!key.startsWith('org') && !key.startsWith('tournament')) {
+      if (!key.startsWith('org1') && !key.startsWith('tournament')) {
         await client.query(`
           INSERT INTO public.profiles (id, full_name, email, status)
-          VALUES ($1, $2, $1 || '@test.example', 'ACTIVE')
+          VALUES ($1, $2, $3, 'ACTIVE')
           ON CONFLICT (id) DO NOTHING
-        `, [uid, key]);
+        `, [uid, key, `${uid}@test.example`]);
       }
     }
 

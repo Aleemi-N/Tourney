@@ -39,16 +39,6 @@ CREATE INDEX idx_platform_super_admins_user ON public.platform_super_admins(user
 
 ALTER TABLE public.platform_super_admins ENABLE ROW LEVEL SECURITY;
 
--- Only super admins can read the table; no regular user can inspect it.
--- The SECURITY DEFINER helper below bypasses this for internal checks.
-CREATE POLICY "Super admins can read super admin list"
-  ON public.platform_super_admins FOR SELECT
-  USING (public.is_platform_super_admin());
-
--- No INSERT/UPDATE/DELETE policy via RLS — mutations happen via
--- service-role psql / seed / migration only (not from browser).
--- This prevents privilege escalation via the browser anon/authenticated key.
-
 --------------------------------------------------------------------------------
 -- 2. is_platform_super_admin() HELPER
 --------------------------------------------------------------------------------
@@ -70,6 +60,17 @@ $$;
 
 REVOKE ALL ON FUNCTION public.is_platform_super_admin() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.is_platform_super_admin() TO authenticated;
+
+-- Only super admins can read the table; no regular user can inspect it.
+-- The SECURITY DEFINER helper below bypasses this for internal checks.
+CREATE POLICY "Super admins can read super admin list"
+  ON public.platform_super_admins FOR SELECT
+  USING (public.is_platform_super_admin());
+
+-- No INSERT/UPDATE/DELETE policy via RLS — mutations happen via
+-- service-role psql / seed / migration only (not from browser).
+-- This prevents privilege escalation via the browser anon/authenticated key.
+
 
 --------------------------------------------------------------------------------
 -- 3. TOURNAMENT APPROVAL LIFECYCLE COLUMNS

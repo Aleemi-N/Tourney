@@ -14,8 +14,6 @@
  * After migration is applied and types are regenerated, these casts can be removed.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { createClient, getUser } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { PlatformDashboardMetrics } from '@/lib/super-admin-types';
@@ -37,8 +35,7 @@ async function requireSuperAdmin() {
   }
 
   // DB-authoritative check: row must exist in platform_super_admins
-  // Cast through unknown because the new RPC isn't in the generated types yet.
-  const { data: isSuperAdmin, error } = await (supabase.rpc as any)('is_platform_super_admin') as { data: boolean | null; error: any };
+  const { data: isSuperAdmin, error } = await supabase.rpc('is_platform_super_admin');
 
   if (error || !isSuperAdmin) {
     return { user, supabase, error: 'Unauthorized: Super Admin access required' as const };
@@ -60,14 +57,14 @@ export async function getPlatformDashboardMetrics(): Promise<
     return { error: authError };
   }
 
-  const { data, error } = await (supabase.rpc as any)('platform_dashboard_metrics') as { data: any; error: any };
+  const { data, error } = await supabase.rpc('platform_dashboard_metrics');
 
   if (error) {
     console.error('platform_dashboard_metrics error:', error);
     return { error: 'Failed to load platform metrics.' };
   }
 
-  return { data: data as PlatformDashboardMetrics };
+  return { data: data as unknown as PlatformDashboardMetrics };
 }
 
 // ---------------------------------------------------------------------------
@@ -78,9 +75,9 @@ export async function getApprovalQueue() {
   const { supabase, error: authError } = await requireSuperAdmin();
   if (authError) return { error: authError };
 
-  // Use raw select with cast since approval_status not in generated types yet
-  const { data, error } = await (supabase
-    .from('tournaments') as any)
+  // Use raw select since approval_status is in generated types now
+  const { data, error } = await supabase
+    .from('tournaments')
     .select(`
       id, name, format, league_mode, created_at,
       approval_status, approval_submitted_at,
@@ -88,7 +85,7 @@ export async function getApprovalQueue() {
       organizations (name)
     `)
     .eq('approval_status', 'PENDING_APPROVAL')
-    .order('approval_submitted_at', { ascending: true }) as { data: any[]; error: any };
+    .order('approval_submitted_at', { ascending: true });
 
   if (error) {
     console.error('getApprovalQueue error:', error);
@@ -102,9 +99,9 @@ export async function approveTournament(tournamentId: string): Promise<{ ok: boo
   const { supabase, error: authError } = await requireSuperAdmin();
   if (authError) return { error: authError };
 
-  const { data, error } = await (supabase.rpc as any)('approve_tournament', {
+  const { data, error } = await supabase.rpc('approve_tournament', {
     p_tournament_id: tournamentId,
-  }) as { data: any; error: any };
+  });
 
   if (error) {
     const msg = (error as { message?: string }).message || 'Failed to approve tournament.';
@@ -130,10 +127,10 @@ export async function rejectTournament(
     return { error: 'Rejection reason is required.' };
   }
 
-  const { data, error } = await (supabase.rpc as any)('reject_tournament', {
+  const { data, error } = await supabase.rpc('reject_tournament', {
     p_tournament_id: tournamentId,
     p_reason: reason.trim(),
-  }) as { data: any; error: any };
+  });
 
   if (error) {
     const msg = (error as { message?: string }).message || 'Failed to reject tournament.';
@@ -159,7 +156,7 @@ export async function getAllTournaments(filter?: {
   const { supabase, error: authError } = await requireSuperAdmin();
   if (authError) return { error: authError };
 
-  let query: any = (supabase.from('tournaments') as any)
+  let query = supabase.from('tournaments')
     .select(`
       id, name, slug, format, status, is_public, created_at,
       approval_status, approval_submitted_at, approval_reviewed_at,
@@ -176,7 +173,7 @@ export async function getAllTournaments(filter?: {
     query = query.ilike('name', `%${filter.search}%`);
   }
 
-  const { data, error } = await query as { data: any[]; error: any };
+  const { data, error } = await query;
 
   if (error) {
     console.error('getAllTournaments error:', error);
@@ -220,10 +217,10 @@ export async function suspendOrganizer(
   const { supabase, error: authError } = await requireSuperAdmin();
   if (authError) return { error: authError };
 
-  const { data, error } = await (supabase.rpc as any)('suspend_organizer', {
+  const { data, error } = await supabase.rpc('suspend_organizer', {
     p_user_id: userId,
-    p_reason: reason ?? null,
-  }) as { data: any; error: any };
+    p_reason: reason,
+  });
 
   if (error) {
     const msg = (error as { message?: string }).message || 'Failed to suspend organizer.';
@@ -242,9 +239,9 @@ export async function reactivateOrganizer(
   const { supabase, error: authError } = await requireSuperAdmin();
   if (authError) return { error: authError };
 
-  const { data, error } = await (supabase.rpc as any)('reactivate_organizer', {
+  const { data, error } = await supabase.rpc('reactivate_organizer', {
     p_user_id: userId,
-  }) as { data: any; error: any };
+  });
 
   if (error) {
     const msg = (error as { message?: string }).message || 'Failed to reactivate organizer.';
@@ -306,9 +303,9 @@ export async function submitTournamentForApproval(
 
   if (!user) return { error: 'Not authenticated' };
 
-  const { data, error } = await (supabase.rpc as any)('submit_tournament_for_approval', {
+  const { data, error } = await supabase.rpc('submit_tournament_for_approval', {
     p_tournament_id: tournamentId,
-  }) as { data: any; error: any };
+  });
 
   if (error) {
     const msg = (error as { message?: string }).message || 'Failed to submit for approval.';
