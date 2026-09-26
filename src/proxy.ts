@@ -19,6 +19,9 @@ import type { Database } from '@/lib/supabase/types';
  * IMPORTANT: This does NOT perform authorization. Authorization must always
  * be enforced server-side via RLS and RPC. Never rely on cookie checks here
  * as the sole authorization mechanism — UI hiding is not security.
+ *
+ * Super Admin authorization is enforced in the layout server component via
+ * the is_platform_super_admin() RPC — NOT here.
  */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
@@ -53,13 +56,19 @@ export async function proxy(request: NextRequest) {
   );
 
   const isOrganizerRoute = request.nextUrl.pathname.startsWith('/organizer');
+
+  // Super-admin routes require a session.
+  // The layout server component performs the full is_platform_super_admin() RPC check.
+  // Proxy only provides an early redirect to login if there is no session at all.
+  const isSuperAdminRoute = request.nextUrl.pathname.startsWith('/super-admin');
+
   // Public registration shells and their metadata must remain crawlable.
   // Their Server Components still gate forms/data with auth.getUser().
   const isProtectedAccountRoute =
     request.nextUrl.pathname.startsWith('/player/') ||
     request.nextUrl.pathname.startsWith('/owner/');
 
-  if (isOrganizerRoute || isProtectedAccountRoute) {
+  if (isOrganizerRoute || isSuperAdminRoute || isProtectedAccountRoute) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
