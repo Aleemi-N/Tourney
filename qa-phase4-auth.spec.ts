@@ -41,7 +41,9 @@ async function createAndSignIn(
   if (opts.waitForUrl) {
     await page.waitForURL(opts.waitForUrl, { timeout: 15000 });
   } else {
-    await page.waitForURL('http://localhost:3000/', { timeout: 15000 });
+    // With role-aware login redirect, a new account with no org and no team
+    // is routed to /player (the Player Portal) rather than the public homepage.
+    await page.waitForURL('http://localhost:3000/player', { timeout: 15000 });
   }
 }
 
@@ -61,19 +63,15 @@ test.describe('Phase 4 - Auth & UX Pass', () => {
     // Create confirmed user and sign in to the browser
     await createAndSignIn(page, email, password);
 
-    // Must land on home, NOT organizer onboarding
-    expect(page.url()).toBe('http://localhost:3000/');
+    // With role-aware login redirect, a fresh account (no org, no team) lands at /player.
+    expect(page.url()).toBe('http://localhost:3000/player');
 
-    // Landing nav must show Sign Out (logged in)
-    // Click avatar to reveal dropdown
-    await page.getByRole('button', { expanded: false }).first().click();
-    await expect(page.getByRole('button', { name: 'Sign Out' })).toBeVisible({
-      timeout: 10000,
-    });
+    // The session must have survived the redirect: PlayerShell renders, not a /login bounce.
+    // Brand header link text is "Tourny Player" (the shell header link).
+    await expect(page.getByRole('link', { name: 'Tourny Player' })).toBeVisible({ timeout: 10000 });
 
-    // Dashboard link must NOT appear — not an organizer
-    await expect(page.getByRole('link', { name: 'Dashboard' })).not.toBeVisible();
-    await expect(page.getByRole('link', { name: 'My Tournaments' })).not.toBeVisible();
+    // The player portal h1 begins with "Welcome," — confirms SSR ran with a valid session.
+    await expect(page.getByRole('heading', { level: 1, name: /^Welcome,/ })).toBeVisible({ timeout: 5000 });
   });
 
   test('Malicious nextUrl is blocked during login', async ({ page }) => {
@@ -94,8 +92,8 @@ test.describe('Phase 4 - Auth & UX Pass', () => {
     await page.fill('input[name="password"]', password);
     await page.click('button[type="submit"]');
 
-    // Must fallback to home
-    await page.waitForURL('http://localhost:3000/', { timeout: 10000 });
+    // Malicious URL rejected — role routing sends a new account to /player, not the attacker site.
+    await page.waitForURL('http://localhost:3000/player', { timeout: 10000 });
     expect(page.url()).not.toContain('evil.example');
   });
 

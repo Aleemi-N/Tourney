@@ -73,7 +73,12 @@ export function LoginForm({ nextUrl }: { nextUrl?: string }) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text-secondary" htmlFor="password">Password</label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-text-secondary" htmlFor="password">Password</label>
+            <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline transition-colors">
+              Forgot password?
+            </Link>
+          </div>
           <div className="relative">
             <input 
               id="password"
