@@ -12,7 +12,7 @@ export async function login(formData: FormData) {
   const password = formData.get('password') as string;
   const nextUrl = formData.get('nextUrl') as string;
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
@@ -22,8 +22,48 @@ export async function login(formData: FormData) {
   }
 
   revalidatePath('/', 'layout');
-  
-  redirect(getSafeRedirectUrl(nextUrl, '/'));
+
+  // Honor an explicit, validated next destination (e.g. set by the proxy when an
+  // unauthenticated user tried to visit a protected route, or by a deep link).
+  const safeNext = getSafeRedirectUrl(nextUrl, '');
+  if (safeNext) {
+    redirect(safeNext);
+  }
+
+  // No explicit next — route the user to the correct portal by role.
+  // Order: super admin › organizer › team owner › player (default).
+  // Scorers have no standalone portal; they land at /player and navigate
+  // to assigned matches from there. This matches the scorer page's own guard.
+  const userId = data.user?.id;
+  if (userId) {
+    // Super Admin: check via the same authoritative RPC used by the layout.
+    const { data: isSuperAdmin } = await supabase.rpc('is_platform_super_admin');
+    if (isSuperAdmin) redirect('/super-admin');
+
+    // Organizer: has an active organization membership.
+    const { data: orgMember } = await supabase
+      .from('organization_members')
+      .select('organization_id')
+      .eq('user_id', userId)
+      .eq('status', 'ACTIVE')
+      .limit(1)
+      .maybeSingle();
+    if (orgMember) redirect('/organizer/dashboard');
+
+    // Team Owner: has an active team ownership record.
+    const { data: teamOwner } = await supabase
+      .from('team_owners')
+      .select('team_id')
+      .eq('user_id', userId)
+      .eq('status', 'ACTIVE')
+      .limit(1)
+      .maybeSingle();
+    if (teamOwner) redirect('/owner/dashboard');
+  }
+
+  // Default destination: Player Portal.
+  // Covers players, scorers, and brand-new accounts with no role yet.
+  redirect('/player');
 }
 
 export async function register(formData: FormData) {
@@ -54,10 +94,19 @@ export async function register(formData: FormData) {
     return { error: 'Something went wrong during registration.' };
   }
 
-  // Basic profile created (by triggers in DB). Do NOT initialize organization.
-  
+  // Supabase returns a non-null user object even for duplicate emails when
+  // email confirmation is disabled — but the identities array is empty.
+  // This is a deliberate anti-enumeration measure in Supabase Auth.
+  // We must check for it explicitly; otherwise the action silently redirects
+  // to / as if registration succeeded, and the user can never sign in.
+  if (!authData.user.identities || authData.user.identities.length === 0) {
+    return { error: 'An account with this email already exists. Please sign in.' };
+  }
+
+  // Genuine new account — profile row created by on_auth_user_created trigger.
+  // player_profiles is created later via the tournament registration RPC.
   revalidatePath('/', 'layout');
-  redirect(getSafeRedirectUrl(nextUrl, '/'));
+  redirect(getSafeRedirectUrl(nextUrl, '/player'));
 }
 
 export async function completeOrganizerOnboarding(formData: FormData) {

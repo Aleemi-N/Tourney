@@ -64,7 +64,14 @@ export async function proxy(request: NextRequest) {
 
   // Public registration shells and their metadata must remain crawlable.
   // Their Server Components still gate forms/data with auth.getUser().
+  //
+  // NOTE: The exact /player pathname must be listed explicitly.
+  // startsWith('/player/') only matches sub-paths (/player/profile, etc.)
+  // and misses the player home route itself, which caused the login loop:
+  //   unauthenticated /player → page redirect('/login') with no ?next=
+  //   → login succeeds → fallback '/' → player never reaches the portal.
   const isProtectedAccountRoute =
+    request.nextUrl.pathname === '/player' ||
     request.nextUrl.pathname.startsWith('/player/') ||
     request.nextUrl.pathname.startsWith('/owner/');
 

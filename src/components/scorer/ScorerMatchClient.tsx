@@ -300,7 +300,7 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
   return (
     <div className="space-y-5 select-none sm:space-y-6 lg:space-y-8" aria-busy={pending}>
       {/* HEADER */}
-      <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:rounded-3xl sm:p-6 lg:p-8">
+      <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/3 p-4 sm:rounded-3xl sm:p-6 lg:p-8">
         <div className="min-w-0">
           <div className="mb-2 flex items-center gap-3">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-300">
@@ -384,7 +384,7 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
       </AnimatePresence>
 
       {/* MATCH SCORE / LIVE CONTROLS */}
-      <section className="rounded-3xl border border-white/10 bg-gradient-to-b from-[#1c1533] to-[#120e21] p-3 min-[360px]:p-4 sm:rounded-[2rem] sm:p-8">
+      <section className="rounded-3xl border border-white/10 bg-linear-to-b from-[#1c1533] to-[#120e21] p-3 min-[360px]:p-4 sm:rounded-4xl sm:p-8">
         {/* Set Score Banner */}
         <div className="mb-6 flex items-center justify-center gap-4 sm:mb-8 sm:gap-6">
           <div className="text-right">
@@ -480,7 +480,7 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
       </section>
 
       {/* SET HISTORY */}
-      <section className="rounded-[2rem] border border-white/10 bg-white/[0.02] p-6 lg:p-8">
+      <section className="rounded-4xl border border-white/10 bg-white/2 p-6 lg:p-8">
         <h2 className="mb-6 flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-white/50">
           <Trophy className="h-4 w-4" /> Match History
         </h2>
