@@ -64,7 +64,7 @@ async function resetFixture(adminClient, initialMatchStatus = 'SCHEDULED') {
           ('${ids.teamB}', '${ids.tournament}', 'Team Beta', 'ACTIVE');
 
     INSERT INTO public.volleyball_rules(id, tournament_id, stage_id, sets_to_win, win_by_two, timeouts_per_set, timeout_duration_seconds)
-    VALUES('${ids.rule}', '${ids.tournament}', '${ids.stage}', 2, true, 2, 30);
+    VALUES('${ids.rule}', '${ids.tournament}', '${ids.stage}', 2, true, 2, 15);
 
     INSERT INTO public.volleyball_set_rules(volleyball_rule_id, set_number, target_points)
     VALUES('${ids.rule}', 1, 25), ('${ids.rule}', 2, 25), ('${ids.rule}', 3, 15);

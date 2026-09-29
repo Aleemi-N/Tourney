@@ -7,7 +7,7 @@
 
 ALTER TABLE public.volleyball_rules
   ADD COLUMN IF NOT EXISTS timeouts_per_set integer NOT NULL DEFAULT 2,
-  ADD COLUMN IF NOT EXISTS timeout_duration_seconds integer NOT NULL DEFAULT 30;
+  ADD COLUMN IF NOT EXISTS timeout_duration_seconds integer NOT NULL DEFAULT 15;
 
 --------------------------------------------------------------------------------
 -- 2. DEDICATED MATCH TIMEOUTS TABLE
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.match_timeouts (
   match_set_id uuid NOT NULL REFERENCES public.match_sets(id) ON DELETE CASCADE,
   team_id uuid NOT NULL REFERENCES public.teams(id) ON DELETE CASCADE,
   timeout_number integer NOT NULL CHECK (timeout_number >= 1),
-  duration_seconds integer NOT NULL DEFAULT 30,
+  duration_seconds integer NOT NULL DEFAULT 15,
   started_at timestamptz NOT NULL DEFAULT now(),
   ended_at timestamptz,
   created_by uuid NOT NULL REFERENCES public.profiles(id),
@@ -441,7 +441,7 @@ BEGIN
   ORDER BY stage_id NULLS LAST LIMIT 1;
 
   v_max_timeouts := COALESCE(v_max_timeouts, 2);
-  v_duration := COALESCE(v_duration, 30);
+  v_duration := COALESCE(v_duration, 15);
 
   -- 6. Check allowance for this team in this set
   SELECT count(*) INTO v_used_timeouts
@@ -555,7 +555,7 @@ BEGIN
   ORDER BY stage_id NULLS LAST LIMIT 1;
 
   v_max_timeouts := COALESCE(v_max_timeouts, 2);
-  v_duration := COALESCE(v_duration, 30);
+  v_duration := COALESCE(v_duration, 15);
 
   IF v_active_set_id IS NOT NULL THEN
     SELECT count(*) INTO v_home_timeouts FROM public.match_timeouts WHERE match_set_id = v_active_set_id AND team_id = v_home_id;
