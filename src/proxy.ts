@@ -73,9 +73,10 @@ export async function proxy(request: NextRequest) {
     if (isOrganizerRoute || isSuperAdminRoute || isProtectedAccountRoute) {
       const {
         data: { user },
+        error
       } = await supabase.auth.getUser();
 
-      if (!user) {
+      if (error || !user) {
         const redirectUrl = request.nextUrl.clone();
         redirectUrl.pathname = '/login';
         redirectUrl.searchParams.set('next', request.nextUrl.pathname);
@@ -84,6 +85,21 @@ export async function proxy(request: NextRequest) {
     }
   } catch (error) {
     console.error('Proxy session check failed:', error);
+    
+    // Do not allow an unhandled 500 error to bypass the security check
+    const isProtected = 
+      request.nextUrl.pathname.startsWith('/organizer') ||
+      request.nextUrl.pathname.startsWith('/super-admin') ||
+      request.nextUrl.pathname === '/player' ||
+      request.nextUrl.pathname.startsWith('/player/') ||
+      request.nextUrl.pathname.startsWith('/owner/');
+
+    if (isProtected) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = '/login';
+      redirectUrl.searchParams.set('next', request.nextUrl.pathname);
+      return NextResponse.redirect(redirectUrl);
+    }
   }
 
   return response;
