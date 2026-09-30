@@ -37,16 +37,33 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet, headers) {
+          // Update the internal Next.js cookies map
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
 
-          response = NextResponse.next({ request });
+          // Explicitly serialize the updated cookies back into the raw 'cookie' HTTP header.
+          // Without this, Server Components will not see the refreshed session!
+          const requestHeaders = new Headers(request.headers);
+          const cookieHeader = request.cookies
+            .getAll()
+            .map((c) => `${c.name}=${c.value}`)
+            .join('; ');
+          requestHeaders.set('cookie', cookieHeader);
 
+          // Pass the explicitly modified headers forward to Server Components
+          response = NextResponse.next({
+            request: {
+              headers: requestHeaders,
+            },
+          });
+
+          // Set the cookies on the outbound response to update the browser
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
           );
 
+          // Apply any standard headers provided by Supabase
           Object.entries(headers).forEach(([key, value]) =>
             response.headers.set(key, value),
           );
