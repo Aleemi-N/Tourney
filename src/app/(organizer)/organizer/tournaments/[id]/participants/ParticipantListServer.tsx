@@ -1,4 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from '@/lib/supabase/server';
 import { ParticipantManager } from './ParticipantManager';
 
@@ -14,8 +14,8 @@ export async function ParticipantListServer({
 
   // Fetch player registrations, team owner applications, and (for auction) categories + settings
   const [
-    { data: players },
-    { data: teamOwners },
+    { data: players, error: playersError },
+    { data: teamOwners, error: teamOwnersError },
     auctionCategoriesResult,
     settingsResult,
   ] = await Promise.all([
@@ -59,15 +59,25 @@ export async function ParticipantListServer({
         .select('id,category_code,display_name,base_price,display_order')
         .eq('tournament_id', tournament.id)
         .order('display_order')
-      : Promise.resolve({ data: null }),
+      : Promise.resolve({ data: null, error: null }),
     isAuctionLeague
       ? supabase
         .from('tournament_settings')
         .select('icon_selection_method,setter_selection_method')
         .eq('tournament_id', tournament.id)
         .single()
-      : Promise.resolve({ data: null }),
+      : Promise.resolve({ data: null, error: null }),
   ]);
+
+  if (playersError || teamOwnersError || auctionCategoriesResult.error || settingsResult.error) {
+    console.error('ParticipantList query error:', playersError || teamOwnersError || auctionCategoriesResult.error || settingsResult.error);
+    return (
+      <div className="bg-destructive/10 border border-destructive/20 text-destructive p-8 rounded-2xl text-center">
+        <h2 className="text-xl font-bold mb-2">Unable to load participants</h2>
+        <p>Please try refreshing the page or logging in again.</p>
+      </div>
+    );
+  }
 
   return (
     <ParticipantManager
