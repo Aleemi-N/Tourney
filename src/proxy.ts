@@ -49,6 +49,15 @@ export async function proxy(request: NextRequest) {
               request.cookies.set(name, value),
             );
 
+            // Explicitly sync the updated cookies to the raw request headers.
+            // Next.js Server Components read from headers().get('cookie').
+            // Without this, Server Components receive the old expired token during this request.
+            const cookieHeader = request.cookies
+              .getAll()
+              .map((cookie) => `${encodeURIComponent(cookie.name)}=${encodeURIComponent(cookie.value)}`)
+              .join('; ');
+            request.headers.set('cookie', cookieHeader);
+
             response = NextResponse.next({ request });
 
             cookiesToSet.forEach(({ name, value, options }) =>
