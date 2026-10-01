@@ -298,11 +298,13 @@ function AuctioneerBiddingPanel({
   teamNameMap,
   onPlaceBid,
   busy,
+  minimumBidIncrement,
 }: {
   snapshot: OrganizerAuctionSnapshot;
   teamNameMap: Record<string, { name: string; short_name: string | null }>;
   onPlaceBid: (teamId: string, amount: number) => void;
   busy: boolean;
+  minimumBidIncrement: number;
 }) {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const cp = snapshot.current_player;
@@ -310,7 +312,7 @@ function AuctioneerBiddingPanel({
   
   if (!cp || snapshot.auction.status !== 'LIVE') return null;
 
-  const nextBidAmount = hb ? hb.amount + snapshot.auction.minimum_bid_increment : cp.base_price;
+  const nextBidAmount = hb ? hb.amount + minimumBidIncrement : cp.base_price;
   
   // Sort teams by remaining descending
   const teams = [...(snapshot.teams || [])].sort((a, b) => b.remaining - a.remaining);
@@ -639,6 +641,7 @@ interface Props {
   playerNameMap: Record<string, string>;
   /** 'SAME_BASE_PRICE' | 'ORGANIZER_SETS_PRICE' */
   reauctionPriceRule: string;
+  minimumBidIncrement: number;
 }
 
 function genKey() {
@@ -655,6 +658,7 @@ export function OrganizerAuctionClient({
   teamNameMap,
   playerNameMap,
   reauctionPriceRule,
+  minimumBidIncrement,
 }: Props) {
   const [snapshot, setSnapshot] = useState<OrganizerAuctionSnapshot | null>(initialSnapshot);
   const [readiness, setReadiness] = useState<ReadinessResult | null>(
@@ -960,7 +964,7 @@ export function OrganizerAuctionClient({
           {snapshot && (
             <>
               <CurrentPlayerPanel snapshot={snapshot} storageBase={storageBase} />
-              <AuctioneerBiddingPanel snapshot={snapshot} teamNameMap={teamNameMap} onPlaceBid={handlePlaceBid} busy={busy} />
+              <AuctioneerBiddingPanel snapshot={snapshot} teamNameMap={teamNameMap} onPlaceBid={handlePlaceBid} busy={busy} minimumBidIncrement={minimumBidIncrement} />
             </>
           )}
 

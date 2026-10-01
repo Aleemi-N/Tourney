@@ -135,6 +135,7 @@ async function AuctionContent({ params }: { params: Promise<{ id: string }> }) {
 
   const reauctionPriceRule =
     (settingsData?.reauction_price_rule as string | null) ?? 'SAME_BASE_PRICE';
+  const minimumBidIncrement = 100;
 
   return (
     <main className="min-h-screen p-4 sm:p-6 md:p-8">
@@ -164,6 +165,7 @@ async function AuctionContent({ params }: { params: Promise<{ id: string }> }) {
         teamNameMap={teamNameMap}
         playerNameMap={playerNameMap}
         reauctionPriceRule={reauctionPriceRule}
+        minimumBidIncrement={minimumBidIncrement}
       />
     </main>
   );
