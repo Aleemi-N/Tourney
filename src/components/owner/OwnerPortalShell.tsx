@@ -23,15 +23,15 @@ export function OwnerPortalShell({
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-neutral-200 font-sans selection:bg-primary/30">
-            <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col lg:flex-row">
-                <aside className="relative z-50 border-b border-white/10 bg-[#0a0a0a]/95 backdrop-blur-xl lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-72 lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-r">
-                    <div className="flex items-center justify-between px-6 py-6 lg:px-8">
-                        <Link href="/owner/dashboard" className="text-xl font-semibold tracking-tight text-white">
+            <div className="flex min-h-screen flex-col lg:flex-row">
+                <aside className="relative z-50 border-b border-white/10 bg-[#0a0a0a]/95 backdrop-blur-xl lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 xl:w-72 lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-r">
+                    <div className="flex items-center justify-between px-6 py-8 lg:px-7">
+                        <Link href="/owner/dashboard" className="text-2xl font-semibold tracking-tight text-white">
                             Tourny <span className="text-neutral-500 font-medium">Owner</span>
                         </Link>
                     </div>
 
-                    <nav aria-label="Owner navigation" className="flex gap-1 overflow-x-auto px-4 pb-4 lg:block lg:space-y-1 lg:px-4 lg:py-2">
+                    <nav aria-label="Owner navigation" className="flex gap-2 overflow-x-auto px-4 pb-4 lg:block lg:space-y-3 lg:px-3 lg:py-4">
                         {activeTeam ? (
                             <>
                                 <Link href={`/owner/teams/${activeTeam.id}`} aria-current={pathname === `/owner/teams/${activeTeam.id}` ? 'page' : undefined} className={navClass(`/owner/teams/${activeTeam.id}`)}>
@@ -80,7 +80,7 @@ export function OwnerPortalShell({
                         </div>
                     ) : null}
 
-                    <form action={logout} className="mt-auto hidden p-4 lg:block border-t border-white/5">
+                    <form action={logout} className="mt-auto hidden p-3 lg:block border-t border-white/5">
                         <button type="submit" className="w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium text-neutral-400 transition-colors hover:bg-white/[0.04] hover:text-white">
                             Sign out
                         </button>
