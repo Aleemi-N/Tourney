@@ -425,16 +425,19 @@ export function ParticipantManager({
                 return (
                   <div key={p.id} className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl shadow-[0_4px_20px_rgb(0,0,0,0.1)] transition-all duration-300 hover:shadow-lg hover:border-primary/30 hover:-translate-y-1">
                     {/* Player photo */}
-                    <div className="relative aspect-4/3 w-full shrink-0 overflow-hidden bg-surface">
+                    <div className="relative aspect-[4/5] w-full shrink-0 overflow-hidden bg-surface">
                       {profile?.photo_path ? (
-                        <Image
-                          src={supabase.storage.from('avatars').getPublicUrl(profile.photo_path).data.publicUrl}
-                          alt={profile.display_name}
-                          fill
-                          unoptimized
-                          className="object-cover object-[center_22%]"
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        />
+                        <>
+                          <Image
+                            src={supabase.storage.from('avatars').getPublicUrl(profile.photo_path).data.publicUrl}
+                            alt={profile.display_name}
+                            fill
+                            unoptimized
+                            className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-surface-raised/95 via-surface-raised/20 to-transparent z-0" />
+                        </>
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-slate-400 dark:text-slate-500">
                           <span className="text-4xl font-bold tracking-widest opacity-40">
@@ -443,17 +446,18 @@ export function ParticipantManager({
                         </div>
                       )}
                       {/* Status badge */}
-                      <span className={`absolute top-2 right-2 z-10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full shadow-sm ${p.status === 'APPROVED' ? 'bg-emerald-500/90 text-white' :
-                          p.status === 'REJECTED' ? 'bg-red-500/90 text-white' :
-                            p.status === 'PENDING' ? 'bg-amber-500/90 text-white' :
-                              'bg-orange-500/90 text-white'
+                      <span className={`absolute top-3 right-3 z-10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg backdrop-blur-md shadow-sm border ${
+                          p.status === 'APPROVED' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
+                          p.status === 'REJECTED' ? 'bg-red-500/20 text-red-300 border-red-500/30' :
+                          p.status === 'PENDING' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
+                          'bg-orange-500/20 text-orange-300 border-orange-500/30'
                         }`}>
                         {p.status === 'CHANGES_REQUESTED' ? 'CHANGES' : p.status}
                       </span>
                     </div>
 
                     {/* Player info */}
-                    <div className="flex flex-1 flex-col p-4">
+                    <div className="flex flex-1 flex-col px-5 pb-5 relative z-10 -mt-16">
                       <h3 className="line-clamp-2 font-bold text-slate-900 dark:text-slate-100">
                         {profile?.display_name}
                       </h3>
@@ -481,7 +485,7 @@ export function ParticipantManager({
                                 setClassifications((prev) => ({ ...prev, [p.id]: e.target.value }))
                               }
                               disabled={isSubmitting}
-                              className="h-12 w-full rounded-xl border border-border bg-surface-muted px-3 text-sm text-text-primary focus:border-primary focus:bg-surface-raised focus:ring-4 focus:ring-primary/20 disabled:opacity-50 transition-all shadow-sm"
+                                className="h-11 w-full rounded-xl border border-glass-border bg-surface-muted/50 backdrop-blur-sm px-3 text-sm text-text-primary focus:border-primary focus:bg-surface-muted focus:ring-2 focus:ring-primary/20 disabled:opacity-50 transition-all shadow-inner"
                             >
                               <option value="" disabled>
                                 Select route…
@@ -511,7 +515,7 @@ export function ParticipantManager({
                                     }))
                                   }
                                   disabled={isSubmitting}
-                                  className="h-12 w-full rounded-xl border border-border bg-surface-muted px-3 text-sm text-text-primary focus:border-primary focus:bg-surface-raised focus:ring-4 focus:ring-primary/20 disabled:opacity-50 transition-all shadow-sm"
+                                    className="h-11 w-full rounded-xl border border-glass-border bg-surface-muted/50 backdrop-blur-sm px-3 text-sm text-text-primary focus:border-primary focus:bg-surface-muted focus:ring-2 focus:ring-primary/20 disabled:opacity-50 transition-all shadow-inner"
                                 >
                                   <option value="">Needs Category…</option>
                                   {auctionCategories.map((cat) => (
@@ -556,14 +560,14 @@ export function ParticipantManager({
                     </div>
 
                     {/* Actions footer */}
-                    <div className="border-t border-border bg-surface-muted/30 p-4">
+                    <div className="border-t border-glass-border bg-surface-muted/20 p-4 backdrop-blur-md">
                       {isPending && (
                         <div className="flex flex-col min-[450px]:flex-row gap-3">
                           <button
                             type="button"
                             onClick={() => handleRejectPlayer(p.id)}
                             disabled={isSubmitting}
-                            className="h-12 flex-1 rounded-xl border border-danger/30 bg-danger/10 px-4 text-sm font-semibold text-danger hover:bg-danger hover:text-white disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95"
+                            className="h-11 flex-1 rounded-xl border border-danger/30 bg-danger/10 px-4 text-sm font-bold text-danger hover:bg-danger/20 hover:border-danger/50 disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 shadow-sm"
                           >
                             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                             Reject
@@ -572,7 +576,7 @@ export function ParticipantManager({
                             type="button"
                             onClick={() => handleApprovePlayer(p.id)}
                             disabled={isSubmitting}
-                            className="h-12 flex-1 rounded-xl bg-gradient-to-r from-success to-emerald-500 px-4 text-sm font-semibold text-white shadow-md hover:shadow-lg hover:shadow-success/30 disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 hover:-translate-y-0.5"
+                            className="h-11 flex-1 rounded-xl bg-gradient-to-r from-success/90 to-emerald-500/90 hover:from-success hover:to-emerald-500 px-4 text-sm font-bold text-white shadow-[0_4px_15px_rgb(16,185,129,0.25)] hover:shadow-[0_8px_25px_rgb(16,185,129,0.35)] disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 hover:-translate-y-0.5 border border-success/20"
                           >
                             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                             Approve
@@ -679,7 +683,7 @@ export function ParticipantManager({
                           type="button"
                           onClick={() => handleRejectOwner(o.id)}
                           disabled={loadingId === o.id}
-                          className="h-11 flex-1 rounded-xl border border-danger/30 bg-danger/10 px-4 text-sm font-semibold text-danger hover:bg-danger hover:text-white disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95"
+                          className="h-11 flex-1 rounded-xl border border-danger/30 bg-danger/10 px-4 text-sm font-bold text-danger hover:bg-danger/20 hover:border-danger/50 disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 shadow-sm"
                         >
                           {loadingId === o.id && <Loader2 className="h-4 w-4 animate-spin" />}
                           Reject
@@ -688,7 +692,7 @@ export function ParticipantManager({
                           type="button"
                           onClick={() => handleApproveOwner(o.id)}
                           disabled={loadingId === o.id}
-                          className="h-11 flex-1 rounded-xl bg-gradient-to-r from-success to-emerald-500 px-4 text-sm font-semibold text-white shadow-[0_4px_15px_rgb(16,185,129,0.3)] hover:shadow-[0_8px_25px_rgb(16,185,129,0.4)] disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 hover:-translate-y-0.5"
+                          className="h-11 flex-1 rounded-xl bg-gradient-to-r from-success/90 to-emerald-500/90 hover:from-success hover:to-emerald-500 px-4 text-sm font-bold text-white shadow-[0_4px_15px_rgb(16,185,129,0.25)] hover:shadow-[0_8px_25px_rgb(16,185,129,0.35)] disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 hover:-translate-y-0.5 border border-success/20"
                         >
                           {loadingId === o.id && <Loader2 className="h-4 w-4 animate-spin" />}
                           Approve

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getOwnerTeams } from '@/lib/owner/owner-team';
 import { OwnerPortalShell } from '@/components/owner/OwnerPortalShell';
+import { Shield, Users, ArrowRight, ShieldAlert, Activity, CheckCircle2 } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Team Owner Dashboard' };
 
@@ -22,31 +23,107 @@ export default async function OwnerDashboardPage() {
             <div className="px-5 py-8 sm:px-8 lg:px-12 lg:py-12">
                 <div className="mx-auto max-w-6xl">
                     <div className="max-w-2xl">
-                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-200/70">Owner overview</p>
-                        <h1 className="mt-3 text-4xl font-black tracking-tight text-white sm:text-5xl">Your teams, at a glance.</h1>
-                        <p className="mt-4 text-base leading-7 text-white/55">Choose a team to review its squad or join a live auction with an authoritative purse snapshot.</p>
+                        <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
+                            <Shield className="h-3.5 w-3.5 text-primary" />
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Owner overview</p>
+                        </div>
+                        <h1 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl bg-gradient-to-br from-white to-white/40 bg-clip-text text-transparent">
+                            Your teams, at a glance.
+                        </h1>
+                        <p className="mt-4 text-base leading-7 text-text-secondary">
+                            Choose a team to review its squad or join a live auction with an authoritative purse snapshot.
+                        </p>
                     </div>
 
-                    <section className="mt-10">
-                        <div className="flex items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">Managed teams</p><h2 className="mt-2 text-2xl font-black text-white">Select a team</h2></div><span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-white/45">{teams.length} active</span></div>
+                    <section className="mt-12">
+                        <div className="flex items-center justify-between border-b border-glass-border pb-4">
+                            <div className="flex items-center gap-3">
+                                <Users className="h-5 w-5 text-text-muted" />
+                                <h2 className="text-xl font-bold text-text-primary">Managed Teams</h2>
+                            </div>
+                            <span className="rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-bold text-primary shadow-sm">
+                                {teams.length} active
+                            </span>
+                        </div>
+                        
                         {teams.length === 0 ? (
-                            <div className="mt-5 rounded-3xl border border-dashed border-white/15 bg-white/3 p-8 text-sm text-white/55">You do not manage an active team yet.</div>
+                            <div className="mt-6 flex flex-col items-center justify-center rounded-3xl border border-glass-border bg-surface-raised/40 p-12 text-center backdrop-blur-sm">
+                                <div className="rounded-full bg-surface-muted p-4 border border-glass-border shadow-inner">
+                                    <ShieldAlert className="h-8 w-8 text-text-muted opacity-50" />
+                                </div>
+                                <h3 className="mt-4 text-lg font-bold text-text-primary">No Active Teams</h3>
+                                <p className="mt-2 max-w-sm text-sm text-text-secondary">
+                                    You do not manage any active teams yet. Any applications that are approved will appear here.
+                                </p>
+                            </div>
                         ) : (
-                            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                            <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                                 {teams.map((team) => (
-                                    <article key={team.id} className="flex min-w-0 flex-col rounded-3xl border border-white/10 bg-[#17132a] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
-                                        <div className="flex items-start justify-between gap-3"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-fuchsia-300/10 text-sm font-black text-fuchsia-100">{(team.short_name || team.name).slice(0, 3).toUpperCase()}</div><span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-100">Active</span></div>
-                                        <h3 className="mt-7 truncate text-xl font-black text-white">{team.name}</h3>
-                                        <p className="mt-1 truncate text-sm text-white/45">{team.tournament_name}</p>
-                                        <div className="mt-6 grid grid-cols-2 gap-3"><div className="rounded-2xl bg-black/20 p-3"><p className="text-[10px] uppercase tracking-wider text-white/40">Context</p><p className="mt-1 truncate text-sm font-semibold text-white">{team.place || 'Tournament team'}</p></div><div className="rounded-2xl bg-black/20 p-3"><p className="text-[10px] uppercase tracking-wider text-white/40">Access</p><p className="mt-1 text-sm font-semibold text-white">Owner</p></div></div>
-                                        <Link href={`/owner/teams/${team.id}`} className="mt-5 rounded-2xl border border-fuchsia-200/20 px-4 py-3 text-center text-sm font-bold text-fuchsia-100 transition hover:bg-fuchsia-300/10">Open team</Link>
+                                    <article key={team.id} className="group relative flex min-w-0 flex-col overflow-hidden rounded-3xl border border-glass-border bg-surface-raised/60 p-6 backdrop-blur-xl shadow-[0_4px_20px_rgb(0,0,0,0.1)] transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:border-primary/40 hover:-translate-y-1">
+                                        <div className="absolute top-0 right-0 h-32 w-32 -translate-y-16 translate-x-16 rounded-full bg-primary/20 blur-[50px] transition-all group-hover:bg-primary/30" />
+                                        
+                                        <div className="relative z-10 flex items-start justify-between gap-3">
+                                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-glass-border bg-surface shadow-inner text-lg font-black text-primary">
+                                                {(team.short_name || team.name).slice(0, 3).toUpperCase()}
+                                            </div>
+                                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                                                <Activity className="h-3 w-3" />
+                                                Active
+                                            </span>
+                                        </div>
+                                        <h3 className="relative z-10 mt-6 truncate text-xl font-bold text-text-primary">{team.name}</h3>
+                                        <p className="relative z-10 mt-1 truncate text-sm font-medium text-text-secondary">{team.tournament_name}</p>
+                                        
+                                        <div className="relative z-10 mt-6 grid grid-cols-2 gap-3">
+                                            <div className="rounded-2xl bg-surface-muted/50 p-3 border border-glass-border">
+                                                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Context</p>
+                                                <p className="mt-1 truncate text-sm font-bold text-text-primary">{team.place || 'Tournament'}</p>
+                                            </div>
+                                            <div className="rounded-2xl bg-surface-muted/50 p-3 border border-glass-border">
+                                                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Access</p>
+                                                <p className="mt-1 text-sm font-bold text-text-primary">Owner</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <Link href={`/owner/teams/${team.id}`} className="relative z-10 mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary-hover px-4 py-3 text-sm font-bold text-white shadow-[0_4px_15px_rgba(var(--primary),0.3)] transition-all hover:shadow-[0_6px_20px_rgba(var(--primary),0.4)] active:scale-[0.98]">
+                                            Open team portal
+                                            <ArrowRight className="h-4 w-4" />
+                                        </Link>
                                     </article>
                                 ))}
                             </div>
                         )}
                     </section>
 
-                    {applicationsResult.data && applicationsResult.data.length > 0 ? <section className="mt-10"><p className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">Applications</p><div className="mt-4 space-y-3">{applicationsResult.data.map((application) => <div key={application.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/3 px-4 py-4"><div><p className="font-semibold text-white">{application.proposed_team_name}</p><p className="text-sm text-white/45">{Array.isArray(application.tournaments) ? application.tournaments[0]?.name : application.tournaments?.name}</p></div><span className="rounded-full border border-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white/55">{application.status}</span></div>)}</div></section> : null}
+                    {applicationsResult.data && applicationsResult.data.length > 0 && (
+                        <section className="mt-12">
+                            <div className="mb-4 flex items-center gap-2 border-b border-glass-border pb-4">
+                                <CheckCircle2 className="h-5 w-5 text-text-muted" />
+                                <h2 className="text-lg font-bold text-text-primary">Pending Applications</h2>
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                {applicationsResult.data.map((application) => (
+                                    <div key={application.id} className="flex flex-col justify-between rounded-2xl border border-glass-border bg-surface-raised/40 p-4 backdrop-blur-md transition-all hover:border-glass-border-strong hover:bg-surface-raised/60">
+                                        <div>
+                                            <p className="font-bold text-text-primary">{application.proposed_team_name}</p>
+                                            <p className="mt-0.5 text-xs text-text-secondary">
+                                                {Array.isArray(application.tournaments) ? application.tournaments[0]?.name : application.tournaments?.name}
+                                            </p>
+                                        </div>
+                                        <div className="mt-4 self-start">
+                                            <span className={`inline-flex rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${
+                                                application.status === 'PENDING' ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' :
+                                                application.status === 'REJECTED' ? 'border-red-500/30 bg-red-500/10 text-red-400' :
+                                                'border-orange-500/30 bg-orange-500/10 text-orange-400'
+                                            }`}>
+                                                {application.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
                 </div>
             </div>
         </OwnerPortalShell>
