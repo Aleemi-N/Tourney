@@ -37,8 +37,11 @@ export function OwnerPortalShell({
                                 <Link href={`/owner/teams/${activeTeam.id}`} aria-current={pathname === `/owner/teams/${activeTeam.id}` ? 'page' : undefined} className={navClass(`/owner/teams/${activeTeam.id}`)}>
                                     Overview
                                 </Link>
+                                <Link href={`/owner/teams/${activeTeam.id}/players`} aria-current={pathname.endsWith('/players') ? 'page' : undefined} className={navClass(`/owner/teams/${activeTeam.id}/players`)}>
+                                    Player Pool
+                                </Link>
                                 <Link href={`/owner/teams/${activeTeam.id}/squad`} aria-current={pathname.endsWith('/squad') ? 'page' : undefined} className={navClass(`/owner/teams/${activeTeam.id}/squad`)}>
-                                    Player Details
+                                    My Squad
                                 </Link>
                                 <Link href={`/owner/teams/${activeTeam.id}/auction`} aria-current={pathname.endsWith('/auction') ? 'page' : undefined} className={navClass(`/owner/teams/${activeTeam.id}/auction`, true)}>
                                     Live Auction
