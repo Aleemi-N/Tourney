@@ -38,7 +38,7 @@ export function OwnerPortalShell({
                                     Overview
                                 </Link>
                                 <Link href={`/owner/teams/${activeTeam.id}/squad`} aria-current={pathname.endsWith('/squad') ? 'page' : undefined} className={navClass(`/owner/teams/${activeTeam.id}/squad`)}>
-                                    My Squad
+                                    Player Details
                                 </Link>
                                 <Link href={`/owner/teams/${activeTeam.id}/auction`} aria-current={pathname.endsWith('/auction') ? 'page' : undefined} className={navClass(`/owner/teams/${activeTeam.id}/auction`, true)}>
                                     Live Auction

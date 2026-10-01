@@ -6,7 +6,7 @@ import { CalendarDays, Home, UserRound } from 'lucide-react';
 
 const links = [
   { href: '/player', label: 'My tournaments', icon: CalendarDays, exact: true },
-  { href: '/player/profile', label: 'Profile', icon: UserRound, exact: false },
+  { href: '/player/profile', label: 'My Details', icon: UserRound, exact: false },
 ];
 
 export function PlayerShell({ children }: { children: React.ReactNode }) {

@@ -52,7 +52,7 @@ export function DashboardShell({ children, user, lotEnabledTournamentIds = [] }:
 
   const tournamentNavigation = isTournamentContext ? [
     { name: 'Overview', href: `/organizer/tournaments/${tournamentId}`, icon: TrophyIcon },
-    { name: 'Participants', href: `/organizer/tournaments/${tournamentId}/participants`, icon: UsersIcon },
+    { name: 'Player Details', href: `/organizer/tournaments/${tournamentId}/participants`, icon: UsersIcon },
     { name: 'Staff', href: `/organizer/tournaments/${tournamentId}/staff`, icon: UserGroupIcon, disabled: false },
     ...(lotEnabledTournamentIds.includes(tournamentId) ? [{ name: 'Lot Draw', href: `/organizer/tournaments/${tournamentId}/lot`, icon: Squares2X2Icon, disabled: false }] : []),
     { name: 'Auction', href: `/organizer/tournaments/${tournamentId}/auction`, icon: BanknotesIcon, disabled: false },
