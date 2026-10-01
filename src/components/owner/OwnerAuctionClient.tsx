@@ -19,9 +19,6 @@ export function OwnerAuctionClient({
     initialSnapshot: OwnerSnapshot | null;
 }) {
     const [snapshot, setSnapshot] = useState(initialSnapshot);
-    const [amount, setAmount] = useState(initialSnapshot?.next_minimum_bid ?? 0);
-    const [bidState, setBidState] = useState<'idle' | 'pending' | 'accepted' | 'rejected'>('idle');
-    const [message, setMessage] = useState('');
     const [connectionState, setConnectionState] = useState('Live snapshot');
     const lastSequence = useRef(initialSnapshot?.last_sequence ?? 0);
 
@@ -39,7 +36,6 @@ export function OwnerAuctionClient({
         const next = data as OwnerSnapshot;
         lastSequence.current = Math.max(lastSequence.current, next.last_sequence ?? 0);
         setSnapshot(next);
-        setAmount(next.next_minimum_bid ?? 0);
         setConnectionState('Live snapshot');
         return true;
     }, [auctionId, teamId]);
@@ -95,43 +91,7 @@ export function OwnerAuctionClient({
         };
     }, [auctionId, refreshSnapshot, teamId]);
 
-    async function placeBid() {
-        if (!auctionId || !snapshot?.current_player || !snapshot.team || bidState === 'pending') return;
-        setBidState('pending');
-        setMessage('Submitting bid…');
-        const supabase = createClient();
-        const { data, error } = await supabase.rpc('place_auction_bid', {
-            p_auction_id: auctionId,
-            p_auction_player_id: snapshot.current_player.auction_player_id,
-            p_team_id: teamId,
-            p_amount: Number(amount),
-            p_request_key: crypto.randomUUID(),
-            p_expected_player_version: snapshot.current_player.state_version,
-            p_expected_highest_bid: snapshot.highest_bid?.amount ?? 0,
-        });
 
-        if (error) {
-            const reason = error.message.toLowerCase();
-            setBidState('rejected');
-            setMessage(
-                reason.includes('stale') || reason.includes('not live')
-                    ? 'This auction moved on. The authoritative state has been refreshed.'
-                    : reason.includes('protected') || reason.includes('purse')
-                        ? 'This bid is outside your authoritative purse allowance.'
-                        : reason.includes('maximum squad')
-                            ? 'Your team has reached its maximum squad size.'
-                            : reason.includes('unauthorized')
-                                ? 'You are not authorized to bid for this team.'
-                                : 'The bid was not accepted. Review the refreshed auction state and try again.',
-            );
-            await refreshSnapshot();
-            return;
-        }
-
-        setBidState('accepted');
-        setMessage((data as { idempotent?: boolean })?.idempotent ? 'Bid request already accepted.' : 'Bid accepted.');
-        await refreshSnapshot();
-    }
 
     const player = snapshot?.current_player;
     const team = snapshot?.team;
@@ -149,13 +109,6 @@ export function OwnerAuctionClient({
                 : team && !team.may_bid
                     ? 'Your team cannot bid in the current authoritative state.'
                     : null;
-    const numericAmount = Number(amount);
-    const cannotSubmit = !player
-        || !team?.may_bid
-        || bidState === 'pending'
-        || !Number.isFinite(numericAmount)
-        || numericAmount < Number(renderSnapshot.next_minimum_bid ?? 0)
-        || numericAmount > Number(team?.max_allowed_bid ?? 0);
     const bidStanding = blockedMessage
         ? 'Cannot bid'
         : leading
@@ -262,39 +215,25 @@ export function OwnerAuctionClient({
 
                     <section className="rounded-3xl border border-fuchsia-200/20 bg-fuchsia-300/10 p-5 sm:p-6">
                         <div className="flex items-center justify-between gap-3">
-                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-100/70">Your bid</p>
+                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-100/70">Live Bidding</p>
                             <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${bidStanding === 'Leading' ? 'bg-emerald-300/15 text-emerald-100' : bidStanding === 'Cannot bid' ? 'bg-amber-300/15 text-amber-100' : 'bg-white/10 text-white/65'}`}>
                                 {bidStanding}
                             </span>
                         </div>
-                        <div className="mt-4 flex items-end justify-between gap-3">
-                            <div>
-                                <p className="text-sm text-white/55">Next valid bid</p>
-                                <p className="text-3xl font-black text-white">{money(renderSnapshot.next_minimum_bid)}</p>
+                        <div className="mt-4 flex flex-col gap-2">
+                            <p className="text-sm font-semibold text-white/80 text-center">Bidding is managed offline</p>
+                            <p className="text-sm text-white/60 text-center">Raise your paddle or shout your bid to the auctioneer.</p>
+                        </div>
+                        <div className="mt-5 border-t border-fuchsia-200/20 pt-5">
+                            <div className="flex items-end justify-between gap-3">
+                                <div>
+                                    <p className="text-sm text-white/55">Next valid bid</p>
+                                    <p className="text-3xl font-black text-white">{money(renderSnapshot.next_minimum_bid)}</p>
+                                </div>
+                                <span className="text-right text-xs text-white/50">Max {money(team?.max_allowed_bid)}</span>
                             </div>
-                            <span className="text-right text-xs text-white/50">Max {money(team?.max_allowed_bid)}</span>
                         </div>
-                        <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                            <input
-                                aria-label="Bid amount"
-                                inputMode="decimal"
-                                type="number"
-                                min={renderSnapshot.next_minimum_bid ?? 0}
-                                max={team?.max_allowed_bid}
-                                step="any"
-                                value={amount || ''}
-                                onChange={(event) => setAmount(Number(event.target.value))}
-                                className="min-h-12 min-w-0 flex-1 rounded-2xl border border-white/15 bg-[#17132a] px-4 py-3 text-lg font-bold text-white outline-none focus:border-fuchsia-200"
-                            />
-                            <button type="button" onClick={() => void placeBid()} disabled={cannotSubmit} className="min-h-12 rounded-2xl bg-fuchsia-300 px-5 text-sm font-black text-[#211334] transition hover:bg-fuchsia-200 disabled:cursor-not-allowed disabled:opacity-40">
-                                {bidState === 'pending' ? 'Sending…' : 'Place bid'}
-                            </button>
-                        </div>
-                        {blockedMessage ? <p className="mt-3 text-sm text-amber-100">{blockedMessage}</p> : null}
-                        {message ? <p role="status" className={`mt-3 text-sm ${bidState === 'rejected' ? 'text-rose-200' : 'text-fuchsia-100'}`}>{message}</p> : null}
-                        {renderSnapshot.highest_bid ? (
-                            <p className="mt-3 text-xs text-white/45">{leading ? 'You are leading this player.' : 'You have been outbid. The snapshot above is authoritative.'}</p>
-                        ) : null}
+                        {blockedMessage ? <p className="mt-4 text-sm text-amber-100 text-center">{blockedMessage}</p> : null}
                     </section>
                 </aside>
             </div>

@@ -45,13 +45,13 @@ export function HeroSection() {
             >
               <Link 
                 href="/organizer/tournaments/new"
-                className="w-full sm:w-auto px-8 py-4 bg-primary hover:bg-primary-hover text-primary-foreground font-bold rounded-xl transition-colors text-center shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-primary to-primary-hover shadow-[0_4px_15px_rgb(79,70,229,0.3)] hover:shadow-[0_8px_25px_rgb(79,70,229,0.4)] hover:-translate-y-0.5 active:scale-95 text-primary-foreground font-bold rounded-xl transition-all duration-300 flex justify-center items-center h-14"
               >
                 Create Tournament
               </Link>
               <a 
                 href="#tournaments"
-                className="w-full sm:w-auto px-8 py-4 bg-transparent border border-border-strong hover:bg-white/5 text-text-primary font-bold rounded-xl transition-colors text-center"
+                className="w-full sm:w-auto px-8 py-4 bg-surface-muted/30 border border-glass-border hover:bg-surface/60 hover:-translate-y-0.5 active:scale-95 text-text-primary font-bold rounded-xl transition-all duration-300 flex justify-center items-center h-14 backdrop-blur-sm"
               >
                 Find Tournament
               </a>

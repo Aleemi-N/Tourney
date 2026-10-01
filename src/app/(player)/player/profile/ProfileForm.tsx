@@ -39,6 +39,13 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
       return;
     }
 
+    if (!photoUrl) {
+      setError('Profile Photo is required.');
+      setPending(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     try {
       const { error: rpcError } = await supabase.rpc('update_player_profile', {
         p_display_name: displayName,
@@ -89,7 +96,7 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
         bucket="avatars" 
         currentPhotoUrl={photoUrl}
         onUploadSuccess={(url, path) => setPhotoUrl(path)} // We store path, not public URL in DB
-        label="Profile Photo"
+        label="Profile Photo *"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

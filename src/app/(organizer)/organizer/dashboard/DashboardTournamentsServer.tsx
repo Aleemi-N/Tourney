@@ -45,17 +45,18 @@ export async function DashboardTournamentsServer({ userId }: { userId: string })
 
   if (tournaments.length === 0) {
     return (
-      <div className="bg-surface border border-border border-dashed rounded-2xl p-12 text-center">
-        <div className="mx-auto w-16 h-16 bg-surface-muted rounded-full flex items-center justify-center mb-4">
-          <TrophyIcon className="w-8 h-8 text-text-muted" />
+      <div className="bg-surface-raised/60 backdrop-blur-xl border border-glass-border rounded-3xl p-16 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-lg bg-primary/5 blur-3xl pointer-events-none rounded-full" />
+        <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6 shadow-sm ring-1 ring-primary/20">
+          <TrophyIcon className="w-10 h-10 text-primary" />
         </div>
-        <h2 className="text-lg font-semibold text-text-primary mb-2">No Tournaments Yet</h2>
-        <p className="text-text-secondary mb-6 max-w-md mx-auto">
+        <h2 className="text-2xl font-bold text-text-primary mb-3 tracking-tight">No Tournaments Yet</h2>
+        <p className="text-text-secondary text-base mb-8 max-w-md mx-auto leading-relaxed">
           You haven&apos;t created any tournaments yet. Get started by creating your first volleyball tournament.
         </p>
         <Link
           href="/organizer/tournaments/new"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary-hover transition-colors"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary-hover transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
         >
           Create Tournament
         </Link>
@@ -98,14 +99,15 @@ export async function DashboardTournamentsServer({ userId }: { userId: string })
               <Link 
                 key={draft.id} 
                 href={`/organizer/tournaments/new?id=${draft.id}`}
-                className="bg-surface border border-border p-5 rounded-xl hover:shadow-md transition-shadow group flex flex-col justify-between"
+                className="bg-surface-raised/80 backdrop-blur-md border border-glass-border p-6 rounded-3xl hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] transition-all duration-500 hover:border-primary/50 hover:-translate-y-1 group flex flex-col justify-between relative overflow-hidden"
               >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                 <div>
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-semibold text-text-primary group-hover:text-primary transition-colors">
                       {draft.name || 'Untitled Tournament'}
                     </h3>
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-surface-muted text-text-secondary rounded">
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 bg-surface-muted text-text-secondary rounded-md shadow-sm">
                       Draft
                     </span>
                   </div>
@@ -130,18 +132,19 @@ export async function DashboardTournamentsServer({ userId }: { userId: string })
             <Link 
               key={tournament.id as string} 
               href={`/organizer/tournaments/${tournament.id}`}
-              className="relative bg-surface border border-border p-5 rounded-xl hover:shadow-md transition-shadow group"
+              className="relative bg-surface-raised/80 backdrop-blur-md border border-glass-border p-6 rounded-3xl hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] transition-all duration-500 hover:border-primary/50 hover:-translate-y-1 group overflow-hidden"
             >
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
               <OrganizerLinkPending className="absolute right-3 bottom-3 text-primary" />
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-semibold text-text-primary group-hover:text-primary transition-colors">
                     {tournament.name}
                 </h3>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-primary/10 text-primary rounded">
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 bg-primary/10 text-primary rounded-md shadow-sm ring-1 ring-primary/20">
                   {tournament.status}
                 </span>
               </div>
-              <div className="flex flex-col gap-1 text-sm text-text-secondary mt-4">
+              <div className="flex flex-col gap-2.5 text-sm text-text-secondary mt-5">
                 <span className="flex justify-between">
                   <span>Format</span>
                   <span className="font-medium text-text-primary">{tournament.format?.replace('_', ' ')}</span>

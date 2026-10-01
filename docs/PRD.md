@@ -243,19 +243,24 @@ category/position restrictions.
 Show: - Player photo. - Name. - Position. - Base price. - Current bid. -
 Highest bidding team. - Auction status.
 
-### 11.3 Team Owner Bidding
+### 11.3 Auctioneer Controlled Bidding
 
-Team Owner can bid only for their own team.
+All bidding is performed offline (in-person). Team Owners raise paddles or shout their bids.
+The Organizer (Auctioneer) uses the digital interface to input the highest current bid on behalf of the bidding team.
+The Team Owner portal does *not* contain digital bidding buttons; they only have a read-only live view of the auction and their remaining purse.
 
-Before acceptance, server validates: - Authenticated membership. -
-Auction is LIVE. - Correct active player. - Bid amount is valid. - Team
-has sufficient purse. - Team is within squad constraints. - Player
-remains available.
+Before acceptance of a manual bid, server validates:
+- Organizer has admin rights.
+- Auction is LIVE.
+- Correct active player.
+- Bid amount is valid (meets minimum increments).
+- Team has sufficient purse.
+- Team is within squad constraints.
 
 ### 11.4 Organizer Control
 
 Organizer can: - Start/pause/resume. - Select next player. - Enter a
-physical/offline bid on behalf of a team. - Mark SOLD. - Mark UNSOLD. -
+bid on behalf of a team. - Mark SOLD. - Mark UNSOLD. -
 Run re-auction/accelerated rounds. - Correct exceptional issues with an
 audit reason.
 

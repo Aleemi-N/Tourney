@@ -366,7 +366,7 @@ export function ParticipantManager({
 
       {/* Tabs + Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-lg w-fit">
+        <div className="flex bg-surface-raised/50 backdrop-blur-xl border border-glass-border p-1.5 rounded-xl w-fit shadow-sm">
           {(
             [
               ['PLAYERS', `Players (${players.length})`],
@@ -376,9 +376,9 @@ export function ParticipantManager({
             <button
               key={value}
               onClick={() => setTab(value)}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${tab === value
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              className={`px-5 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${tab === value
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
                 }`}
             >
               {label}
@@ -386,15 +386,15 @@ export function ParticipantManager({
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
-          <label htmlFor="statusFilter" className="text-sm font-medium text-slate-600 dark:text-slate-400">
+        <div className="flex items-center gap-3">
+          <label htmlFor="statusFilter" className="text-sm font-bold uppercase tracking-wider text-text-muted">
             Filter:
           </label>
           <select
             id="statusFilter"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="p-2.5 rounded-xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl text-text-primary text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary shadow-sm transition-all"
           >
             <option value="ALL">All Statuses ({getCount('ALL')})</option>
             <option value="PENDING">Pending ({getCount('PENDING')})</option>
@@ -423,9 +423,9 @@ export function ParticipantManager({
                 const isApproved = p.status === 'APPROVED';
 
                 return (
-                  <div key={p.id} className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900/40 shadow-sm">
+                  <div key={p.id} className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl shadow-[0_4px_20px_rgb(0,0,0,0.1)] transition-all duration-300 hover:shadow-lg hover:border-primary/30 hover:-translate-y-1">
                     {/* Player photo */}
-                    <div className="relative aspect-4/3 w-full shrink-0 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
+                    <div className="relative aspect-4/3 w-full shrink-0 overflow-hidden bg-surface">
                       {profile?.photo_path ? (
                         <Image
                           src={supabase.storage.from('avatars').getPublicUrl(profile.photo_path).data.publicUrl}
@@ -481,7 +481,7 @@ export function ParticipantManager({
                                 setClassifications((prev) => ({ ...prev, [p.id]: e.target.value }))
                               }
                               disabled={isSubmitting}
-                              className="h-9 w-full rounded-md border border-border bg-surface-muted px-2.5 text-sm text-text-primary focus:border-primary focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
+                              className="h-12 w-full rounded-xl border border-border bg-surface-muted px-3 text-sm text-text-primary focus:border-primary focus:bg-surface-raised focus:ring-4 focus:ring-primary/20 disabled:opacity-50 transition-all shadow-sm"
                             >
                               <option value="" disabled>
                                 Select route…
@@ -511,7 +511,7 @@ export function ParticipantManager({
                                     }))
                                   }
                                   disabled={isSubmitting}
-                                  className="h-9 w-full rounded-md border border-border bg-surface-muted px-2.5 text-sm text-text-primary focus:border-primary focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
+                                  className="h-12 w-full rounded-xl border border-border bg-surface-muted px-3 text-sm text-text-primary focus:border-primary focus:bg-surface-raised focus:ring-4 focus:ring-primary/20 disabled:opacity-50 transition-all shadow-sm"
                                 >
                                   <option value="">Needs Category…</option>
                                   {auctionCategories.map((cat) => (
@@ -556,14 +556,14 @@ export function ParticipantManager({
                     </div>
 
                     {/* Actions footer */}
-                    <div className="border-t border-slate-100 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/80 p-4">
+                    <div className="border-t border-border bg-surface-muted/30 p-4">
                       {isPending && (
-                        <div className="flex flex-col-reverse min-[350px]:flex-row gap-2">
+                        <div className="flex flex-col min-[450px]:flex-row gap-3">
                           <button
                             type="button"
                             onClick={() => handleRejectPlayer(p.id)}
                             disabled={isSubmitting}
-                            className="h-10 flex-1 rounded-md border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                            className="h-12 flex-1 rounded-xl border border-danger/30 bg-danger/10 px-4 text-sm font-semibold text-danger hover:bg-danger hover:text-white disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95"
                           >
                             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                             Reject
@@ -572,7 +572,7 @@ export function ParticipantManager({
                             type="button"
                             onClick={() => handleApprovePlayer(p.id)}
                             disabled={isSubmitting}
-                            className="h-10 flex-1 rounded-md bg-emerald-600 px-4 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                            className="h-12 flex-1 rounded-xl bg-gradient-to-r from-success to-emerald-500 px-4 text-sm font-semibold text-white shadow-md hover:shadow-lg hover:shadow-success/30 disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 hover:-translate-y-0.5"
                           >
                             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                             Approve
@@ -639,9 +639,9 @@ export function ParticipantManager({
               filteredOwners.map((o) => (
                 <div
                   key={o.id}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm flex flex-col"
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl shadow-[0_4px_20px_rgb(0,0,0,0.1)] transition-all duration-300 hover:shadow-lg hover:border-primary/30 hover:-translate-y-1"
                 >
-                  <div className="h-32 bg-slate-100 dark:bg-slate-800 relative flex items-center justify-center border-b border-slate-200 dark:border-slate-800">
+                  <div className="h-32 bg-surface relative flex items-center justify-center border-b border-glass-border/50">
                     {o.logo_path ? (
                       <Image
                         src={
@@ -679,7 +679,7 @@ export function ParticipantManager({
                           type="button"
                           onClick={() => handleRejectOwner(o.id)}
                           disabled={loadingId === o.id}
-                          className="h-10 flex-1 rounded-md border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 text-sm font-medium text-red-600 dark:text-red-400 shadow-sm hover:bg-red-100 dark:hover:bg-red-900/40 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                          className="h-11 flex-1 rounded-xl border border-danger/30 bg-danger/10 px-4 text-sm font-semibold text-danger hover:bg-danger hover:text-white disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95"
                         >
                           {loadingId === o.id && <Loader2 className="h-4 w-4 animate-spin" />}
                           Reject
@@ -688,7 +688,7 @@ export function ParticipantManager({
                           type="button"
                           onClick={() => handleApproveOwner(o.id)}
                           disabled={loadingId === o.id}
-                          className="h-10 flex-1 rounded-md bg-emerald-600 px-4 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                          className="h-11 flex-1 rounded-xl bg-gradient-to-r from-success to-emerald-500 px-4 text-sm font-semibold text-white shadow-[0_4px_15px_rgb(16,185,129,0.3)] hover:shadow-[0_8px_25px_rgb(16,185,129,0.4)] disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 hover:-translate-y-0.5"
                         >
                           {loadingId === o.id && <Loader2 className="h-4 w-4 animate-spin" />}
                           Approve
@@ -729,7 +729,7 @@ export function ParticipantManager({
             aria-modal="true"
             aria-labelledby="correction-title"
             aria-describedby="correction-description"
-            className="w-full max-w-md rounded-2xl border border-border bg-surface p-5 shadow-2xl sm:p-6"
+            className="w-full max-w-md rounded-3xl border border-glass-border bg-surface-raised/90 backdrop-blur-3xl p-6 sm:p-8 shadow-[0_16px_60px_rgb(0,0,0,0.5)] transform transition-all"
           >
             <h2 id="correction-title" className="text-xl font-bold text-text-primary">
               {correction.action === 'revoke' ? 'Revoke approval?' : 'Reopen application?'}
@@ -752,15 +752,15 @@ export function ParticipantManager({
                   setCorrection({ ...correction, reason: event.target.value })
                 }
                 placeholder="Add an internal audit note"
-                className="mt-2 w-full resize-y rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-primary focus:ring-2 focus:ring-primary/30"
+                className="mt-2 w-full resize-y rounded-xl border border-glass-border bg-surface/50 backdrop-blur-sm px-4 py-3 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all"
               />
             </label>
-            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 disabled={loadingId === correction.id}
                 onClick={() => setCorrection(null)}
-                className="min-h-11 rounded-xl border border-border px-4 text-sm font-semibold text-text-secondary hover:bg-surface-muted disabled:opacity-50"
+                className="min-h-[44px] rounded-xl border border-glass-border bg-surface-muted/30 px-6 text-sm font-bold text-text-secondary hover:bg-surface-muted hover:text-text-primary disabled:opacity-50 transition-all"
               >
                 Cancel
               </button>
@@ -768,9 +768,9 @@ export function ParticipantManager({
                 type="button"
                 disabled={loadingId === correction.id}
                 onClick={handleCorrection}
-                className={`min-h-11 rounded-xl px-4 text-sm font-semibold text-white disabled:opacity-50 ${correction.action === 'revoke'
-                    ? 'bg-danger hover:bg-danger/90'
-                    : 'bg-primary hover:bg-primary-hover'
+                className={`min-h-[44px] rounded-xl px-6 text-sm font-bold text-white shadow-lg disabled:opacity-50 transition-all hover:-translate-y-0.5 active:scale-95 ${correction.action === 'revoke'
+                    ? 'bg-gradient-to-r from-danger to-red-600 shadow-danger/25 hover:shadow-danger/40'
+                    : 'bg-gradient-to-r from-primary to-primary-hover shadow-primary/25 hover:shadow-primary/40'
                   }`}
               >
                 {loadingId === correction.id

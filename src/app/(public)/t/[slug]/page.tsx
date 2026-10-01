@@ -132,28 +132,28 @@ export default async function TournamentPublicPage({ params }: Props) {
           {/* Volleyball sport badge */}
           <div className="flex items-center gap-2 mb-4">
             <VolleyballIcon className="w-5 h-5 text-primary" />
-            <span className="text-xs font-bold uppercase tracking-widest text-text-muted">Volleyball</span>
+            <span className="text-xs font-bold uppercase tracking-[0.15em] text-text-muted">Volleyball</span>
           </div>
 
-          <div className="mb-3 flex items-center gap-4">
-            {logoUrl && <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]"><Image src={logoUrl} alt={`${tournament.name} logo`} fill sizes="64px" className="object-contain p-2" unoptimized /></div>}
-            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-text-primary leading-tight">{tournament.name}</h1>
+          <div className="mb-4 flex items-center gap-5">
+            {logoUrl && (
+              <div className="relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 overflow-hidden rounded-[1.25rem] border border-glass-border bg-surface-raised/80 backdrop-blur-xl shadow-xl">
+                <Image src={logoUrl} alt={`${tournament.name} logo`} fill sizes="(max-width: 640px) 64px, 80px" className="object-contain p-2" unoptimized />
+              </div>
+            )}
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-text-primary leading-tight drop-shadow-sm">{tournament.name}</h1>
           </div>
 
           {/* Status + format badges */}
-          <div className="flex flex-wrap items-center gap-3 mb-4">
+          <div className="flex flex-wrap items-center gap-3 mb-6">
             <span
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold"
-              style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-glass-border bg-surface-raised/50 backdrop-blur-md shadow-sm text-xs font-semibold"
               aria-label={`Status: ${statusCfg.label}`}
             >
-              <span className={`w-2 h-2 rounded-full ${statusCfg.dot}`} />
+              <span className={`w-2 h-2 rounded-full shadow-sm ${statusCfg.dot}`} />
               <span className={statusCfg.text}>{statusCfg.label}</span>
             </span>
-            <span
-              className="px-3 py-1 rounded-full text-xs font-semibold text-text-secondary"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-            >
+            <span className="px-3 py-1.5 rounded-full text-xs font-semibold text-text-secondary border border-glass-border bg-surface-raised/50 backdrop-blur-md shadow-sm">
               {formatFormat(tournament.format ?? '', tournament.league_mode)}
             </span>
           </div>
@@ -167,16 +167,15 @@ export default async function TournamentPublicPage({ params }: Props) {
         </div>
 
         {/* Info cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
           {(startDate || endDate) && (
-            <div
-              className="flex items-start gap-3 p-4 rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
-            >
-              <CalendarDays className="h-5 w-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="flex items-start gap-4 p-5 rounded-2xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl shadow-[0_4px_20px_rgb(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300">
+              <div className="mt-0.5 p-2 rounded-xl bg-primary/10">
+                <CalendarDays className="h-5 w-5 text-primary" aria-hidden="true" />
+              </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-1">Date</p>
-                <p className="text-sm font-medium text-text-primary">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted mb-1">Date</p>
+                <p className="text-sm font-semibold text-text-primary">
                   {startDate && endDate && startDate !== endDate
                     ? `${startDate} \u2014 ${endDate}`
                     : (startDate || endDate)}
@@ -186,27 +185,25 @@ export default async function TournamentPublicPage({ params }: Props) {
           )}
 
           {tournament.venue && (
-            <div
-              className="flex items-start gap-3 p-4 rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
-            >
-              <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="flex items-start gap-4 p-5 rounded-2xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl shadow-[0_4px_20px_rgb(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300">
+              <div className="mt-0.5 p-2 rounded-xl bg-primary/10">
+                <MapPin className="h-5 w-5 text-primary" aria-hidden="true" />
+              </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-1">Venue</p>
-                <p className="text-sm font-medium text-text-primary">{tournament.venue}</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted mb-1">Venue</p>
+                <p className="text-sm font-semibold text-text-primary">{tournament.venue}</p>
               </div>
             </div>
           )}
 
           {isLeague && (
-            <div
-              className="flex items-start gap-3 p-4 rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
-            >
-              <Users className="h-5 w-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="flex items-start gap-4 p-5 rounded-2xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl shadow-[0_4px_20px_rgb(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300">
+              <div className="mt-0.5 p-2 rounded-xl bg-primary/10">
+                <Users className="h-5 w-5 text-primary" aria-hidden="true" />
+              </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-1">Teams</p>
-                <p className="text-sm font-medium text-text-primary">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted mb-1">Teams</p>
+                <p className="text-sm font-semibold text-text-primary">
                   {teamsCount > 0
                     ? `${teamsCount} team${teamsCount === 1 ? '' : 's'} registered`
                     : 'No teams yet'}
@@ -216,14 +213,13 @@ export default async function TournamentPublicPage({ params }: Props) {
           )}
 
           {!isRegistrationOpen && tournament.status !== 'COMPLETED' && tournament.status !== 'ARCHIVED' && (
-            <div
-              className="flex items-start gap-3 p-4 rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
-            >
-              <Clock className="h-5 w-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="flex items-start gap-4 p-5 rounded-2xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl shadow-[0_4px_20px_rgb(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300">
+              <div className="mt-0.5 p-2 rounded-xl bg-primary/10">
+                <Clock className="h-5 w-5 text-primary" aria-hidden="true" />
+              </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-1">Status</p>
-                <p className={`text-sm font-medium ${statusCfg.text}`}>{statusCfg.label}</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted mb-1">Status</p>
+                <p className={`text-sm font-semibold ${statusCfg.text}`}>{statusCfg.label}</p>
               </div>
             </div>
           )}
@@ -231,15 +227,17 @@ export default async function TournamentPublicPage({ params }: Props) {
 
         {/* Registration CTAs */}
         {(showPlayerCTA || showTeamOwnerCTA) && (
-          <section className="mb-10" aria-labelledby="register-heading">
-            <h2 id="register-heading" className="text-xl font-bold text-text-primary mb-4">Register Now</h2>
+          <section className="mb-12" aria-labelledby="register-heading">
+            <h2 id="register-heading" className="text-xl font-bold text-text-primary mb-5 flex items-center gap-2">
+              <span className="w-1.5 h-6 bg-primary rounded-full" />
+              Register Now
+            </h2>
             <div className="flex flex-wrap gap-4">
               {showPlayerCTA && (
                 <Link
                   href={`/t/${slug}/register/player`}
                   id="player-register-cta"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-hover text-primary-foreground rounded-xl font-semibold transition-colors text-sm"
-                  style={{ boxShadow: '0 4px 20px rgba(79,70,229,0.3)' }}
+                  className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-primary to-primary-hover text-primary-foreground rounded-2xl font-bold transition-all duration-300 text-sm shadow-[0_8px_20px_rgb(79,70,229,0.25)] hover:shadow-[0_12px_25px_rgb(79,70,229,0.35)] hover:-translate-y-0.5 active:scale-[0.98]"
                 >
                   Register as Player
                 </Link>
@@ -248,8 +246,7 @@ export default async function TournamentPublicPage({ params }: Props) {
                 <Link
                   href={`/t/${slug}/register/owner`}
                   id="team-owner-register-cta"
-                  className="inline-flex items-center gap-2 px-6 py-3 border text-text-primary rounded-xl font-semibold transition-colors text-sm hover:text-text-primary"
-                  style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.10)' }}
+                  className="inline-flex items-center gap-2 px-8 py-3.5 border border-glass-border bg-surface-raised/80 backdrop-blur-xl text-text-primary rounded-2xl font-bold transition-all duration-300 text-sm hover:border-primary/50 hover:bg-surface-raised hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]"
                 >
                   Apply as Team Owner
                 </Link>
@@ -260,20 +257,21 @@ export default async function TournamentPublicPage({ params }: Props) {
 
         {/* Registered Teams — only approved/active teams from public view */}
         {isLeague && teamsCount > 0 && (
-          <section className="mb-10" aria-labelledby="teams-heading">
-            <h2 id="teams-heading" className="text-xl font-bold text-text-primary mb-4">Registered Teams</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <section className="mb-12" aria-labelledby="teams-heading">
+            <h2 id="teams-heading" className="text-xl font-bold text-text-primary mb-5 flex items-center gap-2">
+              <span className="w-1.5 h-6 bg-primary/80 rounded-full" />
+              Registered Teams
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {teams!.map((team) => (
                 <div
                   key={team.id}
-                  className="p-3 rounded-xl flex items-center gap-3"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  className="p-3.5 rounded-2xl flex items-center gap-3 border border-glass-border bg-surface-raised/80 backdrop-blur-xl shadow-sm transition-all hover:bg-surface-raised hover:border-primary/30"
                 >
-                  <div className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 font-bold text-xs text-primary"
-                    style={{ background: 'rgba(79,70,229,0.15)' }}>
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 font-bold text-xs text-primary shadow-inner bg-primary/10">
                     {(team.short_name ?? (team.name ?? '').slice(0, 3)).toUpperCase()}
                   </div>
-                  <span className="text-sm font-medium text-text-primary truncate">{team.name ?? ''}</span>
+                  <span className="text-sm font-semibold text-text-primary truncate">{team.name ?? ''}</span>
                 </div>
               ))}
             </div>
@@ -282,42 +280,51 @@ export default async function TournamentPublicPage({ params }: Props) {
 
         {/* Live hub CTA */}
         <Link
-            href={`/t/${slug}/live`}
-            className="mb-6 flex items-center gap-4 rounded-xl p-5 transition-colors hover:bg-white/[0.05]"
-            style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}
-          >
-            <Radio className="h-7 w-7 shrink-0 text-red-400 animate-pulse" aria-hidden="true" />
-            <div className="min-w-0">
-              <p className="font-bold text-text-primary">{tournament.status === 'LIVE' ? 'Live Now' : 'Live Hub'}</p>
-              <p className="mt-0.5 text-text-secondary text-sm truncate">Watch live matches, auction, and lot draw</p>
-            </div>
-            <span className="ml-auto text-sm text-text-muted shrink-0">→</span>
-          </Link>
+          href={`/t/${slug}/live`}
+          className="mb-8 relative flex items-center gap-5 rounded-3xl p-6 transition-all duration-300 border border-danger/30 bg-danger/10 backdrop-blur-xl overflow-hidden group shadow-[0_8px_30px_rgba(239,68,68,0.15)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.25)] hover:bg-danger/15 hover:-translate-y-1"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-danger/0 via-danger/5 to-danger/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 pointer-events-none" />
+          <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-2xl bg-danger/20 shrink-0">
+            <Radio className="h-6 w-6 text-danger animate-pulse" aria-hidden="true" />
+          </div>
+          <div className="relative z-10 min-w-0 flex-1">
+            <p className="text-lg font-extrabold text-danger drop-shadow-sm">{tournament.status === 'LIVE' ? 'Live Now' : 'Live Hub'}</p>
+            <p className="mt-1 text-danger/80 text-sm font-medium truncate">Watch live matches, auction, and lot draw</p>
+          </div>
+          <span className="relative z-10 ml-auto text-lg text-danger/60 group-hover:text-danger group-hover:translate-x-1 transition-all">→</span>
+        </Link>
 
         {/* Navigation tiles */}
-        <section className="mb-10" aria-labelledby="explore-heading">
-            <h2 id="explore-heading" className="text-xl font-bold text-text-primary mb-4">Explore</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {[
-                { label: 'Fixtures',  path: 'fixtures', icon: CalendarDays, desc: 'Upcoming matches' },
-                { label: 'Results',   path: 'results',  icon: List,         desc: 'Completed scores' },
-                { label: 'Table',     path: 'table',    icon: BarChart2,    desc: 'League standings' },
-                { label: 'Teams',     path: 'teams',    icon: Users,        desc: 'All teams' },
-                { label: 'Players',   path: 'players',  icon: Users,        desc: 'Player roster' },
-              ].map(({ label, path, icon: Icon, desc }) => (
-                <Link
-                  key={path}
-                  href={`/t/${slug}/${path}`}
-                  className="flex flex-col gap-2 rounded-xl p-4 transition-colors hover:bg-white/[0.05]"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
-                >
-                  <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-                  <p className="font-bold text-text-primary text-sm">{label}</p>
-                  <p className="text-xs text-text-muted">{desc}</p>
-                </Link>
-              ))}
-            </div>
-          </section>
+        <section className="mb-12" aria-labelledby="explore-heading">
+          <h2 id="explore-heading" className="text-xl font-bold text-text-primary mb-5 flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-text-muted/30 rounded-full" />
+            Explore
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[
+              { label: 'Fixtures',  path: 'fixtures', icon: CalendarDays, desc: 'Upcoming matches' },
+              { label: 'Results',   path: 'results',  icon: List,         desc: 'Completed scores' },
+              { label: 'Table',     path: 'table',    icon: BarChart2,    desc: 'League standings' },
+              { label: 'Teams',     path: 'teams',    icon: Users,        desc: 'All teams' },
+              { label: 'Players',   path: 'players',  icon: Users,        desc: 'Player roster' },
+            ].map(({ label, path, icon: Icon, desc }) => (
+              <Link
+                key={path}
+                href={`/t/${slug}/${path}`}
+                className="group flex flex-col gap-3 rounded-2xl p-5 transition-all duration-300 border border-glass-border bg-surface-raised/80 backdrop-blur-xl shadow-sm hover:shadow-lg hover:border-primary/40 hover:bg-surface-raised hover:-translate-y-1 relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-300">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div className="relative z-10 mt-1">
+                  <p className="font-bold text-text-primary text-base">{label}</p>
+                  <p className="text-xs font-medium text-text-muted mt-1">{desc}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
       </main>
 
       <LandingFooter />

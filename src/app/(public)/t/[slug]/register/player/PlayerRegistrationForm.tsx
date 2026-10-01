@@ -37,6 +37,13 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
       return;
     }
 
+    if (!photoUrl) {
+      setError('Profile Photo is required.');
+      setPending(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     try {
       const { error: rpcError } = await supabase.rpc('submit_player_registration', {
         p_tournament_id: tournamentId,
@@ -78,11 +85,11 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
     }
   }
 
-  const fieldClass = 'min-h-11 min-w-0 w-full rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary scheme-dark transition-colors placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40';
-  const labelClass = 'text-sm font-medium text-text-secondary';
+  const fieldClass = 'min-h-11 min-w-0 w-full rounded-xl border border-border bg-surface-muted/50 backdrop-blur-sm px-3 py-2.5 text-text-primary scheme-dark transition-all duration-300 placeholder:text-text-muted focus:border-primary focus:bg-surface-raised focus:outline-none focus:ring-4 focus:ring-primary/20 hover:border-border-strong';
+  const labelClass = 'text-sm font-medium text-text-secondary ml-1';
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6 rounded-xl border border-border bg-surface-raised p-5 shadow-2xl shadow-black/20 sm:p-6">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6 rounded-2xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)] sm:p-8 transition-all duration-500 hover:border-border-strong">
       <div className="mb-2 border-b border-border pb-4">
         <h2 className="text-xl font-semibold text-text-primary">Registration Form</h2>
         <p className="mt-1 text-sm text-text-secondary">Please provide your player details to register for this tournament.</p>
@@ -99,7 +106,7 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
         bucket="avatars" 
         currentPhotoUrl={photoUrl}
         onUploadSuccess={(url, path) => setPhotoUrl(path)}
-        label="Profile Photo"
+        label="Profile Photo *"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
@@ -201,7 +208,7 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
       <button 
         type="submit" 
         disabled={pending}
-        className="mt-4 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary p-3.5 font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-4 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary-hover p-3.5 font-semibold text-primary-foreground transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
       >
         {pending && <Loader2 className="h-5 w-5 animate-spin" />}
         {pending ? 'Submitting...' : 'Submit Registration'}

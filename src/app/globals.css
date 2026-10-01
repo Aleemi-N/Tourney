@@ -21,23 +21,24 @@
    ───────────────────────────────────────────────────────────────────────────── */
 :root {
   /* Surfaces */
-  --background:        #ffffff;
-  --surface:           #f8f8fa;
-  --surface-raised:    #ffffff;
-  --surface-muted:     #f2f2f5;
+  --background:        #f8fafc;
+  --surface:           rgba(255, 255, 255, 0.7);
+  --surface-raised:    rgba(255, 255, 255, 0.95);
+  --surface-muted:     rgba(241, 245, 249, 0.6);
+  --glass-border:      rgba(0, 0, 0, 0.05);
 
   /* Text */
-  --text-primary:      #111113;
-  --text-secondary:    #4b4b57;
-  --text-muted:        #8888a0;
+  --text-primary:      #0f172a;
+  --text-secondary:    #475569;
+  --text-muted:        #94a3b8;
   --text-inverse:      #ffffff;
 
   /* Borders */
-  --border:            #e4e4ea;
-  --border-strong:     #c8c8d6;
+  --border:            #e2e8f0;
+  --border-strong:     #cbd5e1;
 
   /* Brand / primary action */
-  --primary:           #4f46e5;   /* Indigo-600 — energetic sports blue-violet */
+  --primary:           #4f46e5;   /* Indigo-600 */
   --primary-hover:     #4338ca;
   --primary-foreground:#ffffff;
 
@@ -67,18 +68,19 @@
    ───────────────────────────────────────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background:        #0f0f11;
-    --surface:           #18181c;
-    --surface-raised:    #222228;
-    --surface-muted:     #1c1c21;
+    --background:        #020617;
+    --surface:           rgba(15, 23, 42, 0.65);
+    --surface-raised:    rgba(30, 41, 59, 0.75);
+    --surface-muted:     rgba(30, 41, 59, 0.4);
+    --glass-border:      rgba(255, 255, 255, 0.08);
 
-    --text-primary:      #f0f0f4;
-    --text-secondary:    #a0a0b8;
-    --text-muted:        #606075;
-    --text-inverse:      #111113;
+    --text-primary:      #f8fafc;
+    --text-secondary:    #94a3b8;
+    --text-muted:        #64748b;
+    --text-inverse:      #0f172a;
 
-    --border:            #2c2c38;
-    --border-strong:     #42424f;
+    --border:            rgba(255, 255, 255, 0.1);
+    --border-strong:     rgba(255, 255, 255, 0.2);
 
     --primary:           #6366f1;
     --primary-hover:     #818cf8;
@@ -97,18 +99,19 @@
 }
 
 .dark {
-  --background:        #0f0f11;
-  --surface:           #18181c;
-  --surface-raised:    #222228;
-  --surface-muted:     #1c1c21;
+  --background:        #020617;
+  --surface:           rgba(15, 23, 42, 0.65);
+  --surface-raised:    rgba(30, 41, 59, 0.75);
+  --surface-muted:     rgba(30, 41, 59, 0.4);
+  --glass-border:      rgba(255, 255, 255, 0.08);
 
-  --text-primary:      #f0f0f4;
-  --text-secondary:    #a0a0b8;
-  --text-muted:        #606075;
-  --text-inverse:      #111113;
+  --text-primary:      #f8fafc;
+  --text-secondary:    #94a3b8;
+  --text-muted:        #64748b;
+  --text-inverse:      #0f172a;
 
-  --border:            #2c2c38;
-  --border-strong:     #42424f;
+  --border:            rgba(255, 255, 255, 0.1);
+  --border-strong:     rgba(255, 255, 255, 0.2);
 
   --primary:           #6366f1;
   --primary-hover:     #818cf8;
@@ -151,6 +154,7 @@
   --color-surface:           var(--surface);
   --color-surface-raised:    var(--surface-raised);
   --color-surface-muted:     var(--surface-muted);
+  --color-glass-border:      var(--glass-border);
 
   --color-text-primary:      var(--text-primary);
   --color-text-secondary:    var(--text-secondary);
@@ -180,12 +184,12 @@
   --color-tournament-accent:     var(--tournament-accent);
   --color-tournament-background: var(--tournament-background);
 
-  /* Border radius */
-  --radius-sm:   var(--radius-sm);
-  --radius-md:   var(--radius-md);
-  --radius-lg:   var(--radius-lg);
-  --radius-xl:   var(--radius-xl);
-  --radius-2xl:  var(--radius-2xl);
+  /* Border radius (softer, more accessible feel) */
+  --radius-sm:   10px;
+  --radius-md:   14px;
+  --radius-lg:   18px;
+  --radius-xl:   24px;
+  --radius-2xl:  32px;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -211,6 +215,8 @@ body {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-feature-settings: "rlig" 1, "calt" 1;
   background-color: var(--background);
+  background-image: radial-gradient(circle at top right, rgba(99, 102, 241, 0.08), transparent 40%), radial-gradient(circle at bottom left, rgba(168, 85, 247, 0.05), transparent 40%);
+  background-attachment: fixed;
   color: var(--text-primary);
   line-height: 1.5;
   min-width: 320px;

@@ -28,9 +28,15 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-md bg-surface p-6 rounded-2xl shadow-sm border border-border">
-      <h1 className="text-2xl font-bold text-text-primary mb-1">Create Account</h1>
-      <p className="text-text-secondary text-sm mb-4">Set up your Tourny profile.</p>
+    <div className="relative w-full max-w-md">
+      {/* Subtle background glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
+      
+      <form onSubmit={handleSubmit} className="relative flex flex-col gap-5 w-full bg-surface-raised/80 backdrop-blur-2xl p-8 rounded-3xl shadow-[0_8px_40px_rgb(0,0,0,0.2)] border border-glass-border">
+        <div className="mb-2">
+          <h1 className="text-3xl font-extrabold text-text-primary mb-2 drop-shadow-sm">Create Account</h1>
+          <p className="text-text-secondary text-sm font-medium">Set up your Tourny profile.</p>
+        </div>
 
       {error && (
         <div className="p-3 text-sm text-danger bg-danger/10 border border-danger/20 rounded-lg">
@@ -40,56 +46,57 @@ export function RegisterForm() {
 
       <input type="hidden" name="nextUrl" value={nextUrl} />
 
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-text-secondary" htmlFor="fullName">Full Name</label>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-bold uppercase tracking-wider text-text-muted" htmlFor="fullName">Full Name</label>
         <input 
           id="fullName"
           name="fullName" 
           type="text" 
           required 
-          className="p-3 rounded-lg border border-border bg-surface-muted text-text-primary focus:outline-none focus:border-primary transition-colors"
+          className="p-3.5 rounded-xl border border-glass-border bg-surface/50 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-inner"
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-text-secondary" htmlFor="email">Email</label>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-bold uppercase tracking-wider text-text-muted" htmlFor="email">Email</label>
         <input 
           id="email"
           name="email" 
           type="email" 
           required 
-          className="p-3 rounded-lg border border-border bg-surface-muted text-text-primary focus:outline-none focus:border-primary transition-colors"
+          className="p-3.5 rounded-xl border border-glass-border bg-surface/50 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-inner"
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-text-secondary" htmlFor="password">Password</label>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-bold uppercase tracking-wider text-text-muted" htmlFor="password">Password</label>
         <input 
           id="password"
           name="password" 
           type="password" 
           required
           minLength={6}
-          className="p-3 rounded-lg border border-border bg-surface-muted text-text-primary focus:outline-none focus:border-primary transition-colors"
+          className="p-3.5 rounded-xl border border-glass-border bg-surface/50 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-inner"
         />
       </div>
 
       <button 
         type="submit" 
         disabled={pending}
-        className="mt-4 p-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors flex justify-center items-center h-12"
+        className="mt-4 p-3.5 bg-gradient-to-r from-primary to-primary-hover shadow-[0_4px_15px_rgb(79,70,229,0.3)] hover:shadow-[0_8px_25px_rgb(79,70,229,0.4)] hover:-translate-y-0.5 active:scale-95 text-primary-foreground font-bold rounded-xl disabled:opacity-50 transition-all duration-300 flex justify-center items-center h-14"
       >
         {pending ? 'Creating Account...' : 'Create Account'}
       </button>
 
-      <div className="mt-4 text-sm text-center text-text-secondary flex flex-col gap-2">
+      <div className="mt-4 pt-4 border-t border-glass-border/50 text-sm text-center text-text-secondary flex flex-col gap-2">
         <span>
           Already have an account?{' '}
-          <Link href={`/login${nextUrl ? `?next=${encodeURIComponent(nextUrl)}` : ''}`} className="text-primary font-medium hover:underline">
+          <Link href={`/login${nextUrl ? `?next=${encodeURIComponent(nextUrl)}` : ''}`} className="text-primary font-bold hover:underline transition-all">
             Sign In
           </Link>
         </span>
       </div>
-    </form>
+      </form>
+    </div>
   );
 }

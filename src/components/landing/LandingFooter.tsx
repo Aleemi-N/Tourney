@@ -5,8 +5,12 @@ import { VolleyballIcon } from './VolleyballIcon';
 
 export function LandingFooter() {
   return (
-    <footer className="w-full bg-[#09090e] border-t border-white/5 py-12 text-sm text-text-muted">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="w-full relative bg-[#09090e] border-t border-glass-border py-12 text-sm text-text-muted overflow-hidden">
+      {/* Subtle background glows */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary-hover/5 rounded-full blur-[100px] pointer-events-none" />
+      
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
           
           <div className="col-span-2 md:col-span-2">

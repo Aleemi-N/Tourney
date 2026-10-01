@@ -33,8 +33,11 @@ export function LoginForm({ nextUrl }: { nextUrl?: string }) {
   }
 
   return (
-    <div className="w-full max-w-md flex flex-col gap-6">
-      <div className="flex justify-between items-center px-2">
+    <div className="relative w-full max-w-md flex flex-col gap-6">
+      {/* Subtle background glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
+      
+      <div className="relative z-10 flex justify-between items-center px-2">
         <Link href="/" className="flex items-center gap-2 group">
           <VolleyballIcon className="w-6 h-6 text-primary group-hover:scale-110 transition-transform" />
           <span className="font-bold text-xl tracking-tight text-text-primary">
@@ -46,12 +49,12 @@ export function LoginForm({ nextUrl }: { nextUrl?: string }) {
         </Link>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5 bg-surface-raised p-6 sm:p-8 rounded-2xl shadow-2xl shadow-black/20 border border-border">
+      <form onSubmit={handleSubmit} className="relative z-10 flex flex-col gap-5 w-full bg-surface-raised/80 backdrop-blur-2xl p-8 rounded-3xl shadow-[0_8px_40px_rgb(0,0,0,0.2)] border border-glass-border">
         {nextUrl && <input type="hidden" name="nextUrl" value={nextUrl} />}
         
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary mb-1">Sign In</h1>
-          <p className="text-sm text-text-secondary">Welcome back to Tourny.</p>
+        <div className="mb-2">
+          <h1 className="text-3xl font-extrabold text-text-primary mb-2 drop-shadow-sm">Sign In</h1>
+          <p className="text-sm font-medium text-text-secondary">Welcome back to Tourny.</p>
         </div>
         
         {error && (
@@ -61,21 +64,21 @@ export function LoginForm({ nextUrl }: { nextUrl?: string }) {
         )}
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text-secondary" htmlFor="email">Email</label>
+          <label className="text-sm font-bold uppercase tracking-wider text-text-muted" htmlFor="email">Email</label>
           <input 
             id="email"
             name="email" 
             type="email" 
             autoComplete="email"
             required 
-            className="p-3 rounded-xl border border-border bg-surface-muted text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+            className="p-3.5 rounded-xl border border-glass-border bg-surface/50 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-inner"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-text-secondary" htmlFor="password">Password</label>
-            <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline transition-colors">
+            <label className="text-sm font-bold uppercase tracking-wider text-text-muted" htmlFor="password">Password</label>
+            <Link href="/forgot-password" className="text-xs font-bold text-primary hover:underline transition-colors">
               Forgot password?
             </Link>
           </div>
@@ -86,7 +89,7 @@ export function LoginForm({ nextUrl }: { nextUrl?: string }) {
               type={showPassword ? "text" : "password"} 
               autoComplete="current-password"
               required 
-              className="w-full p-3 pr-12 rounded-xl border border-border bg-surface-muted text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+              className="w-full p-3.5 pr-12 rounded-xl border border-glass-border bg-surface/50 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-inner"
             />
             <button
               type="button"
@@ -106,19 +109,19 @@ export function LoginForm({ nextUrl }: { nextUrl?: string }) {
         <button 
           type="submit" 
           disabled={pending}
-          className="mt-2 flex justify-center items-center h-12 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary-hover disabled:opacity-50 transition-colors"
+          className="mt-4 p-3.5 bg-gradient-to-r from-primary to-primary-hover shadow-[0_4px_15px_rgb(79,70,229,0.3)] hover:shadow-[0_8px_25px_rgb(79,70,229,0.4)] hover:-translate-y-0.5 active:scale-95 text-primary-foreground font-bold rounded-xl disabled:opacity-50 transition-all duration-300 flex justify-center items-center h-14"
         >
           {pending ? 'Signing in...' : 'Sign In'}
         </button>
 
-        <div className="mt-2 flex flex-col gap-3 text-sm text-center text-text-secondary">
-          <Link href="/forgot-password" className="hover:text-primary transition-colors">
+        <div className="mt-4 pt-4 border-t border-glass-border/50 text-sm text-center text-text-secondary flex flex-col gap-3">
+          <Link href="/forgot-password" className="hover:text-primary transition-all font-medium">
             Forgot your password?
           </Link>
-          <div className="h-px bg-border my-1" />
+          <div className="h-px bg-glass-border my-1" />
           <p>
             New to Tourny?{' '}
-            <Link href={`/register${nextUrl ? `?next=${encodeURIComponent(nextUrl)}` : ''}`} className="text-primary font-medium hover:underline">
+            <Link href={`/register${nextUrl ? `?next=${encodeURIComponent(nextUrl)}` : ''}`} className="text-primary font-bold hover:underline transition-all">
               Create Account
             </Link>
           </p>

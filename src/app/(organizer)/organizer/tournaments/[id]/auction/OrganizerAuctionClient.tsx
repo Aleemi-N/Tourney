@@ -291,6 +291,98 @@ function CurrentPlayerPanel({
   );
 }
 
+// ─── Auctioneer Bidding Panel ───────────────────────────────────────────────────
+
+function AuctioneerBiddingPanel({
+  snapshot,
+  teamNameMap,
+  onPlaceBid,
+  busy,
+}: {
+  snapshot: OrganizerAuctionSnapshot;
+  teamNameMap: Record<string, { name: string; short_name: string | null }>;
+  onPlaceBid: (teamId: string, amount: number) => void;
+  busy: boolean;
+}) {
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const cp = snapshot.current_player;
+  const hb = snapshot.highest_bid;
+  
+  if (!cp || snapshot.auction.status !== 'LIVE') return null;
+
+  const nextBidAmount = hb ? hb.amount + snapshot.auction.minimum_bid_increment : cp.base_price;
+  
+  // Sort teams by remaining descending
+  const teams = [...(snapshot.teams || [])].sort((a, b) => b.remaining - a.remaining);
+
+  return (
+    <div className="rounded-2xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)] relative overflow-hidden group">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+      <div className="relative z-10">
+        <h3 className="mb-4 font-semibold text-text-primary flex items-center gap-2">
+          <DollarSign className="h-4 w-4 text-primary" />
+          Enter Offline Bid
+        </h3>
+        
+        <div className="mb-5">
+          <label className="text-sm font-medium text-text-secondary mb-2 block">Select Team Bidding</label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {teams.map(t => {
+              const teamInfo = teamNameMap[t.team_id];
+              const displayName = teamInfo?.short_name ?? teamInfo?.name ?? `Team ${t.team_id.substring(0, 6)}`;
+              const isSelected = selectedTeam === t.team_id;
+              const canAfford = t.remaining >= nextBidAmount;
+              // Also ensure max squad not reached
+              const f = t.finance;
+              const squadFull = f.active_squad >= f.maximum_squad;
+              const disabled = !canAfford || squadFull;
+              
+              return (
+                <button
+                  key={t.team_id}
+                  type="button"
+                  disabled={disabled || busy}
+                  onClick={() => setSelectedTeam(t.team_id)}
+                  className={`p-2.5 rounded-xl border text-sm font-semibold transition-all ${
+                    isSelected
+                      ? 'border-primary bg-primary/10 text-primary shadow-inner'
+                      : disabled
+                      ? 'border-border/50 bg-surface-muted/50 text-text-muted opacity-50'
+                      : 'border-border bg-surface-muted hover:border-primary/50 text-text-secondary hover:-translate-y-0.5'
+                  }`}
+                  title={squadFull ? 'Squad full' : !canAfford ? 'Insufficient purse' : ''}
+                >
+                  {displayName}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 rounded-xl border border-border bg-surface-muted flex items-center justify-between px-4 py-3">
+            <span className="text-sm text-text-secondary font-medium">Next valid bid</span>
+            <span className="text-xl font-bold text-text-primary">{formatMoney(nextBidAmount)}</span>
+          </div>
+          <button
+            type="button"
+            disabled={!selectedTeam || busy}
+            onClick={() => {
+              if (selectedTeam) {
+                 onPlaceBid(selectedTeam, nextBidAmount);
+                 setSelectedTeam(null);
+              }
+            }}
+            className="flex-1 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-primary to-primary-hover px-4 py-3 text-base font-bold text-primary-foreground shadow-md transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            Submit Bid
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Team wallet monitor ──────────────────────────────────────────────────────
 
 function TeamWalletMonitor({
@@ -776,6 +868,27 @@ export function OrganizerAuctionClient({
     );
   }
 
+  // ── Place Bid (Offline/Auctioneer) ──────────────────────────────────────────
+  
+  async function handlePlaceBid(teamId: string, amount: number) {
+    if (!auctionId || !snapshot?.current_player) return;
+    await run(async () => {
+      const { error: bidErr } = await supabase.rpc('place_auction_bid', {
+        p_auction_id: auctionId,
+        p_auction_player_id: snapshot.current_player!.auction_player_id,
+        p_team_id: teamId,
+        p_amount: amount,
+        p_request_key: genKey(),
+        p_expected_player_version: snapshot.current_player!.state_version,
+        p_expected_highest_bid: snapshot.highest_bid?.amount ?? 0,
+      });
+      if (bidErr) {
+        throw new Error(safeAuctionError(bidErr.message));
+      }
+      return { ok: true };
+    });
+  }
+
   // ─── Unsold players (available for re-auction) ────────────────────────────
 
   const unsoldPlayers = snapshot?.queue.filter((q) => q.status === 'UNSOLD') ?? [];
@@ -845,7 +958,10 @@ export function OrganizerAuctionClient({
         <div className="space-y-6 lg:col-span-2">
           {/* Current player */}
           {snapshot && (
-            <CurrentPlayerPanel snapshot={snapshot} storageBase={storageBase} />
+            <>
+              <CurrentPlayerPanel snapshot={snapshot} storageBase={storageBase} />
+              <AuctioneerBiddingPanel snapshot={snapshot} teamNameMap={teamNameMap} onPlaceBid={handlePlaceBid} busy={busy} />
+            </>
           )}
 
           {/* Organizer controls */}

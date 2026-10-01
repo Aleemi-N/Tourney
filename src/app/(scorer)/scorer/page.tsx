@@ -18,5 +18,55 @@ export default async function ScorerHomePage() {
     return data as { match: { id: string; status: string; match_number: number | null; venue: string | null }; home_team: { name: string }; away_team: { name: string } } | null;
   }));
 
-  return <ScorerShell><div className="max-w-3xl"><p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-200/70">Scorer workspace</p><h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Assigned matches</h1><p className="mt-3 text-base leading-7 text-white/55">Only matches assigned to your account appear here. Point actions remain authorized by the scoring RPC.</p><div className="mt-8 space-y-3">{matches.filter(Boolean).map((match) => match ? <Link key={match.match.id} href={`/scorer/matches/${match.match.id}`} className="block rounded-2xl border border-white/10 bg-[#17132a] p-4 transition hover:border-fuchsia-200/30 hover:bg-white/5 sm:rounded-3xl sm:p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div className="min-w-0"><p className="text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-200/60">Match {match.match.match_number ?? '—'}</p><h2 className="mt-2 break-words text-lg font-black sm:text-xl">{match.home_team.name} <span className="text-white/35">vs</span> {match.away_team.name}</h2><p className="mt-1 text-sm text-white/45">{match.match.venue ?? 'Venue pending'}</p></div><span className="rounded-full border border-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white/55">{match.match.status}</span></div></Link> : null)}{matches.filter(Boolean).length === 0 ? <EmptyState title="No assigned matches" description="When an organizer assigns you to a match, it will appear here automatically." icon={<CalendarClock className="h-5 w-5" />} /> : null}</div></div></ScorerShell>;
+  return (
+    <ScorerShell>
+      <div className="max-w-3xl">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary/70">
+          Scorer workspace
+        </p>
+        <h1 className="mt-3 text-3xl font-black tracking-tight text-text-primary sm:text-4xl drop-shadow-sm">
+          Assigned matches
+        </h1>
+        <p className="mt-3 text-base leading-7 text-text-secondary font-medium">
+          Only matches assigned to your account appear here. Point actions remain authorized by the scoring RPC.
+        </p>
+        
+        <div className="mt-8 space-y-4">
+          {matches.filter(Boolean).map((match) =>
+            match ? (
+              <Link
+                key={match.match.id}
+                href={`/scorer/matches/${match.match.id}`}
+                className="group block rounded-2xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.1)] transition-all duration-300 hover:shadow-lg hover:border-primary/40 hover:-translate-y-1 sm:rounded-3xl sm:p-6"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary/70">
+                      Match {match.match.match_number ?? '—'}
+                    </p>
+                    <h2 className="mt-2 break-words text-xl font-black text-text-primary sm:text-2xl">
+                      {match.home_team.name} <span className="text-text-muted font-medium mx-1">vs</span> {match.away_team.name}
+                    </h2>
+                    <p className="mt-1 text-sm font-semibold text-text-secondary">
+                      {match.match.venue ?? 'Venue pending'}
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-glass-border bg-surface-muted/50 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary shadow-sm">
+                    {match.match.status}
+                  </span>
+                </div>
+              </Link>
+            ) : null
+          )}
+          {matches.filter(Boolean).length === 0 ? (
+            <EmptyState
+              title="No assigned matches"
+              description="When an organizer assigns you to a match, it will appear here automatically."
+              icon={<CalendarClock className="h-6 w-6 text-primary" />}
+            />
+          ) : null}
+        </div>
+      </div>
+    </ScorerShell>
+  );
 }

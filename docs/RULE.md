@@ -94,9 +94,9 @@ Set/match winner. - Tournament membership/role.
 6.  Team must have sufficient purse.
 7.  Team must satisfy squad constraints.
 8.  Player must remain eligible and unsold.
-9.  Team Owner may bid only for their own team.
-10. Organizer may enter an offline/physical bid on behalf of a team.
-11. Concurrent bids are resolved by the authoritative server/database
+9.  Team Owners cannot submit digital bids from their own devices.
+10. Only the Organizer (Auctioneer) may enter bids into the system on behalf of teams based on physical/offline bidding.
+11. Concurrent manual bids are resolved by the authoritative server/database
     operation.
 12. `SOLD` finalization is transactional.
 13. Player cannot be sold twice.

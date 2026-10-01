@@ -37,7 +37,7 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
   }
 
   return (
-    <nav className="sticky top-0 z-50 w-full backdrop-blur-md bg-[#09090e]/85 border-b border-white/5">
+    <nav className="sticky top-0 z-50 w-full backdrop-blur-2xl bg-[#09090e]/70 border-b border-glass-border shadow-[0_4px_30px_rgb(0,0,0,0.1)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center gap-2">
@@ -69,13 +69,13 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                 </Link>
                 <Link 
                   href="/register" 
-                  className="px-5 py-2.5 bg-surface border border-white/10 hover:bg-surface-muted text-text-primary text-sm font-semibold rounded-xl transition-colors"
+                  className="px-5 py-2.5 bg-surface-raised/50 backdrop-blur-xl border border-glass-border hover:border-primary/50 text-text-primary text-sm font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
                 >
                   Create Account
                 </Link>
                 <Link 
                   href="/organizer/tournaments/new" 
-                  className="px-5 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-sm font-semibold rounded-xl transition-colors"
+                  className="px-5 py-2.5 bg-gradient-to-r from-primary to-primary-hover shadow-lg shadow-primary/25 hover:shadow-primary/40 text-primary-foreground text-sm font-bold rounded-xl transition-all duration-300 hover:-translate-y-0.5"
                 >
                   Create Tournament
                 </Link>
@@ -100,7 +100,7 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                     <span className="max-w-28 truncate">{userProfile?.full_name || 'Account'}</span>
                   </button>
                   {isProfileMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-surface border border-white/10 rounded-xl shadow-xl py-2 z-50">
+                    <div className="absolute right-0 mt-2 w-48 bg-surface-raised/90 backdrop-blur-2xl border border-glass-border rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] py-2 z-50 overflow-hidden">
                       <Link href="/profile" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-text-primary hover:bg-white/5">
                         My Profile
                       </Link>
@@ -121,7 +121,7 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                 )}
                 <Link 
                   href="/organizer/tournaments/new" 
-                  className="px-5 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-sm font-semibold rounded-xl transition-colors"
+                  className="px-5 py-2.5 bg-gradient-to-r from-primary to-primary-hover shadow-lg shadow-primary/25 hover:shadow-primary/40 text-primary-foreground text-sm font-bold rounded-xl transition-all duration-300 hover:-translate-y-0.5"
                 >
                   Create Tournament
                 </Link>
@@ -145,7 +145,7 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
 
       {/* Mobile Drawer */}
       {isOpen && (
-        <div className="md:hidden absolute top-16 inset-x-0 bg-[#0d0d13]/95 backdrop-blur-xl border-b border-white/5 shadow-xl p-4 flex flex-col gap-4">
+        <div className="md:hidden absolute top-16 inset-x-0 bg-surface-raised/95 backdrop-blur-3xl border-b border-glass-border shadow-2xl p-4 flex flex-col gap-4">
           <a href="#tournaments" onClick={() => setIsOpen(false)} className="text-base font-medium text-text-secondary hover:text-text-primary py-2 border-b border-white/5">
             Tournaments
           </a>

@@ -10,10 +10,10 @@ export const dynamic = 'force-dynamic';
 
 function DashboardSkeleton() {
   return (
-    <div className="flex flex-col gap-8 animate-pulse">
+    <div className="flex flex-col gap-10 animate-pulse">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-surface border border-border p-5 rounded-xl h-48" />
+          <div key={i} className="bg-surface border border-border/80 p-6 rounded-2xl h-56" />
         ))}
       </div>
     </div>
@@ -28,20 +28,27 @@ export default async function OrganizerDashboardPage() {
   }
 
   return (
-    <main className="p-4 md:p-8 max-w-5xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-text-primary tracking-tight">Dashboard</h1>
-          <p className="text-text-secondary mt-1">Manage your tournaments and events.</p>
+    <main className="p-4 sm:p-6 md:p-10 max-w-6xl mx-auto space-y-8">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative">
+        {/* Subtle decorative glow for the header */}
+        <div className="absolute -top-10 -left-10 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
+            Welcome back, {user.user_metadata?.full_name?.split(' ')[0] || 'Organizer'}
+          </h1>
+          <p className="text-text-secondary mt-1.5 text-base sm:text-lg">
+            Manage your tournaments and events.
+          </p>
         </div>
         <Link
           href="/organizer/tournaments/new"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary-hover transition-colors"
+          className="relative z-10 inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-primary to-primary-hover text-primary-foreground font-semibold rounded-2xl hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:-translate-y-0.5 active:scale-95"
         >
           <PlusIcon className="w-5 h-5" />
           Create Tournament
         </Link>
-      </div>
+      </header>
 
       <Suspense fallback={<DashboardSkeleton />}>
         <DashboardTournamentsServer userId={user.id} />

@@ -1,0 +1,10 @@
+# Sign In | Tournament Platform
+
+[Tourny](http://localhost:3000/)
+[Back to Home](http://localhost:3000/)
+
+# Sign In
+Welcome back to Tourny.
+[Forgot password?](http://localhost:3000/forgot-password)
+[Forgot your password?](http://localhost:3000/forgot-password)
+New to Tourny? [Create Account](http://localhost:3000/register?next=%2Forganizer%2Ftournaments%2F755a49b0-9d33-4537-aa4c-86aa7f770975)
