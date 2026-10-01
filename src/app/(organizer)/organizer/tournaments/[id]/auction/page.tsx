@@ -138,35 +138,41 @@ async function AuctionContent({ params }: { params: Promise<{ id: string }> }) {
   const minimumBidIncrement = 100;
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 md:p-8">
-      <div className="mb-6 flex items-center gap-3">
-        <Link
-          href={`/organizer/tournaments/${id}`}
-          className="inline-flex items-center gap-1 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          Back to Tournament
-          <OrganizerLinkPending />
-        </Link>
-      </div>
+    <main className="relative min-h-screen overflow-hidden p-4 sm:p-6 md:p-8">
+      {/* 🌟 Dynamic Background Glows for Glassmorphism 🌟 */}
+      <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-primary/20 blur-[120px] pointer-events-none mix-blend-screen" />
+      <div className="absolute bottom-[20%] right-[-10%] h-[600px] w-[600px] rounded-full bg-fuchsia-600/15 blur-[150px] pointer-events-none mix-blend-screen" />
+      
+      <div className="relative z-10 max-w-7xl mx-auto">
+        <div className="mb-6 flex items-center gap-3">
+          <Link
+            href={`/organizer/tournaments/${id}`}
+            className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-text-secondary hover:text-primary transition-colors bg-surface-muted/50 px-4 py-2 rounded-xl backdrop-blur-md border border-glass-border shadow-sm"
+          >
+            <ArrowLeftIcon className="h-4 w-4" />
+            Back to Tournament
+            <OrganizerLinkPending />
+          </Link>
+        </div>
 
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-text-primary">Auction Control</h1>
-        <p className="mt-1 text-text-secondary">{tournament.name as string}</p>
-      </div>
+        <div className="mb-8">
+          <h1 className="text-4xl font-black tracking-tight sm:text-5xl bg-gradient-to-br from-white via-primary-100 to-primary/50 bg-clip-text text-transparent drop-shadow-sm">Auction Control</h1>
+          <p className="mt-2 text-lg font-bold text-text-secondary">{tournament.name as string}</p>
+        </div>
 
-      <OrganizerAuctionClient
-        tournamentId={id}
-        tournamentName={tournament.name as string}
-        auctionId={auctionRow?.id ?? null}
-        initialSnapshot={snapshot}
-        initialReadiness={readiness}
-        categories={categories}
-        teamNameMap={teamNameMap}
-        playerNameMap={playerNameMap}
-        reauctionPriceRule={reauctionPriceRule}
-        minimumBidIncrement={minimumBidIncrement}
-      />
+        <OrganizerAuctionClient
+          tournamentId={id}
+          tournamentName={tournament.name as string}
+          auctionId={auctionRow?.id ?? null}
+          initialSnapshot={snapshot}
+          initialReadiness={readiness}
+          categories={categories}
+          teamNameMap={teamNameMap}
+          playerNameMap={playerNameMap}
+          reauctionPriceRule={reauctionPriceRule}
+          minimumBidIncrement={minimumBidIncrement}
+        />
+      </div>
     </main>
   );
 }
