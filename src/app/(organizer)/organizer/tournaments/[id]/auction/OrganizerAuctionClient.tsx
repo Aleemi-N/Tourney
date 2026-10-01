@@ -224,65 +224,71 @@ function CurrentPlayerPanel({
     : null;
 
   return (
-    <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+    <div className="rounded-3xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.15)] relative">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50" />
+      
       {/* Player photo header */}
-      <div className="relative h-48 sm:h-56 w-full bg-linear-to-br from-slate-800 to-slate-900">
+      <div className="relative h-64 sm:h-80 w-full bg-linear-to-br from-surface to-surface-raised">
         {photoUrl ? (
-          <Image src={photoUrl} alt={cp.player.display_name} fill className="object-cover object-[center_20%] opacity-90" unoptimized />
+          <>
+            <Image src={photoUrl} alt={cp.player.display_name} fill className="object-cover object-top opacity-95 transition-transform duration-1000 hover:scale-105" unoptimized />
+            <div className="absolute inset-0 bg-gradient-to-t from-surface-raised/95 via-surface-raised/30 to-transparent" />
+          </>
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <span className="text-5xl font-bold text-slate-500 opacity-40">
+            <span className="text-7xl font-black text-slate-500 opacity-20 tracking-widest drop-shadow-sm">
               {cp.player.display_name.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase()}
             </span>
+            <div className="absolute inset-0 bg-gradient-to-t from-surface-raised/95 to-transparent" />
           </div>
         )}
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-black/70 to-transparent" />
+        
         {cp.attempt_number > 1 && (
-          <span className="absolute left-3 top-3 rounded-full bg-warning/90 px-2 py-0.5 text-xs font-bold text-white">
+          <span className="absolute left-4 top-4 rounded-xl border border-warning/30 bg-warning/20 backdrop-blur-md px-3 py-1.5 text-xs font-black uppercase tracking-wider text-warning shadow-sm">
             Re-auction #{cp.attempt_number}
           </span>
         )}
       </div>
 
       {/* Player info */}
-      <div className="p-5">
-        <h2 className="text-2xl font-bold text-text-primary">{cp.player.display_name}</h2>
-        <div className="mt-1 flex flex-wrap gap-2">
+      <div className="relative z-10 px-6 pb-6 -mt-16 sm:-mt-20">
+        <h2 className="text-3xl sm:text-5xl font-black text-text-primary drop-shadow-md">{cp.player.display_name}</h2>
+        <div className="mt-3 flex flex-wrap gap-2">
           {/* Volleyball position — always separate from auction info */}
           {cp.player.primary_position && (
-            <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
+            <span className="rounded-lg border border-glass-border bg-surface-muted/80 backdrop-blur-md px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary shadow-sm">
               {formatVolleyballPosition(cp.player.primary_position)}
             </span>
           )}
           {/* Category */}
           {cp.category_code && (
-            <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+            <span className="rounded-lg border border-primary/30 bg-primary/20 backdrop-blur-md px-3 py-1.5 text-xs font-black uppercase tracking-wider text-primary shadow-sm">
               Cat {cp.category_code}{cp.category_label ? ` — ${cp.category_label}` : ''}
             </span>
           )}
         </div>
 
         {/* Price info */}
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-border bg-surface-muted p-3 text-center">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted">Cat Base</p>
-            <p className="mt-1 text-lg font-bold text-text-primary">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-glass-border bg-surface-muted/50 backdrop-blur-md p-4 text-center shadow-inner">
+            <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Cat Base</p>
+            <p className="mt-1 text-xl sm:text-2xl font-bold text-text-primary drop-shadow-sm">
               {cp.category_base_price != null ? formatMoney(cp.category_base_price) : '—'}
             </p>
           </div>
-          <div className="rounded-xl border border-border bg-surface-muted p-3 text-center">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted">Op. Base</p>
-            <p className="mt-1 text-lg font-bold text-text-primary">{formatMoney(cp.base_price)}</p>
+          <div className="rounded-2xl border border-glass-border bg-surface-muted/50 backdrop-blur-md p-4 text-center shadow-inner">
+            <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Op. Base</p>
+            <p className="mt-1 text-xl sm:text-2xl font-bold text-text-primary drop-shadow-sm">{formatMoney(cp.base_price)}</p>
           </div>
-          <div className={`rounded-xl border p-3 text-center col-span-2 sm:col-span-1 ${hb ? 'border-success/30 bg-success/8' : 'border-border bg-surface-muted'}`}>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
+          <div className={`rounded-2xl border backdrop-blur-md p-4 text-center col-span-2 sm:col-span-1 shadow-inner transition-colors duration-500 ${hb ? 'border-success/40 bg-success/10' : 'border-glass-border bg-surface-muted/50'}`}>
+            <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">
               {hb ? 'Highest Bid' : 'No Bids Yet'}
             </p>
-            <p className={`mt-1 text-xl font-bold ${hb ? 'text-success' : 'text-text-muted'}`}>
+            <p className={`mt-1 text-2xl sm:text-3xl font-black ${hb ? 'text-success drop-shadow-sm' : 'text-text-muted'}`}>
               {hb ? formatMoney(hb.amount) : '—'}
             </p>
             {hb && (
-              <p className="mt-0.5 truncate text-xs font-medium text-text-secondary">{hb.team.name}</p>
+              <p className="mt-1 truncate text-xs font-bold uppercase tracking-wider text-success/80">{hb.team.name}</p>
             )}
           </div>
         </div>
