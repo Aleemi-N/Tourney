@@ -60,5 +60,30 @@ export async function getOwnerTeam(
     teamId: string,
 ) {
     const teams = await getOwnerTeams(supabase, userId);
-    return teams.find((team) => team.id === teamId) ?? null;
+    const owned = teams.find((team) => team.id === teamId);
+    if (owned) return owned;
+
+    // Allow tournament organizers to preview/access team pages
+    const { data: teamData } = await supabase
+        .from('teams')
+        .select('id, name, short_name, logo_path, place, tournament_id, tournaments!inner(name, created_by)')
+        .eq('id', teamId)
+        .maybeSingle();
+
+    if (teamData) {
+        const tournament = Array.isArray(teamData.tournaments) ? teamData.tournaments[0] : teamData.tournaments;
+        if (tournament && tournament.created_by === userId) {
+            return {
+                id: teamData.id,
+                name: teamData.name,
+                short_name: teamData.short_name,
+                logo_path: teamData.logo_path,
+                place: teamData.place,
+                tournament_id: teamData.tournament_id,
+                tournament_name: tournament.name ?? 'Tournament',
+            } satisfies OwnerTeam;
+        }
+    }
+
+    return null;
 }

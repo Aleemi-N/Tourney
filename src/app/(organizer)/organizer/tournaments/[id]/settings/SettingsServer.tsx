@@ -51,6 +51,7 @@ export async function SettingsServer({ tournament }: { tournament: any }) {
     base_price: number;
     display_order: number;
   }[];
+
   const categories: AuctionCategory[] = rawCategories.map((r) => ({
     id: r.id,
     code: r.category_code as 'A' | 'B' | 'C',

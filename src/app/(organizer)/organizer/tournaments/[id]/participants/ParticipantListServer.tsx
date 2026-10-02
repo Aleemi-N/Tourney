@@ -1,4 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from '@/lib/supabase/server';
 import { ParticipantManager } from './ParticipantManager';
 
@@ -33,7 +33,13 @@ export async function ParticipantListServer({
           secondary_position,
           photo_path,
           place,
-          height_cm
+          height_cm,
+          phone,
+          date_of_birth,
+          playing_history,
+          jersey_name,
+          jersey_number,
+          jersey_size
         )
       `)
       .eq('tournament_id', tournament.id)

@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getOwnerTeams } from '@/lib/owner/owner-team';
-import type { OwnerSquadPlayer } from '@/lib/owner/owner-auction';
 import { OwnerPortalShell } from '@/components/owner/OwnerPortalShell';
 import { OwnerStat } from '@/components/owner/OwnerStat';
 import { OwnerTeamHeader } from '@/components/owner/OwnerTeamHeader';
+import { OwnerSquadRoster, SquadRosterItem } from '@/components/owner/OwnerSquadRoster';
 
 export const metadata: Metadata = { title: 'Team Overview' };
 
@@ -16,10 +16,19 @@ type SquadRow = {
     acquisition_type: string;
     acquisition_amount: number | null;
     player_profiles: {
+        id?: string;
         display_name: string;
         photo_path: string | null;
         primary_position: string | null;
         secondary_position: string | null;
+        place: string | null;
+        height_cm: number | null;
+        phone?: string | null;
+        date_of_birth?: string | null;
+        playing_history?: string | null;
+        jersey_name?: string | null;
+        jersey_number?: string | null;
+        jersey_size?: string | null;
     } | null;
 };
 
@@ -43,28 +52,38 @@ export default async function OwnerTeamPage({ params }: { params: Promise<{ team
     ] = await Promise.all([
         supabase.from('auctions').select('id, status').eq('tournament_id', team.tournament_id).maybeSingle(),
         // SOLD and lot-assigned ACTIVE players
-        supabase.from('team_players').select('id, player_id, acquisition_type, acquisition_amount, player_profiles(display_name, photo_path, primary_position, secondary_position)').eq('team_id', team.id).eq('tournament_id', team.tournament_id).eq('status', 'ACTIVE'),
+        supabase.from('team_players').select('id, player_id, acquisition_type, acquisition_amount, player_profiles(id, display_name, photo_path, primary_position, secondary_position, place, height_cm, phone, date_of_birth, playing_history, jersey_name, jersey_number, jersey_size)').eq('team_id', team.id).eq('tournament_id', team.tournament_id).eq('status', 'ACTIVE'),
         supabase.from('tournament_settings').select('max_squad_size').eq('tournament_id', team.tournament_id).maybeSingle(),
         supabase.from('auction_team_wallets').select('starting_balance, spent_amount, remaining_balance').eq('team_id', team.id).maybeSingle(),
         supabase.from('matches').select('id, court, scheduled_at, stage_id, home_team_id, away_team_id, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)').or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`).in('status', ['SCHEDULED']).order('scheduled_at', { ascending: true }).limit(1),
         supabase.from('auction_sales').select('auction_players!inner(player_id, attempt_number)').eq('team_id', team.id)
     ]);
 
-    const squad = ((squadData ?? []) as unknown as SquadRow[]).map((row): OwnerSquadPlayer => {
+    const squad: SquadRosterItem[] = ((squadData ?? []) as unknown as SquadRow[]).map((row) => {
         let label = row.acquisition_type.replaceAll('_', ' ');
+        let badgeColor = 'bg-slate-400/10 text-slate-300 border-slate-400/30';
         if (row.acquisition_type === 'AUCTION') {
             const sale = salesData?.find((s) => s.auction_players?.player_id === row.player_id);
             if (sale && sale.auction_players?.attempt_number > 1) {
                 label = 'RE-AUCTION';
+                badgeColor = 'bg-purple-400/10 text-purple-300 border-purple-400/30';
             } else {
                 label = 'MAIN AUCTION';
+                badgeColor = 'bg-fuchsia-400/10 text-fuchsia-300 border-fuchsia-400/30';
             }
+        } else if (row.acquisition_type === 'ICON_LOT') {
+            label = 'Icon Lot';
+            badgeColor = 'bg-amber-400/10 text-amber-300 border-amber-400/30';
+        } else if (row.acquisition_type === 'SETTER_LOT') {
+            label = 'Setter Lot';
+            badgeColor = 'bg-sky-400/10 text-sky-300 border-sky-400/30';
         }
         return {
             id: row.id,
-            player_id: row.player_id,
-            acquisition_type: label,
-            acquisition_amount: row.acquisition_amount,
+            playerId: row.player_id,
+            sourceLabel: label,
+            badgeColor,
+            price: row.acquisition_amount,
             player: row.player_profiles,
         };
     });
@@ -116,26 +135,7 @@ export default async function OwnerTeamPage({ params }: { params: Promise<{ team
                                     </div>
                                     <Link href={`/owner/teams/${team.id}/squad`} className="text-sm font-bold text-fuchsia-300 hover:text-fuchsia-200">VIEW FULL SQUAD →</Link>
                                 </div>
-                                {squad.length === 0 ? (
-                                    <div className="mt-5 rounded-3xl border border-dashed border-white/15 bg-white/3 p-8 text-sm text-white/55">
-                                        No players are assigned to this team yet.
-                                    </div>
-                                ) : (
-                                    <div className="mt-5 grid gap-3 md:grid-cols-2">
-                                        {squad.slice(0, 4).map((entry) => (
-                                            <article key={entry.id} className="flex min-w-0 items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#17132a] p-4">
-                                                <div className="min-w-0">
-                                                    <h3 className="truncate font-bold text-white">{entry.player?.display_name ?? 'Player'}</h3>
-                                                    <p className="mt-1 truncate text-sm text-white/45">{entry.player?.primary_position ?? 'Position pending'}{entry.player?.secondary_position ? ` · ${entry.player.secondary_position}` : ''}</p>
-                                                </div>
-                                                <div className="shrink-0 text-right">
-                                                    <p className="text-xs font-bold uppercase tracking-wider text-fuchsia-200/70">{entry.acquisition_type.replaceAll('_', ' ')}</p>
-                                                    {entry.acquisition_amount !== null ? <p className="mt-1 text-sm font-bold text-white">₹{Number(entry.acquisition_amount).toLocaleString('en-IN')}</p> : null}
-                                                </div>
-                                            </article>
-                                        ))}
-                                    </div>
-                                )}
+                                <OwnerSquadRoster squad={squad.slice(0, 4)} teamName={team.name} />
                             </section>
                         </div>
                         <div className="lg:col-span-1">

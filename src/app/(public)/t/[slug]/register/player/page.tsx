@@ -102,8 +102,33 @@ export default async function PlayerRegistrationPage({ params }: { params: Promi
             </div>
           )}
 
-          <div className="mt-6 text-sm text-text-secondary">
-            <p>Your registration has been submitted. If you need to update your profile information, please visit your <a href="/player/profile" className="font-medium text-primary hover:text-primary-hover hover:underline">Player Profile</a>.</p>
+          {/* Kit Details Card */}
+          <div className="mt-4 rounded-xl border border-border bg-surface-muted/50 p-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">Registered Kit Details</h3>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-lg bg-surface-raised p-2 border border-border/50">
+                <span className="block text-[10px] uppercase font-semibold text-text-muted">Name</span>
+                <span className="block text-sm font-bold text-text-primary uppercase truncate">{profile?.jersey_name || '—'}</span>
+              </div>
+              <div className="rounded-lg bg-surface-raised p-2 border border-border/50">
+                <span className="block text-[10px] uppercase font-semibold text-text-muted">Number</span>
+                <span className="block text-sm font-bold text-text-primary">{profile?.jersey_number ? `#${profile.jersey_number}` : '—'}</span>
+              </div>
+              <div className="rounded-lg bg-surface-raised p-2 border border-border/50">
+                <span className="block text-[10px] uppercase font-semibold text-text-muted">Size</span>
+                <span className="block text-sm font-bold text-text-primary">{profile?.jersey_size || '—'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-text-secondary">
+            <p>Your registration has been submitted.</p>
+            <Link 
+              href="/player/profile" 
+              className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3.5 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
+            >
+              Edit Kit & Profile
+            </Link>
           </div>
         </div>
       ) : (

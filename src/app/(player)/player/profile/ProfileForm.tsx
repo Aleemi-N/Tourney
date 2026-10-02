@@ -32,6 +32,9 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
     const height = formData.get('height') as string;
     const submittedPrimaryPosition = formData.get('primaryPosition') as string;
     const submittedSecondaryPosition = formData.get('secondaryPosition') as string;
+    const jerseyName = formData.get('jerseyName') as string;
+    const jerseyNumber = formData.get('jerseyNumber') as string;
+    const jerseySize = formData.get('jerseySize') as string;
 
     if (submittedSecondaryPosition && submittedSecondaryPosition === submittedPrimaryPosition) {
       setError('Secondary Position must be different from Primary Position.');
@@ -56,7 +59,10 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
         p_place: place || undefined,
         p_height_cm: height ? parseFloat(height) : undefined,
         p_secondary_position: submittedSecondaryPosition || undefined,
-        p_playing_history: initialProfile?.playing_history || undefined
+        p_playing_history: initialProfile?.playing_history || undefined,
+        p_jersey_name: jerseyName || undefined,
+        p_jersey_number: jerseyNumber || undefined,
+        p_jersey_size: jerseySize || undefined,
       });
 
       if (rpcError) throw rpcError;
@@ -192,6 +198,53 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
               <option key={p} value={p}>{formatVolleyballPosition(p)}</option>
             ))}
           </select>
+        </div>
+
+        {/* Kit / Jersey Details */}
+        <div className="col-span-1 md:col-span-2 pt-3 border-t border-border mt-1">
+          <h3 className="text-sm font-semibold text-text-primary mb-3">Jersey & Kit Preferences</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="jerseyName" className="text-sm font-medium text-text-secondary">Jersey Name (Back Print)</label>
+              <input 
+                id="jerseyName"
+                name="jerseyName"
+                type="text"
+                maxLength={20}
+                placeholder="e.g. ALEX"
+                defaultValue={initialProfile?.jersey_name || ''}
+                className="min-h-11 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary placeholder:text-text-muted uppercase focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="jerseyNumber" className="text-sm font-medium text-text-secondary">Jersey Number</label>
+              <input 
+                id="jerseyNumber"
+                name="jerseyNumber"
+                type="text"
+                maxLength={4}
+                placeholder="e.g. 10"
+                defaultValue={initialProfile?.jersey_number || ''}
+                className="min-h-11 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="jerseySize" className="text-sm font-medium text-text-secondary">Jersey Size</label>
+              <select 
+                id="jerseySize"
+                name="jerseySize"
+                defaultValue={initialProfile?.jersey_size || ''}
+                className="min-h-11 min-w-0 w-full rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+              >
+                <option value="">Select size...</option>
+                {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'].map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -44,6 +44,7 @@ export async function updateAuctionPriceCategoriesAction(
 
   revalidatePath(`/organizer/tournaments/${tournamentId}/settings`);
   revalidatePath(`/organizer/tournaments/${tournamentId}/auction`);
+  revalidatePath(`/organizer/tournaments/${tournamentId}/participants`);
   return { ok: true, data };
 }
 

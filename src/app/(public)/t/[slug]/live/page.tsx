@@ -51,9 +51,19 @@ export default async function PublicLivePage({ params }: Props) {
       .limit(1)
       .maybeSingle();
 
-    if (latestAuctionEvent?.auction_id) {
+    let targetAuctionId = latestAuctionEvent?.auction_id;
+    if (!targetAuctionId) {
+      const { data: auctionData } = await supabase
+        .from('auctions')
+        .select('id')
+        .eq('tournament_id', tournament.id)
+        .maybeSingle();
+      targetAuctionId = auctionData?.id;
+    }
+
+    if (targetAuctionId) {
       const { data: auctionState, error } = await supabase.rpc('get_auction_public_state', {
-        p_auction_id: latestAuctionEvent.auction_id,
+        p_auction_id: targetAuctionId,
       });
       if (!error && auctionState) {
         return (
@@ -70,8 +80,10 @@ export default async function PublicLivePage({ params }: Props) {
               <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Live Auction</h1>
             </div>
             <PublicAuctionLive
-              auctionId={latestAuctionEvent.auction_id}
+              auctionId={targetAuctionId}
               initialState={auctionState as never}
+              tournamentName={tournament.name}
+              tournamentLogoUrl={tournament.logoUrl}
             />
           </PublicTournamentFrame>
         );

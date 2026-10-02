@@ -5,23 +5,13 @@ import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { AssignPlayerButton } from '@/components/organizer/AssignPlayerButton';
 import type { EligiblePlayer } from '@/components/organizer/AssignPlayerModal';
 import { TeamRenameForm } from '@/components/organizer/TeamRenameForm';
+import { OrganizerTeamsSquadRoster, OrganizerSquadPlayer } from '@/components/organizer/OrganizerTeamsSquadRoster';
 
 export const metadata: Metadata = {
     title: 'Teams & Squads | Organizer',
 };
 
-type SquadEntry = {
-    id: string;
-    player_id: string;
-    acquisition_type: string;
-    acquisition_amount: number | null;
-    player: {
-        display_name: string;
-        photo_path: string | null;
-        primary_position: string | null;
-        secondary_position: string | null;
-    } | null;
-};
+type SquadEntry = OrganizerSquadPlayer;
 
 export default async function OrganizerTeamsPage({
     params,
@@ -47,7 +37,7 @@ export default async function OrganizerTeamsPage({
         supabase.from('tournament_settings').select('min_squad_size, max_squad_size').eq('tournament_id', id).single(),
         supabase.from('teams').select('id, name, short_name, logo_path, status').eq('tournament_id', id).order('name'),
         auction ? supabase.from('auction_team_wallets').select('team_id, starting_balance, spent_amount, remaining_balance').eq('auction_id', auction.id) : Promise.resolve({ data: [] }),
-        supabase.from('team_players').select('id, team_id, player_id, acquisition_type, acquisition_amount, player_profiles(display_name, photo_path, primary_position, secondary_position)').eq('tournament_id', id).eq('status', 'ACTIVE'),
+        supabase.from('team_players').select('id, team_id, player_id, acquisition_type, acquisition_amount, player_profiles(id, display_name, photo_path, primary_position, secondary_position, place, height_cm, phone, date_of_birth, playing_history, jersey_name, jersey_number, jersey_size)').eq('tournament_id', id).eq('status', 'ACTIVE'),
         auction ? supabase.from('auction_sales').select('team_id, auction_players!inner(player_id, attempt_number)') : Promise.resolve({ data: [] }),
         supabase.from('player_tournament_registrations').select('id, player_id, status, player_profiles(id, display_name, primary_position, secondary_position, photo_path)').eq('tournament_id', id).eq('status', 'APPROVED'),
         auction ? supabase.from('auction_players').select('player_id').eq('auction_id', auction.id).eq('status', 'LIVE') : Promise.resolve({ data: [] })
@@ -177,28 +167,7 @@ export default async function OrganizerTeamsPage({
                                 )}
                             </div>
                             <div className="p-6">
-                                {team.squad.length === 0 ? (
-                                    <div className="py-8 text-center border border-dashed border-border rounded-xl">
-                                        <p className="text-sm text-text-muted">No players assigned yet.</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                        {team.squad.map(p => (
-                                            <article key={p.id} className="flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-background p-4">
-                                                <div className="min-w-0">
-                                                    <h3 className="truncate font-bold text-text-primary text-sm">{p.player?.display_name ?? 'Player'}</h3>
-                                                    <p className="truncate text-xs text-text-secondary">{p.player?.primary_position ?? 'Position pending'}</p>
-                                                </div>
-                                                <div className="flex items-end justify-between border-t border-border pt-3 mt-auto">
-                                                    <p className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-400/80">{p.acquisition_type.replaceAll('_', ' ')}</p>
-                                                    <p className="font-mono text-xs font-bold text-text-primary">
-                                                        {p.acquisition_amount !== null ? `₹${Number(p.acquisition_amount).toLocaleString('en-IN')}` : '—'}
-                                                    </p>
-                                                </div>
-                                            </article>
-                                        ))}
-                                    </div>
-                                )}
+                                <OrganizerTeamsSquadRoster squad={team.squad} teamName={team.name} />
                             </div>
                         </div>
                     ))}

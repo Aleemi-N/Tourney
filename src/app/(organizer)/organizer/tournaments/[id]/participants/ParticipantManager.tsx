@@ -17,6 +17,28 @@ import { LockClosedIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { formatVolleyballPosition } from '@/lib/volleyball-positions';
+import { AnimatedSelect } from './AnimatedSelect';
+import { motion, AnimatePresence } from 'framer-motion';
+import { PlayerDetailModal, PlayerDetailData } from '@/components/player/PlayerDetailModal';
+import { downloadAllPlayerCardsZip } from '@/lib/generate-player-card';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05, delayChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  show: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: { type: 'spring' as const, stiffness: 300, damping: 24 }
+  }
+};
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -178,16 +200,41 @@ export function ParticipantManager({
     action: 'revoke' | 'reopen';
     reason: string;
   } | null>(null);
+  const [selectedModalPlayer, setSelectedModalPlayer] = useState<PlayerDetailData | null>(null);
 
   // Classification state: allocation route for pending players
   const [classifications, setClassifications] = useState<Record<string, string>>({});
   // Price category state for pending players (in progress of being approved)
   const [pendingPriceCategories, setPendingPriceCategories] = useState<Record<string, string | null>>({});
 
-  // Auction locked state (prepared = true if any player in queue)
-  // We infer from prop — if auctionCategories are empty and isAuctionLeague, assume unlocked
-  // Real lock comes from server — we just show conservative UI and let RPC error guide
-  const auctionPrepared = false; // server determines; we disable controls on RPC error
+  // Auction locked state
+  const auctionPrepared = false;
+
+  // Bulk zip download state
+  const [isDownloadingZip, setIsDownloadingZip] = useState(false);
+  const [zipProgress, setZipProgress] = useState<{ current: number; total: number } | null>(null);
+
+  const handleDownloadAllZip = async () => {
+    if (players.length === 0) return;
+    setIsDownloadingZip(true);
+    setZipProgress({ current: 0, total: players.length });
+    try {
+      await downloadAllPlayerCardsZip(
+        players,
+        auctionCategories,
+        supabase,
+        (current, total) => {
+          setZipProgress({ current, total });
+        }
+      );
+    } catch (err) {
+      console.error('Failed to generate bulk cards ZIP:', err);
+      setMessage({ type: 'error', text: 'Failed to generate cards ZIP bundle.' });
+    } finally {
+      setIsDownloadingZip(false);
+      setZipProgress(null);
+    }
+  };
 
   const router = useRouter();
 
@@ -386,7 +433,31 @@ export function ParticipantManager({
           ))}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {tab === 'PLAYERS' && (
+            <button
+              type="button"
+              onClick={handleDownloadAllZip}
+              disabled={isDownloadingZip || players.length === 0}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-md transition-all active:scale-95 disabled:opacity-50 border border-amber-300/40"
+              title="Download a ZIP archive containing high-res auction cards for all registered players"
+            >
+              {isDownloadingZip ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
+                  <span>
+                    Generating ZIP ({zipProgress?.current ?? 0}/{zipProgress?.total ?? players.length})…
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span>📦</span>
+                  <span>Download All Cards (ZIP)</span>
+                </>
+              )}
+            </button>
+          )}
+
           <label htmlFor="statusFilter" className="text-sm font-bold uppercase tracking-wider text-text-muted">
             Filter:
           </label>
@@ -394,12 +465,12 @@ export function ParticipantManager({
             id="statusFilter"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="p-2.5 rounded-xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl text-text-primary text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary shadow-sm transition-all"
+            className="p-2.5 rounded-xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl text-text-primary text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary shadow-sm transition-all bg-[#181825]"
           >
-            <option value="ALL">All Statuses ({getCount('ALL')})</option>
-            <option value="PENDING">Pending ({getCount('PENDING')})</option>
-            <option value="APPROVED">Approved ({getCount('APPROVED')})</option>
-            <option value="REJECTED">Rejected ({getCount('REJECTED')})</option>
+            <option value="ALL" className="bg-[#181825] text-white">All Statuses ({getCount('ALL')})</option>
+            <option value="PENDING" className="bg-[#181825] text-white">Pending ({getCount('PENDING')})</option>
+            <option value="APPROVED" className="bg-[#181825] text-white">Approved ({getCount('APPROVED')})</option>
+            <option value="REJECTED" className="bg-[#181825] text-white">Rejected ({getCount('REJECTED')})</option>
           </select>
         </div>
       </div>
@@ -407,7 +478,12 @@ export function ParticipantManager({
       {/* Players tab */}
       <div className="mt-4">
         {tab === 'PLAYERS' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4"
+          >
             {filteredPlayers.length === 0 ? (
               <p className="text-slate-500 text-sm col-span-full">
                 {statusFilter === 'ALL'
@@ -421,30 +497,68 @@ export function ParticipantManager({
                 const isPending =
                   p.status === 'PENDING' || p.status === 'CHANGES_REQUESTED';
                 const isApproved = p.status === 'APPROVED';
+                const assignedCat = auctionCategories.find((c) => c.id === (pendingPriceCategories[p.id] ?? p.auction_price_category_id));
+
+                const openPlayerModal = () => {
+                  if (profile) {
+                    setSelectedModalPlayer({
+                      id: profile.id,
+                      display_name: profile.display_name,
+                      photo_path: profile.photo_path,
+                      primary_position: profile.primary_position,
+                      secondary_position: profile.secondary_position,
+                      place: profile.place,
+                      height_cm: profile.height_cm,
+                      phone: profile.phone,
+                      date_of_birth: profile.date_of_birth,
+                      playing_history: profile.playing_history,
+                      jersey_name: profile.jersey_name,
+                      jersey_number: profile.jersey_number,
+                      jersey_size: profile.jersey_size,
+                      category_code: assignedCat?.code ?? null,
+                      base_price: assignedCat?.base_price ?? null,
+                    });
+                  }
+                };
 
                 return (
-                  <div key={p.id} className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl shadow-[0_4px_20px_rgb(0,0,0,0.1)] transition-all duration-300 hover:shadow-lg hover:border-primary/30 hover:-translate-y-1">
+                  <motion.div variants={itemVariants} key={p.id} className="group relative flex h-full flex-col overflow-visible rounded-2xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl shadow-[0_4px_20px_rgb(0,0,0,0.1)] transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.15)] hover:border-primary/40 hover:-translate-y-1 hover:z-50 focus-within:z-50">
                     {/* Player photo */}
-                    <div className="relative aspect-[4/5] w-full shrink-0 overflow-hidden bg-surface">
+                    <div
+                      onClick={openPlayerModal}
+                      className="relative aspect-[4/5] w-full shrink-0 overflow-hidden bg-surface rounded-t-2xl cursor-pointer"
+                      title="Click to view full player profile card"
+                    >
                       {profile?.photo_path ? (
-                        <>
-                          <Image
-                            src={supabase.storage.from('avatars').getPublicUrl(profile.photo_path).data.publicUrl}
-                            alt={profile.display_name}
-                            fill
-                            unoptimized
-                            className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-surface-raised/95 via-surface-raised/20 to-transparent z-0" />
-                        </>
+                        <Image
+                          src={supabase.storage.from('avatars').getPublicUrl(profile.photo_path).data.publicUrl}
+                          alt={profile.display_name}
+                          fill
+                          unoptimized
+                          className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                        />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-slate-400 dark:text-slate-500">
+                        <div className="flex h-full w-full items-center justify-center text-slate-400 dark:text-slate-500 bg-slate-900/60">
                           <span className="text-4xl font-bold tracking-widest opacity-40">
                             {(profile?.display_name ?? '?').split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()}
                           </span>
                         </div>
                       )}
+                      
+                      {/* Printable Card Badge Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openPlayerModal();
+                        }}
+                        className="absolute top-3 left-3 z-10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-amber-500/90 text-slate-950 hover:bg-amber-400 backdrop-blur-md shadow-md transition-all border border-amber-300/40 flex items-center gap-1 active:scale-95"
+                        title="Download printable pre-auction card PNG"
+                      >
+                        <span>🎴</span> Print Card
+                      </button>
+
                       {/* Status badge */}
                       <span className={`absolute top-3 right-3 z-10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg backdrop-blur-md shadow-sm border ${
                           p.status === 'APPROVED' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
@@ -457,16 +571,19 @@ export function ParticipantManager({
                     </div>
 
                     {/* Player info */}
-                    <div className="flex flex-1 flex-col px-5 pb-5 relative z-10 -mt-16">
-                      <h3 className="line-clamp-2 font-bold text-slate-900 dark:text-slate-100">
+                    <div className="flex flex-1 flex-col px-4 pt-3.5 pb-4 relative z-10 bg-surface-raised/90 border-t border-glass-border/40">
+                      <h3
+                        onClick={openPlayerModal}
+                        className="line-clamp-2 text-base font-black tracking-tight text-slate-900 dark:text-slate-100 cursor-pointer hover:text-primary transition-colors"
+                      >
                         {profile?.display_name}
                       </h3>
                       {/* Volleyball position — always shown separately from auction info */}
-                      <p className="mt-0.5 text-sm font-medium text-slate-500 dark:text-slate-400">
+                      <p className="mt-0.5 text-xs font-bold text-primary uppercase tracking-wider">
                         {formatVolleyballPosition(profile?.primary_position)}
                       </p>
                       {profile?.secondary_position && (
-                        <p className="mt-0.5 truncate text-xs text-slate-400 dark:text-slate-500">
+                        <p className="mt-0.5 truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
                           Secondary: {formatVolleyballPosition(profile.secondary_position)}
                         </p>
                       )}
@@ -477,23 +594,19 @@ export function ParticipantManager({
                           {/* Allocation route */}
                           <div>
                             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                              Allocation Route
+                              Allocation Route ({auctionCategories.length})
                             </label>
-                            <select
+                            <AnimatedSelect
                               value={classifications[p.id] || p.auction_category || ''}
-                              onChange={(e) =>
-                                setClassifications((prev) => ({ ...prev, [p.id]: e.target.value }))
-                              }
+                              onChange={(val) => setClassifications((prev) => ({ ...prev, [p.id]: val }))}
                               disabled={isSubmitting}
-                                className="h-11 w-full rounded-xl border border-glass-border bg-surface-muted/50 backdrop-blur-sm px-3 text-sm text-text-primary focus:border-primary focus:bg-surface-muted focus:ring-2 focus:ring-primary/20 disabled:opacity-50 transition-all shadow-inner"
-                            >
-                              <option value="" disabled>
-                                Select route…
-                              </option>
-                              <option value="MAIN_AUCTION">Main Auction</option>
-                              <option value="ICON_LOT">Icon Player</option>
-                              <option value="SETTER_LOT">Setter</option>
-                            </select>
+                              placeholder="Select route…"
+                              options={[
+                                { value: 'MAIN_AUCTION', label: 'Main Auction' },
+                                { value: 'ICON_LOT', label: 'Icon Player' },
+                                { value: 'SETTER_LOT', label: 'Setter' },
+                              ]}
+                            />
                           </div>
 
                           {/* Price category — only shown when route requires it */}
@@ -506,25 +619,23 @@ export function ParticipantManager({
                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
                                   Auction Price Category
                                 </label>
-                                <select
+                                <AnimatedSelect
                                   value={pendingPriceCategories[p.id] ?? p.auction_price_category_id ?? ''}
-                                  onChange={(e) =>
+                                  onChange={(val) =>
                                     setPendingPriceCategories((prev) => ({
                                       ...prev,
-                                      [p.id]: e.target.value || null,
+                                      [p.id]: val || null,
                                     }))
                                   }
                                   disabled={isSubmitting}
-                                    className="h-11 w-full rounded-xl border border-glass-border bg-surface-muted/50 backdrop-blur-sm px-3 text-sm text-text-primary focus:border-primary focus:bg-surface-muted focus:ring-2 focus:ring-primary/20 disabled:opacity-50 transition-all shadow-inner"
-                                >
-                                  <option value="">Needs Category…</option>
-                                  {auctionCategories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>
-                                      {cat.code} — {cat.display_name} — ₹
-                                      {cat.base_price.toLocaleString('en-IN')}
-                                    </option>
-                                  ))}
-                                </select>
+                                  placement="top"
+                                  placeholder="Needs Category…"
+                                  options={auctionCategories.map((cat) => ({
+                                    value: cat.id,
+                                    label: `${cat.code} — ${cat.display_name}`,
+                                    subtitle: `₹${cat.base_price.toLocaleString('en-IN')}`,
+                                  }))}
+                                />
                               </div>
                             )}
                         </div>
@@ -624,11 +735,11 @@ export function ParticipantManager({
                         </button>
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })
             )}
-          </div>
+          </motion.div>
         )}
 
         {tab === 'TEAM_OWNERS' && (
@@ -787,6 +898,13 @@ export function ParticipantManager({
           </section>
         </div>
       )}
+
+      {/* Player Detail Card Modal */}
+      <PlayerDetailModal
+        isOpen={Boolean(selectedModalPlayer)}
+        onClose={() => setSelectedModalPlayer(null)}
+        player={selectedModalPlayer}
+      />
     </div>
   );
 }

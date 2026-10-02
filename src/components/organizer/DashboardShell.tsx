@@ -52,7 +52,7 @@ export function DashboardShell({ children, user, lotEnabledTournamentIds = [] }:
 
   const tournamentNavigation = isTournamentContext ? [
     { name: 'Overview', href: `/organizer/tournaments/${tournamentId}`, icon: TrophyIcon },
-    { name: 'Player Details', href: `/organizer/tournaments/${tournamentId}/participants`, icon: UsersIcon },
+    { name: 'Player Details', shortName: 'Players', href: `/organizer/tournaments/${tournamentId}/participants`, icon: UsersIcon },
     { name: 'Staff', href: `/organizer/tournaments/${tournamentId}/staff`, icon: UserGroupIcon, disabled: false },
     ...(lotEnabledTournamentIds.includes(tournamentId) ? [{ name: 'Lot Draw', href: `/organizer/tournaments/${tournamentId}/lot`, icon: Squares2X2Icon, disabled: false }] : []),
     { name: 'Auction', href: `/organizer/tournaments/${tournamentId}/auction`, icon: BanknotesIcon, disabled: false },
@@ -159,6 +159,7 @@ export function DashboardShell({ children, user, lotEnabledTournamentIds = [] }:
           : [{ name: 'Home', href: '/', icon: VolleyballIcon, disabled: false }, globalNavigation[0], globalNavigation[1]]
         ).map((item) => {
           const isActive = !item.disabled && pathname === item.href;
+          const displayLabel = (item as any).shortName || item.name.replace(' (Coming Soon)', '');
           return (
             <Link
               key={item.name}
@@ -180,7 +181,7 @@ export function DashboardShell({ children, user, lotEnabledTournamentIds = [] }:
             >
               <item.icon className="h-6 w-6" />
               <span className="flex items-center gap-1 text-xs font-semibold truncate max-w-[100%]">
-                {item.name.replace(' (Coming Soon)', '')}
+                {displayLabel}
                 {!item.disabled && <OrganizerLinkPending className="h-2.5 w-2.5 flex-shrink-0" />}
               </span>
             </Link>

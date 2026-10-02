@@ -19,10 +19,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Radio, Wifi, WifiOff, RefreshCcw, Clock, Trophy, Pause } from 'lucide-react';
+import { Radio, Wifi, WifiOff, RefreshCcw, Clock, Trophy, Pause, Maximize2, Minimize2, User, Hand, Award, Phone, Gavel, Shield } from 'lucide-react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
+import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
 import { formatVolleyballPosition } from '@/lib/volleyball-positions';
+import { AuctionPlayerCard } from '@/components/auction/AuctionPlayerCard';
 
 // ─── Types (mirrors get_auction_public_state output) ─────────────────────────
 
@@ -56,6 +58,7 @@ interface PublicCurrentPlayer {
     photo_path: string | null;
     primary_position: string | null;
     secondary_position: string | null;
+    phone?: string | null;
   };
 }
 
@@ -168,133 +171,47 @@ function ProgressStats({ progress }: { progress: PublicAuctionState['progress'] 
 
 // ─── Player photo ─────────────────────────────────────────────────────────────
 
-function PlayerPhoto({ player, storageBase }: {
+function PlayerPhoto({ player, supabase, isFullscreen }: {
   player: PublicCurrentPlayer['player'];
-  storageBase: string;
+  supabase: ReturnType<typeof createClient>;
+  isFullscreen?: boolean;
 }) {
-  const url = player.photo_path ? `${storageBase}/avatars/${player.photo_path}` : null;
-  const initials = player.display_name
-    .split(' ')
-    .map((w) => w[0] ?? '')
-    .join('')
-    .substring(0, 2)
-    .toUpperCase();
+  const url = resolvePublicStorageUrl(supabase as any, 'avatars', player.photo_path);
+  const initial = player.display_name.trim().charAt(0).toUpperCase();
 
   return (
-    <div className="relative mx-auto h-28 w-28 sm:h-36 sm:w-36 shrink-0 overflow-hidden rounded-full border-2 border-primary/40 bg-gradient-to-br from-violet-900 to-slate-900">
+    <div
+      className={`relative mx-auto shrink-0 overflow-hidden rounded-3xl border-4 border-[#e5a93c]/60 bg-gradient-to-tr from-[#1a1409] via-[#2c200b] to-[#0c0d14] shadow-[0_0_50px_rgba(229,169,60,0.4)] flex items-center justify-center group transition-all duration-300
+        ${isFullscreen ? 'h-64 w-64 sm:h-80 sm:w-80' : 'h-56 w-56 sm:h-64 sm:w-64'}`}
+    >
       {url ? (
         <Image
           src={url}
           alt={player.display_name}
           fill
           unoptimized
-          className="object-cover object-[center_15%]"
-          sizes="144px"
+          className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+          sizes="320px"
         />
       ) : (
-        <span className="flex h-full w-full items-center justify-center text-3xl font-black text-white/30">
-          {initials}
+        <span className="text-8xl font-black tracking-widest text-[#e5a93c] drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">
+          {initial}
         </span>
       )}
     </div>
   );
 }
 
-// ─── Current player card ──────────────────────────────────────────────────────
-
-function CurrentPlayerCard({
-  player,
-  highestBid,
-  storageBase,
-}: {
+function CurrentPlayerCard(props: {
   player: PublicCurrentPlayer;
   highestBid: PublicBid | null;
-  storageBase: string;
+  recentBidsCount?: number;
+  supabase: ReturnType<typeof createClient>;
+  isFullscreen?: boolean;
+  tournamentName?: string;
+  tournamentLogoUrl?: string | null;
 }) {
-  const reduceMotion = useReducedMotion();
-  const categoryBase = player.category_base_price ?? player.base_price;
-
-  return (
-    <motion.div
-      key={player.auction_player_id}
-      initial={!reduceMotion ? { opacity: 0, y: 12 } : false}
-      animate={{ opacity: 1, y: 0 }}
-      exit={!reduceMotion ? { opacity: 0, y: -12 } : undefined}
-      transition={{ duration: 0.35 }}
-      className="rounded-2xl border border-white/10 bg-gradient-to-b from-violet-950/60 to-slate-900/60 p-5 sm:p-7"
-    >
-      {player.attempt_number > 1 && (
-        <span className="mb-3 inline-block rounded-full bg-amber-400/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-300">
-          Re-auction — Attempt #{player.attempt_number}
-        </span>
-      )}
-
-      {/* Player identity */}
-      <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-        <PlayerPhoto player={player.player} storageBase={storageBase} />
-        <div className="min-w-0">
-          <h2 className="text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl">
-            {player.player.display_name}
-          </h2>
-          {/* Volleyball position — always shown separately from auction category */}
-          {player.player.primary_position && (
-            <p className="mt-1.5 text-sm font-semibold text-white/55">
-              {formatVolleyballPosition(player.player.primary_position)}
-              {player.player.secondary_position && (
-                <span className="text-white/35"> · {formatVolleyballPosition(player.player.secondary_position)}</span>
-              )}
-            </p>
-          )}
-          {/* Price category — separate concept from volleyball position */}
-          {player.category_code && (
-            <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/20 px-3 py-1 text-xs font-bold text-primary-foreground/90">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-black">
-                {player.category_code}
-              </span>
-              {player.category_label ?? `Category ${player.category_code}`}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Price info row */}
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-white/8 bg-black/20 p-3 text-center">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-white/35">Cat Base</p>
-          <p className="mt-1 text-lg font-black text-white">{formatMoney(categoryBase)}</p>
-        </div>
-        <div className="rounded-xl border border-white/8 bg-black/20 p-3 text-center">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-white/35">Op Base</p>
-          <p className="mt-1 text-lg font-black text-white">{formatMoney(player.base_price)}</p>
-        </div>
-        {/* Current bid — highlighted */}
-        <div className={`col-span-2 rounded-xl border p-4 text-center sm:col-span-1 ${highestBid
-            ? 'border-emerald-400/30 bg-emerald-400/10'
-            : 'border-white/8 bg-black/20'
-          }`}>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-white/35">
-            {highestBid ? 'Current Bid' : 'No Bids Yet'}
-          </p>
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={highestBid?.amount ?? 'no-bid'}
-              initial={!reduceMotion ? { opacity: 0, scale: 0.88 } : false}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={!reduceMotion ? { opacity: 0, scale: 0.88 } : undefined}
-              className={`mt-1 text-2xl font-black ${highestBid ? 'text-emerald-400' : 'text-white/40'}`}
-            >
-              {highestBid ? formatMoney(highestBid.amount) : formatMoney(player.base_price)}
-            </motion.p>
-          </AnimatePresence>
-          {highestBid && (
-            <p className="mt-0.5 truncate text-xs font-semibold text-white/60">
-              {highestBid.team.short_name ?? highestBid.team.name}
-            </p>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
+  return <AuctionPlayerCard {...props} />;
 }
 
 // ─── Recent bids feed ─────────────────────────────────────────────────────────
@@ -369,20 +286,36 @@ function IdleState({ status, progress }: { status: AuctionStatus; progress: Publ
 interface Props {
   auctionId: string;
   initialState: PublicAuctionState;
+  tournamentName?: string;
+  tournamentLogoUrl?: string | null;
 }
 
-export function PublicAuctionLive({ auctionId, initialState }: Props) {
+export function PublicAuctionLive({ auctionId, initialState, tournamentName, tournamentLogoUrl }: Props) {
   const [state, setState] = useState<PublicAuctionState>(initialState);
   const [conn, setConn] = useState<'connecting' | 'live' | 'reconnecting'>('connecting');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const containerRef = useRef<HTMLDivElement>(null);
   const lastSeqRef = useRef<number>(initialState.last_sequence ?? 0);
   const supabase = useMemo(() => createClient(), []);
   const reduceMotion = useReducedMotion();
 
-  // Storage base URL for player photos
-  const storageBase = useMemo(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    return url ? `${url}/storage/v1/object/public` : '';
+  // Fullscreen change listener
+  useEffect(() => {
+    const handleFSChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFSChange);
+    return () => document.removeEventListener('fullscreenchange', handleFSChange);
   }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
 
   // ── Snapshot refresh ─────────────────────────────────────────────────────
   const refresh = useCallback(async () => {
@@ -452,34 +385,58 @@ export function PublicAuctionLive({ auctionId, initialState }: Props) {
   const { auction, current_player, highest_bid, recent_bids, progress } = state;
 
   return (
-    <section aria-label="Live Auction" className="mt-6 space-y-5">
+    <section ref={containerRef} aria-label="Live Auction" className={`space-y-5 ${isFullscreen ? 'bg-[#030718] p-6 min-h-screen flex flex-col justify-center items-center overflow-auto' : 'mt-6'}`}>
       {/* ── Header bar ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
+      <div className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 ${isFullscreen ? 'w-full max-w-5xl' : ''}`}>
         <div className="flex items-center gap-3">
-          <Radio className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
+          <Radio className="h-5 w-5 text-cyan-400 shrink-0" aria-hidden="true" />
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/50">
-              Live Auction
+              Live Auction Stage
             </p>
             <div className="mt-1">
               <AuctionStatusChip status={auction.status} />
             </div>
           </div>
         </div>
-        <ConnectionBadge status={conn} />
+
+        <div className="flex items-center gap-3">
+          <ConnectionBadge status={conn} />
+          <button
+            onClick={toggleFullscreen}
+            className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/40 bg-cyan-500/10 px-3.5 py-2 text-xs font-bold text-cyan-300 transition-all hover:bg-cyan-500/20 hover:border-cyan-400/60 active:scale-95 shadow-sm"
+            title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen (Projector View)'}
+          >
+            {isFullscreen ? (
+              <>
+                <Minimize2 className="h-4 w-4" />
+                <span>Exit Fullscreen</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="h-4 w-4" />
+                <span>Fullscreen Stage</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* ── Main content: desktop two-column, mobile stacked ── */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        {/* Left / main area */}
-        <div className="space-y-5 lg:col-span-2">
+      {/* ── Main content: desktop two-column, mobile stacked (or centered when fullscreen) ── */}
+      <div className={`grid grid-cols-1 gap-6 ${isFullscreen ? 'w-full max-w-5xl' : 'lg:grid-cols-12'}`}>
+        {/* Left / main stage card area */}
+        <div className={`space-y-5 ${isFullscreen ? 'w-full' : 'lg:col-span-8'}`}>
           <AnimatePresence mode="wait">
             {current_player ? (
               <CurrentPlayerCard
                 key={current_player.auction_player_id}
                 player={current_player}
                 highestBid={highest_bid}
-                storageBase={storageBase}
+                recentBidsCount={recent_bids?.length ?? 0}
+                supabase={supabase}
+                isFullscreen={true}
+                tournamentName={tournamentName}
+                tournamentLogoUrl={tournamentLogoUrl}
               />
             ) : (
               <motion.div
@@ -493,47 +450,49 @@ export function PublicAuctionLive({ auctionId, initialState }: Props) {
             )}
           </AnimatePresence>
 
-          {/* Recent bids — below player card on mobile */}
-          {current_player && recent_bids && recent_bids.length > 0 && (
+          {/* Recent bids — shown below card if not in fullscreen */}
+          {!isFullscreen && current_player && recent_bids && recent_bids.length > 0 && (
             <RecentBidsFeed bids={recent_bids} />
           )}
         </div>
 
-        {/* Right sidebar */}
-        <div className="space-y-5">
-          {/* Progress */}
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <h3 className="mb-4 text-[11px] font-bold uppercase tracking-wider text-white/40">
-              Auction Progress
-            </h3>
-            <ProgressStats progress={progress} />
+        {/* Right sidebar (hidden in fullscreen projector mode) */}
+        {!isFullscreen && (
+          <div className="space-y-5 lg:col-span-4">
+            {/* Progress */}
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <h3 className="mb-4 text-[11px] font-bold uppercase tracking-wider text-white/40">
+                Auction Progress
+              </h3>
+              <ProgressStats progress={progress} />
+            </div>
+
+            {/* Leading team highlight — on sidebar for desktop, already shown in player card on mobile */}
+            {current_player && highest_bid && (
+              <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-5">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-300/60">
+                  Leading Team
+                </p>
+                <p className="mt-2 text-xl font-black text-white truncate">
+                  {highest_bid.team.name}
+                </p>
+                <p className="mt-0.5 text-sm font-semibold text-emerald-400">
+                  {formatMoney(highest_bid.amount)}
+                </p>
+              </div>
+            )}
+
+            {/* No current player but LIVE — show waiting count */}
+            {!current_player && auction.status === 'LIVE' && progress.waiting > 0 && (
+              <div className="rounded-2xl border border-blue-400/20 bg-blue-400/5 p-5 text-center">
+                <p className="text-3xl font-black text-blue-300">{progress.waiting}</p>
+                <p className="mt-1 text-xs font-bold uppercase tracking-wider text-white/40">
+                  Players Waiting
+                </p>
+              </div>
+            )}
           </div>
-
-          {/* Leading team highlight — on sidebar for desktop, already shown in player card on mobile */}
-          {current_player && highest_bid && (
-            <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-5">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-300/60">
-                Leading Team
-              </p>
-              <p className="mt-2 text-xl font-black text-white truncate">
-                {highest_bid.team.name}
-              </p>
-              <p className="mt-0.5 text-sm font-semibold text-emerald-400">
-                {formatMoney(highest_bid.amount)}
-              </p>
-            </div>
-          )}
-
-          {/* No current player but LIVE — show waiting count */}
-          {!current_player && auction.status === 'LIVE' && progress.waiting > 0 && (
-            <div className="rounded-2xl border border-blue-400/20 bg-blue-400/5 p-5 text-center">
-              <p className="text-3xl font-black text-blue-300">{progress.waiting}</p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-wider text-white/40">
-                Players Waiting
-              </p>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </section>
   );

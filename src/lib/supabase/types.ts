@@ -1349,6 +1349,9 @@ export type Database = {
           display_name: string
           height_cm: number | null
           id: string
+          jersey_name: string | null
+          jersey_number: string | null
+          jersey_size: string | null
           phone: string | null
           photo_path: string | null
           place: string | null
@@ -1364,6 +1367,9 @@ export type Database = {
           display_name: string
           height_cm?: number | null
           id?: string
+          jersey_name?: string | null
+          jersey_number?: string | null
+          jersey_size?: string | null
           phone?: string | null
           photo_path?: string | null
           place?: string | null
@@ -1379,6 +1385,9 @@ export type Database = {
           display_name?: string
           height_cm?: number | null
           id?: string
+          jersey_name?: string | null
+          jersey_number?: string | null
+          jersey_size?: string | null
           phone?: string | null
           photo_path?: string | null
           place?: string | null

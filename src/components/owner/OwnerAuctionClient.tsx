@@ -5,9 +5,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
 import type { OwnerSnapshot } from '@/lib/owner/owner-auction';
+import { UserIcon, ShieldCheckIcon, RadioIcon, SparklesIcon, AlertTriangleIcon, CheckCircleIcon, TrendingUpIcon } from 'lucide-react';
+import { AuctionPlayerCard } from '@/components/auction/AuctionPlayerCard';
 
 const money = (value: number | null | undefined) =>
     `₹${Math.max(0, Number(value ?? 0)).toLocaleString('en-IN')}`;
+
+const formatPos = (pos?: string | null) =>
+    pos ? pos.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Position Pending';
 
 export function OwnerAuctionClient({
     auctionId,
@@ -36,7 +41,7 @@ export function OwnerAuctionClient({
         const next = data as OwnerSnapshot;
         lastSequence.current = Math.max(lastSequence.current, next.last_sequence ?? 0);
         setSnapshot(next);
-        setConnectionState('Live snapshot');
+        setConnectionState('Live connected');
         return true;
     }, [auctionId, teamId]);
 
@@ -69,7 +74,7 @@ export function OwnerAuctionClient({
                 },
             )
             .subscribe((status) => {
-                if (status === 'SUBSCRIBED') setConnectionState('Live updates connected');
+                if (status === 'SUBSCRIBED') setConnectionState('Live connected');
                 if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
                     setConnectionState('Reconnecting…');
                     void recoverSnapshot();
@@ -91,8 +96,6 @@ export function OwnerAuctionClient({
         };
     }, [auctionId, refreshSnapshot, teamId]);
 
-
-
     const player = snapshot?.current_player;
     const team = snapshot?.team;
     const renderSnapshot = snapshot ?? { next_minimum_bid: 0, highest_bid: null };
@@ -100,15 +103,17 @@ export function OwnerAuctionClient({
     const photoUrl = player?.player.photo_path
         ? resolvePublicStorageUrl(createClient(), 'avatars', player.player.photo_path)
         : null;
+
     const blockedMessage = team?.blocked_reason === 'PROTECTED_PURSE'
         ? 'Your usable purse must protect the remaining minimum-squad reserve.'
         : team?.blocked_reason === 'AUCTION_NOT_LIVE'
             ? 'Bidding opens when the organizer starts the auction.'
             : team?.blocked_reason === 'NO_LIVE_PLAYER'
-                ? 'Waiting for the next player.'
+                ? 'Waiting for the auctioneer to bring the next player.'
                 : team && !team.may_bid
                     ? 'Your team cannot bid in the current authoritative state.'
                     : null;
+
     const bidStanding = blockedMessage
         ? 'Cannot bid'
         : leading
@@ -119,157 +124,168 @@ export function OwnerAuctionClient({
 
     if (!auctionId) {
         return (
-            <section className="rounded-3xl border border-white/10 bg-white/3 p-6 text-white/70">
+            <section className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center text-white/70">
                 Auction preparation is not available for this team yet.
             </section>
         );
     }
 
     return (
-        <div className="space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-200/60">Live auction</p>
-                    <p className="mt-1 text-sm text-white/50">{connectionState}</p>
-                </div>
-                {snapshot?.auction ? (
-                    <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white/60">
-                        {snapshot.auction.status}
+        <div className="space-y-6">
+            {/* Live Header Status Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.02] p-4 backdrop-blur-xl">
+                <div className="flex items-center gap-3">
+                    <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                     </span>
+                    <div>
+                        <p className="text-xs font-black uppercase tracking-[0.2em] text-fuchsia-300">Live Auction Arena</p>
+                        <p className="text-xs text-neutral-400">{connectionState}</p>
+                    </div>
+                </div>
+
+                {snapshot?.auction ? (
+                    <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-fuchsia-300">
+                            <RadioIcon className="h-3.5 w-3.5 animate-pulse" />
+                            {snapshot.auction.status}
+                        </span>
+                    </div>
                 ) : null}
             </div>
 
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
-                <section className="overflow-hidden rounded-3xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.15)] relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50" />
-                    <div className="relative z-10 border-b border-glass-border px-6 py-5">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Current player</p>
-                    </div>
-                    {player ? (
-                        <div className="relative z-10 grid gap-6 p-6 sm:grid-cols-[12rem_minmax(0,1fr)] lg:p-8">
-                            <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden rounded-2xl border border-glass-border bg-surface shadow-inner">
-                                {photoUrl ? (
-                                    <Image src={photoUrl} alt="" fill className="object-cover object-top" unoptimized />
-                                ) : (
-                                    <span className="text-6xl font-black text-slate-500 opacity-20 tracking-widest drop-shadow-sm">
-                                        {player.player.display_name.slice(0, 1).toUpperCase()}
-                                    </span>
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-surface-raised/80 via-transparent to-transparent" />
-                            </div>
-                            <div className="min-w-0 flex flex-col justify-center">
-                                <h2 className="truncate text-4xl sm:text-5xl font-black tracking-tight text-text-primary drop-shadow-md">{player.player.display_name}</h2>
-                                <p className="mt-2 text-sm sm:text-base font-bold text-text-secondary">
-                                    {player.player.primary_position ?? 'Position pending'}
-                                    {player.player.secondary_position ? ` · ${player.player.secondary_position}` : ''}
-                                </p>
-                                <div className="mt-5 flex flex-wrap gap-2">
-                                    <span className="rounded-lg border border-primary/30 bg-primary/20 backdrop-blur-md px-3 py-1.5 text-xs font-black uppercase tracking-wider text-primary shadow-sm">
-                                        Cat {player.category_code ?? '—'}{player.category_label ? ` — ${player.category_label}` : ''}
-                                    </span>
-                                </div>
-                                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                                    <div className="rounded-2xl border border-glass-border bg-surface-muted/50 p-4 backdrop-blur-md shadow-inner">
-                                        <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Cat Base</p>
-                                        <p className="mt-1 text-xl font-bold text-text-primary drop-shadow-sm">{money(player.category_base_price)}</p>
-                                    </div>
-                                    <div className="rounded-2xl border border-glass-border bg-surface-muted/50 p-4 backdrop-blur-md shadow-inner">
-                                        <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Op. Base</p>
-                                        <p className="mt-1 text-xl font-bold text-text-primary drop-shadow-sm">{money(player.base_price)}</p>
-                                    </div>
-                                </div>
-                                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                    <div className={`rounded-2xl border p-4 backdrop-blur-md shadow-inner transition-colors duration-500 ${renderSnapshot.highest_bid ? 'border-success/40 bg-success/10' : 'border-glass-border bg-surface-muted/50'}`}>
-                                        <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Current Bid</p>
-                                        <p className={`mt-1 text-2xl font-black drop-shadow-sm ${renderSnapshot.highest_bid ? 'text-success' : 'text-text-muted'}`}>
-                                            {renderSnapshot.highest_bid ? money(renderSnapshot.highest_bid.amount) : 'No bids'}
-                                        </p>
-                                    </div>
-                                    <div className="rounded-2xl border border-glass-border bg-surface-muted/50 p-4 backdrop-blur-md shadow-inner">
-                                        <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Leading Team</p>
-                                        <p className="mt-1 truncate text-lg font-bold text-text-primary">
-                                            {leading ? 'You are leading' : renderSnapshot.highest_bid?.team.name ?? 'No bids yet'}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+            {/* Main Stadium Layout */}
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(20rem,0.7fr)]">
+                
+                {/* LEFT SPOTLIGHT: Current Player Card */}
+                <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#16122b] to-[#0c0919] p-6 sm:p-8 shadow-2xl backdrop-blur-2xl">
+                    <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-fuchsia-500/10 blur-[80px] pointer-events-none" />
+                    
+                    <div className="mb-6 flex items-center justify-between border-b border-white/10 pb-4">
+                        <div className="flex items-center gap-2">
+                            <SparklesIcon className="h-4 w-4 text-fuchsia-400" />
+                            <p className="text-xs font-black uppercase tracking-[0.2em] text-fuchsia-300/80">Stage Spotlight</p>
                         </div>
+                        {player?.category_code ? (
+                            <span className="rounded-full border border-fuchsia-500/40 bg-fuchsia-500/20 px-3 py-1 text-xs font-black uppercase text-fuchsia-200">
+                                Cat {player.category_code}{player.category_label ? ` — ${player.category_label}` : ''}
+                            </span>
+                        ) : null}
+                    </div>
+
+                    {player ? (
+                        <AuctionPlayerCard
+                            player={player}
+                            highestBid={renderSnapshot.highest_bid}
+                            supabase={createClient()}
+                            currentlyBiddingTeamName={leading ? 'Your Team (YOU ARE LEADING)' : (renderSnapshot.highest_bid?.team.short_name ?? renderSnapshot.highest_bid?.team.name)}
+                        />
                     ) : (
-                        <div className="relative z-10 flex flex-col items-center justify-center p-12 text-center">
-                            <div className="rounded-full bg-surface-muted p-5 border border-glass-border shadow-inner mb-4">
-                                <span className="text-4xl">⏳</span>
+                        <div className="flex flex-col items-center justify-center p-16 text-center">
+                            <div className="rounded-full bg-white/5 p-6 border border-white/10 mb-4 shadow-inner">
+                                <SparklesIcon className="h-10 w-10 text-fuchsia-300" />
                             </div>
-                            <h3 className="text-xl font-bold text-text-primary">No player is live</h3>
-                            <p className="mt-2 text-text-secondary">This view refreshes when the auctioneer starts the next lot.</p>
+                            <h3 className="text-xl font-bold text-white">No player is on stage</h3>
+                            <p className="mt-2 text-sm text-neutral-400 max-w-sm">Waiting for the auctioneer to spotlight the next player lot.</p>
                         </div>
                     )}
                 </section>
 
-                <aside className="space-y-5">
-                    <section className="rounded-3xl border border-glass-border bg-surface-raised/60 p-5 sm:p-6 backdrop-blur-md shadow-md">
-                        <div className="flex items-center justify-between gap-3">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Team finance</p>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Authoritative</span>
+                {/* RIGHT COLUMN: Finance & Bidding Status */}
+                <aside className="space-y-6">
+                    {/* Team Finance Card */}
+                    <section className="rounded-3xl border border-white/10 bg-[#16122b]/80 p-6 backdrop-blur-xl shadow-xl">
+                        <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-5">
+                            <div className="flex items-center gap-2">
+                                <ShieldCheckIcon className="h-4 w-4 text-fuchsia-400" />
+                                <p className="text-xs font-black uppercase tracking-[0.2em] text-fuchsia-300">Team Purse & Finance</p>
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Live Balance</span>
                         </div>
+
                         {team ? (
-                            <>
-                                <div className="mt-5 grid grid-cols-2 gap-3">
-                                    <Metric label="Remaining" value={money(team.remaining_purse)} />
-                                    <Metric label="Spent" value={money(team.spent_purse)} />
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Metric label="Remaining Purse" value={money(team.remaining_purse)} />
+                                    <Metric label="Total Spent" value={money(team.spent_purse)} />
                                 </div>
-                                <div className="mt-3 grid grid-cols-2 gap-3">
-                                    <Metric label="Min-squad reserve" value={money(team.protected_reserve)} />
-                                    <Metric label="Maximum bid" value={money(team.max_allowed_bid)} accent />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Metric label="Min-Squad Reserve" value={money(team.protected_reserve)} />
+                                    <Metric label="Max Bid Allowed" value={money(team.max_allowed_bid)} highlight />
                                 </div>
-                                <div className="mt-5 rounded-2xl border border-glass-border bg-surface-muted/50 p-4 shadow-inner">
-                                    <div className="flex justify-between text-xs font-bold text-text-secondary">
-                                        <span>Squad progress</span>
-                                        <span>{team.active_squad} / {team.maximum_squad}</span>
+
+                                {/* Squad Capacity Meter */}
+                                <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+                                    <div className="flex justify-between text-xs font-bold text-neutral-300">
+                                        <span>Squad Capacity</span>
+                                        <span className="text-fuchsia-300">{team.active_squad} / {team.maximum_squad} Players</span>
                                     </div>
-                                    <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-surface">
-                                        <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary-hover shadow-[0_0_10px_rgba(var(--primary),0.5)]" style={{ width: `${Math.min(100, (team.active_squad / Math.max(team.maximum_squad, 1)) * 100)}%` }} />
+                                    <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-neutral-900 border border-white/10">
+                                        <div
+                                            className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 to-primary transition-all duration-500 shadow-[0_0_10px_rgba(217,70,239,0.5)]"
+                                            style={{ width: `${Math.min(100, (team.active_squad / Math.max(team.maximum_squad, 1)) * 100)}%` }}
+                                        />
                                     </div>
-                                    <p className="mt-3 text-[10px] font-bold uppercase tracking-wider text-text-muted">Minimum required: {team.minimum_squad}</p>
+                                    <p className="mt-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-500">Minimum required squad: {team.minimum_squad}</p>
                                 </div>
-                            </>
+                            </div>
                         ) : (
-                            <p className="mt-5 text-sm text-text-secondary text-center">Finance becomes available after auction preparation.</p>
+                            <p className="text-sm text-neutral-400 text-center py-4">Finance information unavailable.</p>
                         )}
                     </section>
 
-                    <section className={`rounded-3xl border ${bidStanding === 'Leading' ? 'border-emerald-500/30 bg-emerald-500/5' : bidStanding === 'Cannot bid' ? 'border-amber-500/30 bg-amber-500/5' : 'border-primary/20 bg-primary/5'} p-5 sm:p-6 backdrop-blur-md shadow-md transition-colors duration-500`}>
-                        <div className="flex items-center justify-between gap-3">
-                            <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${bidStanding === 'Leading' ? 'text-emerald-400' : bidStanding === 'Cannot bid' ? 'text-amber-400' : 'text-primary'}`}>Live Bidding</p>
-                            <span className={`rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shadow-sm border ${bidStanding === 'Leading' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : bidStanding === 'Cannot bid' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-surface-muted border-glass-border text-text-secondary'}`}>
+                    {/* Live Bidding Standing Card */}
+                    <section className={`rounded-3xl border ${bidStanding === 'Leading' ? 'border-emerald-500/40 bg-emerald-500/[0.04]' : bidStanding === 'Cannot bid' ? 'border-amber-500/40 bg-amber-500/[0.04]' : 'border-fuchsia-500/30 bg-fuchsia-500/[0.04]'} p-6 backdrop-blur-xl shadow-xl`}>
+                        <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4">
+                            <div className="flex items-center gap-2">
+                                <TrendingUpIcon className="h-4 w-4 text-fuchsia-400" />
+                                <p className="text-xs font-black uppercase tracking-[0.2em] text-white">Live Bidding Status</p>
+                            </div>
+                            <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider border shadow-sm ${
+                                bidStanding === 'Leading' ? 'border-emerald-500/40 bg-emerald-500/20 text-emerald-300' :
+                                bidStanding === 'Cannot bid' ? 'border-amber-500/40 bg-amber-500/20 text-amber-300' :
+                                'border-fuchsia-500/40 bg-fuchsia-500/20 text-fuchsia-300'
+                            }`}>
                                 {bidStanding}
                             </span>
                         </div>
-                        <div className="mt-6 flex flex-col gap-2">
-                            <p className="text-sm font-bold text-text-primary text-center drop-shadow-sm">Bidding is managed offline</p>
-                            <p className="text-xs text-text-secondary text-center max-w-[200px] mx-auto">Raise your paddle or shout your bid to the auctioneer.</p>
+
+                        <div className="mt-5 text-center">
+                            <p className="text-sm font-bold text-white">Bidding is Managed Offline</p>
+                            <p className="mt-1 text-xs text-neutral-400 max-w-[220px] mx-auto">Signal or shout your bid to the auctioneer in the venue.</p>
                         </div>
-                        <div className={`mt-6 border-t ${bidStanding === 'Leading' ? 'border-emerald-500/20' : bidStanding === 'Cannot bid' ? 'border-amber-500/20' : 'border-primary/20'} pt-5`}>
-                            <div className="flex items-end justify-between gap-3">
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Next valid bid</p>
-                                    <p className="text-3xl font-black text-text-primary drop-shadow-sm">{money(renderSnapshot.next_minimum_bid)}</p>
-                                </div>
-                                <span className="text-right text-[10px] font-bold uppercase tracking-wider text-text-muted">Max {money(team?.max_allowed_bid)}</span>
+
+                        <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex items-center justify-between">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-wider text-neutral-400">Next Valid Bid</p>
+                                <p className="text-2xl font-black text-white mt-0.5">{money(renderSnapshot.next_minimum_bid)}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] font-black uppercase tracking-wider text-neutral-400">Your Max Bid</p>
+                                <p className="text-lg font-black text-fuchsia-300 mt-0.5">{money(team?.max_allowed_bid)}</p>
                             </div>
                         </div>
-                        {blockedMessage ? <p className="mt-5 rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-xs font-bold text-amber-400 text-center shadow-inner">{blockedMessage}</p> : null}
+
+                        {blockedMessage ? (
+                            <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs font-semibold text-amber-300 shadow-inner">
+                                <AlertTriangleIcon className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+                                <p>{blockedMessage}</p>
+                            </div>
+                        ) : null}
                     </section>
                 </aside>
+
             </div>
         </div>
     );
 }
 
-function Metric({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+function Metric({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
     return (
-        <div className="rounded-2xl border border-glass-border bg-surface-muted/50 p-4 backdrop-blur-md shadow-inner transition-colors duration-300 hover:bg-surface-muted">
-            <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">{label}</p>
-            <p className={`mt-1 text-xl font-black drop-shadow-sm ${accent ? 'text-primary' : 'text-text-primary'}`}>{value}</p>
+        <div className={`rounded-2xl border p-4 backdrop-blur-md transition-all ${highlight ? 'border-fuchsia-500/40 bg-fuchsia-500/10 shadow-[0_0_15px_rgba(217,70,239,0.15)]' : 'border-white/10 bg-white/[0.03]'}`}>
+            <p className="text-[10px] font-black uppercase tracking-wider text-neutral-400">{label}</p>
+            <p className={`mt-1 text-xl font-black ${highlight ? 'text-fuchsia-300' : 'text-white'}`}>{value}</p>
         </div>
     );
 }
