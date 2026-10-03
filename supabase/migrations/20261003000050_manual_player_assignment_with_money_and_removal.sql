@@ -17,11 +17,16 @@ DECLARE
   v_settings public.tournament_settings%ROWTYPE;
   v_current_squad_count integer;
   v_max_squad integer;
+  v_min_squad integer;
   v_team_player_id uuid;
   v_auction_status text;
   v_auction public.auctions%ROWTYPE;
   v_wallet public.auction_team_wallets%ROWTYPE;
   v_amount numeric := COALESCE(p_acquisition_amount, 0);
+  v_reserve_floor numeric := 0;
+  v_missing_after integer := 0;
+  v_required_reserve numeric := 0;
+  v_max_allowed numeric := 0;
 BEGIN
   -- 1. Validate authenticated user is organizer of this tournament
   IF auth.uid() IS NULL OR NOT public.is_tournament_organizer(p_tournament_id) THEN
@@ -54,6 +59,7 @@ BEGIN
   -- 5. Check maximum squad size limit
   SELECT * INTO v_settings FROM public.tournament_settings WHERE tournament_id = p_tournament_id;
   v_max_squad := COALESCE(v_settings.max_squad_size, 99);
+  v_min_squad := COALESCE(v_settings.min_squad_size, 0);
 
   SELECT count(*) INTO v_current_squad_count 
   FROM public.team_players 
@@ -89,8 +95,19 @@ BEGIN
       WHERE auction_id = v_auction.id AND team_id = p_team_id FOR UPDATE;
       
       IF v_wallet.id IS NOT NULL THEN
-        IF v_wallet.remaining_balance < v_amount THEN
-          RAISE EXCEPTION 'Insufficient purse balance. Team remaining balance is %', v_wallet.remaining_balance;
+        -- Reserve Purse Rule: verify team retains enough purse to buy remaining players to reach minimum squad size
+        v_reserve_floor := COALESCE(v_auction.minimum_acquisition_reserve_price, 0);
+        v_missing_after := greatest(v_min_squad - (v_current_squad_count + 1), 0);
+        v_required_reserve := v_missing_after * v_reserve_floor;
+        v_max_allowed := v_wallet.remaining_balance - v_required_reserve;
+
+        IF v_amount > v_max_allowed THEN
+          IF v_required_reserve > 0 AND v_max_allowed < v_wallet.remaining_balance THEN
+            RAISE EXCEPTION 'Amount (₹%) exceeds maximum allowed acquisition price (₹%). A purse reserve of ₹% must be kept to complete minimum squad size of % players (% remaining).',
+              v_amount, v_max_allowed, v_required_reserve, v_min_squad, v_missing_after;
+          ELSE
+            RAISE EXCEPTION 'Insufficient purse balance. Team remaining balance is ₹%', v_wallet.remaining_balance;
+          END IF;
         END IF;
 
         -- Update wallet balance
