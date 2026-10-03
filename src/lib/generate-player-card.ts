@@ -440,7 +440,8 @@ export async function downloadAllPlayerCardsZip(
   players: any[],
   auctionCategories: any[],
   supabase: any,
-  onProgress?: (current: number, total: number) => void
+  onProgress?: (current: number, total: number) => void,
+  auctionOrderMap?: Record<string, number>
 ): Promise<void> {
   const zip = new JSZip();
   const folder = zip.folder('player_auction_cards');
@@ -481,7 +482,8 @@ export async function downloadAllPlayerCardsZip(
       const pos = cardData.primary_position ? formatVolleyballPosition(cardData.primary_position).replace(/[^a-zA-Z0-9]/g, '') : 'Player';
       const cat = cardData.category_code ? `Cat_${cardData.category_code}` : 'Unclassified';
       const safeName = cardData.display_name.replace(/[^a-zA-Z0-9_-]/g, '_');
-      const indexStr = String(i + 1).padStart(2, '0');
+      const orderNum = auctionOrderMap && cardData.id && auctionOrderMap[cardData.id] ? auctionOrderMap[cardData.id] : (i + 1);
+      const indexStr = String(orderNum).padStart(2, '0');
       const fileName = `${indexStr}_${safeName}_${pos}_${cat}.png`;
 
       folder?.file(fileName, base64Data, { base64: true });

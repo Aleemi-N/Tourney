@@ -50,13 +50,26 @@ export function DownloadCardsModal({
     setProgress({ current: 0, total: selectedCount });
 
     try {
+      let orderMap: Record<string, number> = {};
+      if (targetPlayers.length > 0) {
+        const tId = targetPlayers[0].tournament_id;
+        const { data: auction } = await supabase.from('auctions').select('id').eq('tournament_id', tId).order('created_at', { ascending: false }).limit(1).single();
+        if (auction) {
+          const { data: aPlayers } = await supabase.from('auction_players').select('player_id, auction_order').eq('auction_id', auction.id);
+          if (aPlayers) {
+            aPlayers.forEach((ap: any) => { orderMap[ap.player_id] = ap.auction_order; });
+          }
+        }
+      }
+
       await downloadAllPlayerCardsZip(
         targetPlayers,
         auctionCategories,
         supabase,
         (current, total) => {
           setProgress({ current, total });
-        }
+        },
+        orderMap
       );
       onClose();
     } catch (err: any) {
