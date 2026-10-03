@@ -1,3 +1,4 @@
+
 -- 20261002000042_add_jersey_details_to_player_profiles.sql
 -- Add jersey_name, jersey_number, and jersey_size to player_profiles and update profile/registration RPCs
 

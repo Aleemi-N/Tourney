@@ -1056,7 +1056,7 @@ export function OrganizerAuctionClient({
                   disabled={busy}
                   className="flex items-center gap-2 rounded-2xl bg-surface px-6 py-3 text-sm font-bold text-text hover:bg-surface-hover border border-border shadow-sm disabled:opacity-50 transition-all active:scale-95"
                 >
-                  <Settings className="h-4 w-4" />
+                  <List className="h-4 w-4" />
                   Configure Queue Order
                 </button>
               )}
