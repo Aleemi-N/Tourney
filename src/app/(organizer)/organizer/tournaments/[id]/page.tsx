@@ -6,6 +6,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Suspense } from 'react';
 
 import { RegistrationLinks } from './RegistrationLinks';
+import { RegistrationStatusControl } from './RegistrationStatusControl';
 import { TournamentStatsServer } from './TournamentStatsServer';
 import { OrganizerLinkPending } from '@/components/organizer/OrganizerLinkPending';
 import { TournamentApprovalStatus } from '@/components/organizer/TournamentApprovalStatus';
@@ -93,6 +94,11 @@ async function TournamentOverviewContent({
         slug={tournament.slug as string}
         tournamentName={tournament.name as string}
         isLeague={tournament.format === 'LEAGUE'}
+        status={tournament.status as string}
+      />
+
+      <RegistrationStatusControl
+        tournamentId={id}
         status={tournament.status as string}
       />
 

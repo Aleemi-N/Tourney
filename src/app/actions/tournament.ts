@@ -107,3 +107,67 @@ export async function publishTournament(tournamentId: string) {
   }
   return { success: true };
 }
+
+export async function closeRegistration(tournamentId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await getUser();
+
+  if (!user) return { error: 'Unauthorized' };
+
+  const { data: tourny } = await supabase
+    .from('tournaments')
+    .select('slug, status')
+    .eq('id', tournamentId)
+    .single();
+
+  if (!tourny) return { error: 'Tournament not found.' };
+  if (tourny.status !== 'REGISTRATION') return { error: 'Registration is not currently open.' };
+
+  const { error } = await supabase
+    .from('tournaments')
+    .update({ status: 'PREPARATION' })
+    .eq('id', tournamentId)
+    .eq('status', 'REGISTRATION'); // optimistic concurrency guard
+
+  if (error) return { error: error.message };
+
+  revalidatePath('/organizer/dashboard');
+  revalidatePath('/');
+  if (tourny.slug) {
+    revalidatePath(`/t/${tourny.slug}`, 'page');
+    revalidatePath(`/organizer/tournaments/${tournamentId}`, 'page');
+  }
+  return { success: true };
+}
+
+export async function reopenRegistration(tournamentId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await getUser();
+
+  if (!user) return { error: 'Unauthorized' };
+
+  const { data: tourny } = await supabase
+    .from('tournaments')
+    .select('slug, status')
+    .eq('id', tournamentId)
+    .single();
+
+  if (!tourny) return { error: 'Tournament not found.' };
+  if (tourny.status !== 'PREPARATION') return { error: 'Tournament is not in preparation state.' };
+
+  const { error } = await supabase
+    .from('tournaments')
+    .update({ status: 'REGISTRATION' })
+    .eq('id', tournamentId)
+    .eq('status', 'PREPARATION'); // optimistic concurrency guard
+
+  if (error) return { error: error.message };
+
+  revalidatePath('/organizer/dashboard');
+  revalidatePath('/');
+  if (tourny.slug) {
+    revalidatePath(`/t/${tourny.slug}`, 'page');
+    revalidatePath(`/organizer/tournaments/${tournamentId}`, 'page');
+  }
+  return { success: true };
+}
