@@ -14,6 +14,64 @@ type Scope = { stage_id: string | null; round_number: number | null; revision: n
 type Preview = { standings: Standing[]; matches: Array<{ label: string; home?: Standing; away?: Standing; home_source?: string; away_source?: string }> };
 type Tournament = { id: string; name: string; slug: string; format: string; venue: string | null; teamCount: number; rulesReady: boolean; logoUrl: string | null; primaryColor: string | null; secondaryColor: string | null };
 
+export function interleaveMatchesForMaxRest(matches: Match[]): Match[] {
+  if (matches.length <= 2) return [...matches];
+
+  const lockedMatches: Match[] = [];
+  const unlockableMatches: Match[] = [];
+
+  for (const m of matches) {
+    if (['LIVE', 'COMPLETED', 'CANCELLED'].includes(m.status)) {
+      lockedMatches.push(m);
+    } else {
+      unlockableMatches.push(m);
+    }
+  }
+
+  if (unlockableMatches.length <= 2) return [...matches];
+
+  const result: Match[] = [...lockedMatches];
+  const lastPlayed = new Map<string, number>();
+
+  result.forEach((m, idx) => {
+    if (m.home_team_id) lastPlayed.set(m.home_team_id, idx);
+    if (m.away_team_id) lastPlayed.set(m.away_team_id, idx);
+  });
+
+  const remaining = [...unlockableMatches];
+
+  while (remaining.length > 0) {
+    let bestIndex = 0;
+    let bestScore = -Infinity;
+
+    for (let i = 0; i < remaining.length; i++) {
+      const match = remaining[i];
+      const homeId = match.home_team_id ?? `home_${match.id}`;
+      const awayId = match.away_team_id ?? `away_${match.id}`;
+
+      const homeLast = lastPlayed.has(homeId) ? result.length - lastPlayed.get(homeId)! : 999;
+      const awayLast = lastPlayed.has(awayId) ? result.length - lastPlayed.get(awayId)! : 999;
+
+      const minRest = Math.min(homeLast, awayLast);
+      const sumRest = homeLast + awayLast;
+
+      const score = minRest * 100000 + sumRest * 100 - i;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = i;
+      }
+    }
+
+    const [chosen] = remaining.splice(bestIndex, 1);
+    result.push(chosen);
+    if (chosen.home_team_id) lastPlayed.set(chosen.home_team_id, result.length - 1);
+    if (chosen.away_team_id) lastPlayed.set(chosen.away_team_id, result.length - 1);
+  }
+
+  return result;
+}
+
 export function FixtureManager({ tournament, stages, matches, scorers, orderScopes, progressionPlans }: {
   tournament: Tournament; stages: Stage[]; matches: Match[]; scorers: Scorer[]; orderScopes: Scope[]; progressionPlans: Array<{ source_stage_id: string }>;
 }) {
@@ -429,12 +487,22 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
                 <h3 className="text-base font-black uppercase tracking-[.15em] text-primary">{stage.stage_type === 'KNOCKOUT' ? `Knockout · Round ${round}` : `Round ${round}`}</h3>
               </div>
               {items.length > 1 && (
-                <button
-                  onClick={() => setReorderModalGroup({ stageId: stage.id, round, stageName: stage.name, items })}
-                  className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition-colors flex items-center gap-1.5"
-                >
-                  ⚡ Easy Reorder ({items.length})
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => void saveMatchOrder(stage.id, round, interleaveMatchesForMaxRest(items))}
+                    disabled={pending !== null}
+                    className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5"
+                    title="Automatically arrange matches so teams get maximum rest between games (no back-to-back matches)"
+                  >
+                    🔄 Auto-Spread Rest
+                  </button>
+                  <button
+                    onClick={() => setReorderModalGroup({ stageId: stage.id, round, stageName: stage.name, items })}
+                    className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition-colors flex items-center gap-1.5"
+                  >
+                    ⚡ Easy Reorder ({items.length})
+                  </button>
+                </div>
               )}
             </div>
             <div className="h-px w-full bg-gradient-to-r from-primary/40 to-transparent mb-4" />
@@ -617,9 +685,19 @@ function EasyReorderModal({
             <h3 className="text-lg font-black text-text-primary">⚡ Easy Match Reorder</h3>
             <p className="text-xs text-text-secondary">{group.stageName} · Round {group.round} ({list.length} matches)</p>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1 text-text-muted hover:bg-surface-muted hover:text-text-primary">
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setList(interleaveMatchesForMaxRest(list))}
+              disabled={isSaving}
+              className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5"
+              title="Automatically arrange matches so teams get maximum rest between games"
+            >
+              🔄 Auto-Spread Rest
+            </button>
+            <button onClick={onClose} className="rounded-lg p-1 text-text-muted hover:bg-surface-muted hover:text-text-primary">
+              ✕
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-2">

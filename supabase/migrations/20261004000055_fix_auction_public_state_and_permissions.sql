@@ -301,3 +301,125 @@ GRANT EXECUTE ON FUNCTION public.get_public_live_state(uuid) TO anon, authentica
 GRANT EXECUTE ON FUNCTION public.get_auction_organizer_state(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.prepare_auction(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.set_auction_lifecycle(uuid, text, bigint, text) TO authenticated;
+
+-- Update generate_stage_fixtures to use Berger Round-Robin algorithm for LEAGUE stages
+-- This guarantees teams are assigned to distinct rounds and never play back-to-back matches sequentially.
+CREATE OR REPLACE FUNCTION public.generate_stage_fixtures(p_stage_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+  v_stage public.tournament_stages%ROWTYPE; v_created integer:=0; v_existing integer;
+  v_match_id uuid; v_team_count integer;
+  v_bracket_size integer:=1; v_rounds integer:=0; v_round integer; v_position integer;
+  v_matches_this_round integer; v_teams uuid[];
+  v_home_seed integer; v_away_seed integer; v_previous_stage uuid; v_qualification_count integer;
+  v_program_order integer := 0;
+BEGIN
+  SELECT * INTO v_stage FROM public.tournament_stages WHERE id=p_stage_id FOR UPDATE;
+  IF v_stage.id IS NULL OR NOT public.is_tournament_organizer(v_stage.tournament_id) THEN RAISE EXCEPTION 'Unauthorized'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.volleyball_rules WHERE tournament_id=v_stage.tournament_id AND (stage_id=p_stage_id OR stage_id IS NULL)) THEN
+    RAISE EXCEPTION 'Volleyball rules are required before fixture generation';
+  END IF;
+  SELECT count(*) INTO v_existing FROM public.matches WHERE stage_id=p_stage_id;
+  IF v_existing > 0 THEN RETURN jsonb_build_object('stage_id',p_stage_id,'created',0,'existing',v_existing,'idempotent',true); END IF;
+
+  IF v_stage.stage_type='LEAGUE' THEN
+    SELECT array_agg(id ORDER BY name, id) INTO v_teams FROM public.teams WHERE tournament_id=v_stage.tournament_id AND status='ACTIVE';
+    v_team_count := COALESCE(array_length(v_teams, 1), 0);
+    
+    IF v_team_count < 2 THEN
+      RAISE EXCEPTION 'At least two active teams are required to generate league fixtures';
+    END IF;
+
+    -- Add dummy BYE team if odd number of teams
+    IF v_team_count % 2 <> 0 THEN
+      v_teams := array_append(v_teams, NULL::uuid);
+      v_team_count := v_team_count + 1;
+    END IF;
+
+    v_rounds := v_team_count - 1;
+
+    -- Berger Round-Robin Pairing
+    FOR v_round IN 1..v_rounds LOOP
+      FOR v_position IN 0..(v_team_count / 2 - 1) LOOP
+        DECLARE
+          v_t1_idx integer;
+          v_t2_idx integer;
+          v_t1_id uuid;
+          v_t2_id uuid;
+        BEGIN
+          IF v_position = 0 THEN
+            v_t1_idx := v_team_count;
+          ELSE
+            v_t1_idx := ((v_round - 1 - v_position + (v_team_count - 1)) % (v_team_count - 1)) + 1;
+          END IF;
+
+          v_t2_idx := ((v_round - 1 + v_position) % (v_team_count - 1)) + 1;
+
+          v_t1_id := v_teams[v_t1_idx];
+          v_t2_id := v_teams[v_t2_idx];
+
+          IF v_t1_id IS NOT NULL AND v_t2_id IS NOT NULL THEN
+            v_program_order := v_program_order + 1;
+            INSERT INTO public.matches(tournament_id, stage_id, match_number, round_number, program_order, home_team_id, away_team_id, status)
+            VALUES(v_stage.tournament_id, p_stage_id, v_created + 1, v_round, v_program_order, v_t1_id, v_t2_id, 'SCHEDULED')
+            RETURNING id INTO v_match_id;
+
+            PERFORM public.initialize_match_sets(v_match_id);
+            v_created := v_created + 1;
+          END IF;
+        END;
+      END LOOP;
+    END LOOP;
+  ELSE
+    SELECT id,qualification_count INTO v_previous_stage,v_qualification_count
+    FROM public.tournament_stages WHERE tournament_id=v_stage.tournament_id AND sequence<v_stage.sequence
+    ORDER BY sequence DESC LIMIT 1;
+    IF v_previous_stage IS NOT NULL AND v_qualification_count IS NOT NULL THEN
+      SELECT array_agg((entry.value->>'team_id')::uuid ORDER BY entry.ordinality),count(*)
+      INTO v_teams,v_team_count
+      FROM jsonb_array_elements(public.get_stage_standings(v_previous_stage)) WITH ORDINALITY entry(value,ordinality)
+      WHERE entry.ordinality<=v_qualification_count;
+    ELSE
+      SELECT array_agg(id ORDER BY id),count(*) INTO v_teams,v_team_count FROM public.teams WHERE tournament_id=v_stage.tournament_id AND status='ACTIVE';
+    END IF;
+    IF v_team_count < 2 THEN RAISE EXCEPTION 'At least two active teams are required'; END IF;
+    WHILE v_bracket_size<v_team_count LOOP v_bracket_size:=v_bracket_size*2; v_rounds:=v_rounds+1; END LOOP;
+    FOR v_round IN 1..v_rounds LOOP
+      v_matches_this_round:=v_bracket_size/(2^v_round)::integer;
+      FOR v_position IN 1..v_matches_this_round LOOP
+        v_home_seed:=CASE WHEN v_round=1 THEN v_position ELSE NULL END;
+        v_away_seed:=CASE WHEN v_round=1 THEN v_bracket_size-v_position+1 ELSE NULL END;
+        v_program_order := v_program_order + 1;
+        INSERT INTO public.matches(tournament_id,stage_id,match_number,round_number,program_order,bracket_position,home_team_id,away_team_id,status)
+        VALUES(v_stage.tournament_id,p_stage_id,v_created+1,v_round,v_program_order,v_position,
+          CASE WHEN v_home_seed<=v_team_count THEN v_teams[v_home_seed] ELSE NULL END,
+          CASE WHEN v_away_seed<=v_team_count THEN v_teams[v_away_seed] ELSE NULL END,'SCHEDULED') RETURNING id INTO v_match_id;
+        v_created:=v_created+1;
+      END LOOP;
+    END LOOP;
+    FOR v_round IN 1..v_rounds-1 LOOP
+      v_matches_this_round:=v_bracket_size/(2^v_round)::integer;
+      FOR v_position IN 1..v_matches_this_round LOOP
+        UPDATE public.matches source_match SET
+          next_match_id=(SELECT target_match.id FROM public.matches target_match WHERE target_match.stage_id=p_stage_id AND target_match.round_number=v_round+1 AND target_match.bracket_position=((v_position+1)/2)::integer),
+          next_match_slot=CASE WHEN v_position%2=1 THEN 'HOME' ELSE 'AWAY' END
+        WHERE source_match.stage_id=p_stage_id AND source_match.round_number=v_round AND source_match.bracket_position=v_position;
+      END LOOP;
+    END LOOP;
+    -- Resolve first-round byes into the next round immediately.
+    FOR v_match_id IN SELECT id FROM public.matches WHERE stage_id=p_stage_id AND round_number=1 AND ((home_team_id IS NULL)<>(away_team_id IS NULL)) LOOP
+      UPDATE public.matches SET status='COMPLETED',winner_team_id=COALESCE(home_team_id,away_team_id),updated_at=now() WHERE id=v_match_id;
+      PERFORM public.advance_bracket_winner(v_match_id);
+    END LOOP;
+  END IF;
+
+  RETURN jsonb_build_object('stage_id',p_stage_id,'created',v_created,'existing',0,'idempotent',false);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.generate_stage_fixtures(uuid) TO authenticated;
+
