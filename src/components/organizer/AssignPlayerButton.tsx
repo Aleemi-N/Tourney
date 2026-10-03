@@ -11,6 +11,7 @@ type AssignPlayerButtonProps = {
     currentSquadCount: number;
     maxSquadSize: number;
     eligiblePlayers: EligiblePlayer[];
+    remainingWalletBalance?: number | null;
 };
 
 export function AssignPlayerButton({
@@ -20,6 +21,7 @@ export function AssignPlayerButton({
     currentSquadCount,
     maxSquadSize,
     eligiblePlayers,
+    remainingWalletBalance,
 }: AssignPlayerButtonProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const isFull = currentSquadCount >= maxSquadSize;
@@ -50,6 +52,7 @@ export function AssignPlayerButton({
                 currentSquadCount={currentSquadCount}
                 maxSquadSize={maxSquadSize}
                 eligiblePlayers={eligiblePlayers}
+                remainingWalletBalance={remainingWalletBalance}
             />
         </>
     );

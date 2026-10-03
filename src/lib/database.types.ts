@@ -3071,9 +3071,17 @@ export type Database = {
       }
       assign_player_manually: {
         Args: {
-          p_player_id: string
-          p_team_id: string
           p_tournament_id: string
+          p_team_id: string
+          p_player_id: string
+          p_acquisition_amount?: number
+        }
+        Returns: Json
+      }
+      remove_player_manually: {
+        Args: {
+          p_tournament_id: string
+          p_team_player_id: string
         }
         Returns: Json
       }

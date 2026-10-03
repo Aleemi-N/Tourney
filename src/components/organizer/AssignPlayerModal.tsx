@@ -31,6 +31,7 @@ type AssignPlayerModalProps = {
     currentSquadCount: number;
     maxSquadSize: number;
     eligiblePlayers: EligiblePlayer[];
+    remainingWalletBalance?: number | null;
 };
 
 export function AssignPlayerModal({
@@ -42,11 +43,13 @@ export function AssignPlayerModal({
     currentSquadCount,
     maxSquadSize,
     eligiblePlayers,
+    remainingWalletBalance,
 }: AssignPlayerModalProps) {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedPlayer, setSelectedPlayer] = useState<EligiblePlayer | null>(null);
     const [step, setStep] = useState<'SELECT' | 'CONFIRM'>('SELECT');
+    const [acquisitionAmount, setAcquisitionAmount] = useState<string>('0');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -63,16 +66,28 @@ export function AssignPlayerModal({
     const handleSelectPlayer = (player: EligiblePlayer) => {
         setSelectedPlayer(player);
         setStep('CONFIRM');
+        setAcquisitionAmount('0');
         setErrorMsg(null);
     };
 
     const handleConfirmAssignment = async () => {
         if (!selectedPlayer) return;
 
+        const amount = Number(acquisitionAmount || 0);
+        if (isNaN(amount) || amount < 0) {
+            setErrorMsg('Please enter a valid positive acquisition amount.');
+            return;
+        }
+
+        if (remainingWalletBalance !== undefined && remainingWalletBalance !== null && amount > remainingWalletBalance) {
+            setErrorMsg(`Amount (₹${amount.toLocaleString('en-IN')}) exceeds remaining purse balance (₹${remainingWalletBalance.toLocaleString('en-IN')}).`);
+            return;
+        }
+
         setIsSubmitting(true);
         setErrorMsg(null);
 
-        const res = await assignPlayerManuallyAction(tournamentId, teamId, selectedPlayer.id);
+        const res = await assignPlayerManuallyAction(tournamentId, teamId, selectedPlayer.id, amount);
 
         setIsSubmitting(false);
 
@@ -84,6 +99,7 @@ export function AssignPlayerModal({
         // Reset and close
         setSelectedPlayer(null);
         setStep('SELECT');
+        setAcquisitionAmount('0');
         onClose();
         router.refresh();
     };
@@ -94,8 +110,11 @@ export function AssignPlayerModal({
         setStep('SELECT');
         setErrorMsg(null);
         setSearchQuery('');
+        setAcquisitionAmount('0');
         onClose();
     };
+
+    const parsedAmount = Number(acquisitionAmount || 0);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm sm:p-6 overflow-y-auto">
@@ -201,7 +220,7 @@ export function AssignPlayerModal({
 
                 {/* STEP 2: Review and Confirm */}
                 {step === 'CONFIRM' && selectedPlayer && (
-                    <div className="mt-4 flex-1 space-y-5">
+                    <div className="mt-4 flex-1 space-y-5 overflow-y-auto pr-1">
                         <div className="rounded-2xl border border-white/10 bg-black/20 p-5 space-y-4">
                             <div className="flex items-center gap-4">
                                 {selectedPlayer.photoPath ? (
@@ -234,7 +253,9 @@ export function AssignPlayerModal({
                                 </div>
                                 <div>
                                     <p className="text-white/40 uppercase font-bold tracking-wider text-[10px]">Cost / Purse Impact</p>
-                                    <p className="mt-1 font-bold text-white text-sm">₹0 / No purse deduction</p>
+                                    <p className="mt-1 font-bold text-amber-300 text-sm">
+                                        {parsedAmount > 0 ? `₹${parsedAmount.toLocaleString('en-IN')}` : '₹0 (Free)'}
+                                    </p>
                                 </div>
                                 <div>
                                     <p className="text-white/40 uppercase font-bold tracking-wider text-[10px]">Squad Expansion</p>
@@ -243,12 +264,44 @@ export function AssignPlayerModal({
                                     </p>
                                 </div>
                             </div>
+
+                            {/* Acquisition Amount Field */}
+                            <div className="space-y-2 pt-3 border-t border-white/10">
+                                <div className="flex items-center justify-between gap-2">
+                                    <label className="text-xs font-bold uppercase tracking-wider text-white/80">
+                                        Acquisition Price / Amount (₹)
+                                    </label>
+                                    {remainingWalletBalance !== undefined && remainingWalletBalance !== null && (
+                                        <span className="text-xs text-fuchsia-300 font-bold">
+                                            Purse: ₹{remainingWalletBalance.toLocaleString('en-IN')}
+                                        </span>
+                                    )}
+                                </div>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="500"
+                                    value={acquisitionAmount}
+                                    onChange={(e) => setAcquisitionAmount(e.target.value)}
+                                    placeholder="Enter amount (0 for free)"
+                                    className="w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-bold text-white placeholder-white/35 focus:border-fuchsia-400 focus:outline-none focus:ring-1 focus:ring-fuchsia-400 font-mono"
+                                />
+                                <p className="text-[11px] text-white/50">
+                                    {parsedAmount > 0
+                                        ? `₹${parsedAmount.toLocaleString('en-IN')} will be deducted from ${teamName}'s purse.`
+                                        : 'Leave 0 for a free manual assignment (no purse deduction).'
+                                    }
+                                </p>
+                            </div>
                         </div>
 
                         <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-xs text-emerald-200 flex items-start gap-3">
                             <CheckCircleIcon className="w-5 h-5 shrink-0 text-emerald-300 mt-0.5" />
                             <p className="leading-relaxed">
-                                This assignment does not use the team&apos;s auction purse. The player will be placed directly into {teamName}&apos;s squad under <strong className="text-white">Manual Assignment</strong>.
+                                {parsedAmount > 0
+                                    ? `This assignment will deduct ₹${parsedAmount.toLocaleString('en-IN')} from ${teamName}'s auction purse.`
+                                    : `This player will be placed directly into ${teamName}'s squad under Manual Assignment with no purse deduction.`
+                                }
                             </p>
                         </div>
 

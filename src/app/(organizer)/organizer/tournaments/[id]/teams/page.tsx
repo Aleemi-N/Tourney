@@ -144,6 +144,7 @@ export default async function OrganizerTeamsPage({
                                             currentSquadCount={team.count}
                                             maxSquadSize={team.max}
                                             eligiblePlayers={eligiblePlayers}
+                                            remainingWalletBalance={team.wallet ? Number(team.wallet.remaining_balance) : null}
                                         />
                                     </div>
                                     <div className="flex items-center gap-3 mt-2">
@@ -167,7 +168,7 @@ export default async function OrganizerTeamsPage({
                                 )}
                             </div>
                             <div className="p-6">
-                                <OrganizerTeamsSquadRoster squad={team.squad} teamName={team.name} />
+                                <OrganizerTeamsSquadRoster squad={team.squad} teamName={team.name} tournamentId={id} />
                             </div>
                         </div>
                     ))}
