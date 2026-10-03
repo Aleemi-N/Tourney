@@ -51,7 +51,6 @@ import {
   completeAuctionAction,
 } from '@/app/actions/auction';
 import { formatVolleyballPosition } from '@/lib/volleyball-positions';
-import { downloadAllPlayerCardsZip } from '@/lib/generate-player-card';
 
 
 // ─── Confirmation modal ───────────────────────────────────────────────────────
@@ -677,45 +676,9 @@ export function OrganizerAuctionClient({
   const [showPickPlayerModal, setShowPickPlayerModal] = useState(false);
   const [showConfigureQueueModal, setShowConfigureQueueModal] = useState(false);
   const [pickSearchQuery, setPickSearchQuery] = useState('');
-  const [downloadingZip, setDownloadingZip] = useState(false);
 
   // Stable Supabase client — created once per component mount
   const supabase = useMemo(() => createClient(), []);
-
-  const handleDownloadZip = async () => {
-    if (!auctionId) return;
-    setDownloadingZip(true);
-    try {
-      const { data: players } = await supabase
-        .from('auction_players')
-        .select(`
-          *,
-          player_profiles (*),
-          auction_price_categories (*)
-        `)
-        .eq('auction_id', auctionId)
-        .order('auction_order', { ascending: true });
-        
-      if (!players) throw new Error('No players found');
-
-      let orderMap: Record<string, number> = {};
-      players.forEach(p => orderMap[p.player_id] = p.auction_order);
-
-      const formatted = players.map(p => ({
-        ...p.player_profiles,
-        category_code: p.auction_price_categories?.code || p.category_code,
-        base_price: p.base_price,
-        attempt_number: p.auction_order
-      }));
-
-      await downloadAllPlayerCardsZip(formatted, categories, supabase, undefined, orderMap);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to download ZIP. Make sure players are prepared in the auction.');
-    } finally {
-      setDownloadingZip(false);
-    }
-  };
 
   const disposed = useRef(false);
   const lastSequence = useRef(initialSnapshot?.last_sequence ?? 0);
