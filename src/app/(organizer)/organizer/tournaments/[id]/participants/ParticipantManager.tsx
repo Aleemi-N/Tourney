@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PlayerDetailModal, PlayerDetailData } from '@/components/player/PlayerDetailModal';
 import { downloadAllPlayerCardsZip } from '@/lib/generate-player-card';
 import { AddPlayerModal } from './AddPlayerModal';
+import { DownloadCardsModal } from './DownloadCardsModal';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -212,33 +213,10 @@ export function ParticipantManager({
   const auctionPrepared = false;
 
   // Bulk zip download state
-  const [isDownloadingZip, setIsDownloadingZip] = useState(false);
-  const [zipProgress, setZipProgress] = useState<{ current: number; total: number } | null>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
 
   // Manual add player modal
   const [showAddPlayer, setShowAddPlayer] = useState(false);
-
-  const handleDownloadAllZip = async () => {
-    if (players.length === 0) return;
-    setIsDownloadingZip(true);
-    setZipProgress({ current: 0, total: players.length });
-    try {
-      await downloadAllPlayerCardsZip(
-        players,
-        auctionCategories,
-        supabase,
-        (current, total) => {
-          setZipProgress({ current, total });
-        }
-      );
-    } catch (err) {
-      console.error('Failed to generate bulk cards ZIP:', err);
-      setMessage({ type: 'error', text: 'Failed to generate cards ZIP bundle.' });
-    } finally {
-      setIsDownloadingZip(false);
-      setZipProgress(null);
-    }
-  };
 
   const router = useRouter();
 
@@ -441,24 +419,13 @@ export function ParticipantManager({
           {tab === 'PLAYERS' && (
             <button
               type="button"
-              onClick={handleDownloadAllZip}
-              disabled={isDownloadingZip || players.length === 0}
+              onClick={() => setShowDownloadModal(true)}
+              disabled={players.length === 0}
               className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-md transition-all active:scale-95 disabled:opacity-50 border border-amber-300/40"
-              title="Download a ZIP archive containing high-res auction cards for all registered players"
+              title="Download a ZIP archive containing high-res auction cards for registered players"
             >
-              {isDownloadingZip ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
-                  <span>
-                    Generating ZIP ({zipProgress?.current ?? 0}/{zipProgress?.total ?? players.length})…
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span>📦</span>
-                  <span>Download All Cards (ZIP)</span>
-                </>
-              )}
+              <span>📦</span>
+              <span>Download Cards (ZIP)</span>
             </button>
           )}
 
@@ -914,6 +881,15 @@ export function ParticipantManager({
           </section>
         </div>
       )}
+
+      {/* Download Cards Modal */}
+      <DownloadCardsModal
+        open={showDownloadModal}
+        onClose={() => setShowDownloadModal(false)}
+        players={players}
+        auctionCategories={auctionCategories}
+        supabase={supabase}
+      />
 
       {/* Add Player Modal */}
       <AddPlayerModal

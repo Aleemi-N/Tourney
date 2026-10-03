@@ -150,7 +150,7 @@ export function AddPlayerModal({ tournamentId, open, onClose }: AddPlayerModalPr
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-white">Add Player Manually</h2>
-                  <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">Instantly Approved</span>
+                  <span className="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">Added to Pending Queue</span>
                 </div>
               </div>
               <button
@@ -171,18 +171,18 @@ export function AddPlayerModal({ tournamentId, open, onClose }: AddPlayerModalPr
                   animate={{ opacity: 1, scale: 1 }}
                   className="flex flex-col items-center gap-3 py-8 text-center"
                 >
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
                     <CheckCircle2 className="h-8 w-8" />
                   </div>
-                  <p className="text-lg font-bold text-emerald-400">Player Added & Approved!</p>
+                  <p className="text-lg font-bold text-amber-400">Player Registered!</p>
                   <p className="text-sm text-white/50">
-                    The player skips the pending queue and is placed directly into the Approved list.
+                    The player has been added to the Pending list for classification and approval.
                   </p>
                 </motion.div>
               ) : (
                 <form id="add-player-form" onSubmit={handleSubmit} className="flex flex-col gap-5">
                   <p className="text-sm text-white/50">
-                    Register a player on their behalf. They will skip the pending queue and be <strong>instantly approved</strong> into the tournament.
+                    Register a player on their behalf. They will appear in the <strong>Pending</strong> list for review and category classification.
                   </p>
 
                   {error && (
