@@ -21,11 +21,14 @@ import {
   Trophy,
   Users,
   List,
-  UserPlus
+  UserPlus,
+  Hash,
+  Search
 } from 'lucide-react';
 import { AuctionPlayerCard } from '@/components/auction/AuctionPlayerCard';
 import { createClient } from '@/lib/supabase/client';
 import { OrganizerAddPlayerModal } from '@/components/organizer/OrganizerAddPlayerModal';
+import { ConfigureQueueModal } from './ConfigureQueueModal';
 import Image from 'next/image';
 import {
   formatMoney,
@@ -669,6 +672,9 @@ export function OrganizerAuctionClient({
     playerId: string; playerVersion: number; categoryBase: number; currentPrice: number;
   } | null>(null);
   const [showAddPlayerModal, setShowAddPlayerModal] = useState(false);
+  const [showPickPlayerModal, setShowPickPlayerModal] = useState(false);
+  const [showConfigureQueueModal, setShowConfigureQueueModal] = useState(false);
+  const [pickSearchQuery, setPickSearchQuery] = useState('');
 
   // Stable Supabase client — created once per component mount
   const supabase = useMemo(() => createClient(), []);
@@ -811,10 +817,11 @@ export function OrganizerAuctionClient({
 
   // ── Open next player ──────────────────────────────────────────────────────
 
-  async function handleOpenNext() {
+  async function handleOpenNext(targetPlayerId?: string | null) {
     if (!auctionId || !snapshot) return;
+    setShowPickPlayerModal(false);
     await run(() =>
-      openNextAuctionPlayerAction(auctionId, snapshot.auction.state_version, genKey())
+      openNextAuctionPlayerAction(auctionId, snapshot.auction.state_version, genKey(), targetPlayerId)
     );
   }
 
@@ -909,7 +916,7 @@ export function OrganizerAuctionClient({
           <div className="flex items-center justify-between gap-3 rounded-2xl border border-glass-border bg-surface-raised/95 backdrop-blur-2xl p-3.5 shadow-[0_16px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
             <div className="min-w-0 flex-1">
               <p className="truncate text-[11px] font-bold uppercase tracking-wider text-text-muted">
-                Stage: {snapshot.current_player.player.display_name}
+                Stage: #{snapshot.current_player.auction_order ?? '?'} - {snapshot.current_player.player.display_name}
               </p>
               <p className="text-sm font-black text-emerald-400 truncate">
                 {snapshot.highest_bid ? `${snapshot.highest_bid.team.name} — ${formatMoney(snapshot.highest_bid.amount)}` : 'No Bids Yet'}
@@ -1040,6 +1047,19 @@ export function OrganizerAuctionClient({
                 </button>
               )}
 
+              {/* Configure Queue */}
+              {snapshot?.queue && (currentStatus === 'READY' || currentStatus === 'PAUSED') && (
+                <button
+                  type="button"
+                  onClick={() => setShowConfigureQueueModal(true)}
+                  disabled={busy}
+                  className="flex items-center gap-2 rounded-2xl bg-surface px-6 py-3 text-sm font-bold text-text hover:bg-surface-hover border border-border shadow-sm disabled:opacity-50 transition-all active:scale-95"
+                >
+                  <Settings className="h-4 w-4" />
+                  Configure Queue Order
+                </button>
+              )}
+
               {/* Pause */}
               {actions.canPause && (
                 <button
@@ -1070,16 +1090,32 @@ export function OrganizerAuctionClient({
 
               {/* Open Next Player */}
               {actions.canOpenNext && (
-                <button
-                  type="button"
-                  id="btn-open-next-player"
-                  onClick={handleOpenNext}
-                  disabled={busy}
-                  className="flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/15 backdrop-blur-md px-6 py-3 text-sm font-bold text-primary hover:bg-primary/25 disabled:opacity-50 transition-all active:scale-95 shadow-md shadow-primary/10"
-                >
-                  <SkipForward className="h-4 w-4" />
-                  Open Next Player
-                </button>
+                <>
+                  <button
+                    type="button"
+                    id="btn-open-next-player"
+                    onClick={() => handleOpenNext()}
+                    disabled={busy}
+                    className="flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/15 backdrop-blur-md px-5 py-3 text-sm font-bold text-primary hover:bg-primary/25 disabled:opacity-50 transition-all active:scale-95 shadow-md shadow-primary/10"
+                  >
+                    <SkipForward className="h-4 w-4" />
+                    Open Next Player
+                  </button>
+
+                  <button
+                    type="button"
+                    id="btn-pick-player-by-number"
+                    onClick={() => {
+                      setPickSearchQuery('');
+                      setShowPickPlayerModal(true);
+                    }}
+                    disabled={busy}
+                    className="flex items-center gap-2 rounded-2xl border border-fuchsia-400/40 bg-fuchsia-400/15 backdrop-blur-md px-5 py-3 text-sm font-bold text-fuchsia-300 hover:bg-fuchsia-400/25 disabled:opacity-50 transition-all active:scale-95 shadow-md shadow-fuchsia-500/10"
+                  >
+                    <Hash className="h-4 w-4" />
+                    Pick Player by #
+                  </button>
+                </>
               )}
 
               {/* SOLD - Hero Action Button */}
@@ -1309,6 +1345,122 @@ export function OrganizerAuctionClient({
           categories={categories}
           onClose={() => setShowAddPlayerModal(false)}
           onSuccess={() => refreshSnapshot(auctionId)}
+        />
+      )}
+
+      {/* Pick Specific Player by Auction # Modal */}
+      {showPickPlayerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="relative w-full max-w-lg rounded-3xl border border-white/15 bg-[#17132a] p-6 shadow-2xl text-white space-y-4 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-fuchsia-400/20 text-fuchsia-300 font-bold border border-fuchsia-400/30">
+                  <Hash className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white">Select Auction Player</h3>
+                  <p className="text-xs text-white/50">Enter Auction # or search player name to bring LIVE</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPickPlayerModal(false)}
+                className="rounded-xl p-2 text-white/50 hover:bg-white/10 hover:text-white transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute left-4 top-3.5 h-4 w-4 text-white/40" />
+              <input
+                type="text"
+                autoFocus
+                value={pickSearchQuery}
+                onChange={(e) => setPickSearchQuery(e.target.value)}
+                placeholder="Type Auction # (e.g. 14 or #14) or player name..."
+                className="w-full rounded-2xl border border-white/15 bg-white/5 py-3 pl-11 pr-4 text-sm font-bold text-white placeholder-white/35 focus:border-fuchsia-400 focus:outline-none focus:ring-1 focus:ring-fuchsia-400"
+              />
+            </div>
+
+            {/* List of Waiting Players */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[360px]">
+              {(() => {
+                const waitingPlayers = (snapshot?.queue ?? []).filter((p) => p.status === 'WAITING');
+                const filtered = waitingPlayers.filter((p) => {
+                  const name = (playerNameMap[p.player_id] || '').toLowerCase();
+                  const q = pickSearchQuery.toLowerCase().trim().replace(/^#/, '');
+                  if (!q) return true;
+                  const numMatch = String(p.auction_order) === q || String(p.auction_order).includes(q);
+                  const nameMatch = name.includes(q);
+                  const catMatch = (p.category_label || '').toLowerCase().includes(q) || (p.category_code || '').toLowerCase().includes(q);
+                  return numMatch || nameMatch || catMatch;
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="rounded-2xl border border-dashed border-white/10 bg-white/3 p-8 text-center text-sm text-white/50">
+                      {pickSearchQuery ? `No waiting player found for "${pickSearchQuery}".` : 'No players currently waiting in auction queue.'}
+                    </div>
+                  );
+                }
+
+                return filtered.map((p) => {
+                  const name = playerNameMap[p.player_id] || 'Player';
+                  return (
+                    <div
+                      key={p.auction_player_id}
+                      className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-3.5 hover:border-fuchsia-400/50 hover:bg-fuchsia-400/10 transition group"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <span className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-fuchsia-400/20 text-fuchsia-200 font-mono font-black text-sm border border-fuchsia-400/40">
+                          #{p.auction_order}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-bold text-white text-sm group-hover:text-fuchsia-200">
+                            {name}
+                          </p>
+                          <p className="truncate text-xs text-white/50">
+                            {p.category_label ? `Category ${p.category_code} (${p.category_label})` : 'Base Category'} · <span className="font-mono text-emerald-300 font-semibold">₹{p.base_price.toLocaleString('en-IN')}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenNext(p.auction_player_id)}
+                        disabled={busy}
+                        className="shrink-0 rounded-xl bg-fuchsia-400 px-4 py-2 text-xs font-black text-[#17132a] hover:bg-fuchsia-300 transition disabled:opacity-50"
+                      >
+                        Bring #{p.auction_order} Live
+                      </button>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            <div className="flex items-center justify-end pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setShowPickPlayerModal(false)}
+                className="rounded-xl border border-white/15 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConfigureQueueModal && snapshot?.queue && (
+        <ConfigureQueueModal
+          open={showConfigureQueueModal}
+          onClose={() => setShowConfigureQueueModal(false)}
+          queue={snapshot.queue}
+          playerNameMap={playerNameMap}
+          supabase={supabase}
+          onSaved={() => refreshSnapshot(auctionId!)}
         />
       )}
     </div>

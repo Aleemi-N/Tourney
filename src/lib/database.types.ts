@@ -3276,6 +3276,7 @@ export type Database = {
           p_auction_id: string
           p_expected_version: number
           p_request_key: string
+          p_target_auction_player_id?: string | null
         }
         Returns: Json
       }

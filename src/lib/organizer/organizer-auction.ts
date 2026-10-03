@@ -68,6 +68,7 @@ export interface LivePlayerInfo {
   category_label: string | null;
   category_base_price: number | null;
   attempt_number: number;
+  auction_order?: number;
   state_version: number;
   player: {
     id: string;

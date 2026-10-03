@@ -124,13 +124,15 @@ export async function setAuctionLifecycleAction(
 export async function openNextAuctionPlayerAction(
   auctionId: string,
   expectedVersion: number,
-  requestKey: string
+  requestKey: string,
+  targetAuctionPlayerId?: string | null
 ) {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc('open_next_auction_player', {
     p_auction_id: auctionId,
     p_expected_version: expectedVersion,
     p_request_key: requestKey,
+    p_target_auction_player_id: targetAuctionPlayerId ?? null,
   });
   if (error) {
     return { error: error.message };

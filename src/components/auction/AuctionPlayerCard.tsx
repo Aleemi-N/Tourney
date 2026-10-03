@@ -19,6 +19,7 @@ export interface AuctionPlayerCardProps {
     base_price: number;
     category_code?: string | null;
     attempt_number?: number;
+    auction_order?: number;
     player: {
       id?: string;
       display_name: string;
@@ -344,9 +345,9 @@ export function AuctionPlayerCard({
       <div className={`relative z-10 flex flex-row items-center justify-between ${isFullscreen ? 'gap-8 mb-7' : 'gap-4 mb-5'}`}>
         {/* Left: Photo */}
         <div className={`relative flex justify-center shrink-0 ${isFullscreen ? 'w-[40%] max-w-[280px]' : 'w-[120px] sm:w-[140px]'}`}>
-          <div className={`absolute z-20 ${isFullscreen ? '-top-4 -left-3' : '-top-2 -left-2'}`}>
-            <span className={`font-black italic text-[#e5a93c] drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] tracking-tighter ${isFullscreen ? 'text-6xl' : 'text-4xl'}`}>
-              {String(player.attempt_number || 1).padStart(2, '0')}
+          <div className={`absolute z-30 flex items-center justify-center bg-black/95 border-2 border-[#e5a93c] rounded-xl shadow-[0_4px_12px_rgba(0,0,0,1)] ${isFullscreen ? '-top-5 -left-5 px-3 py-1' : '-top-3 -left-3 px-2 py-0.5'}`}>
+            <span className={`font-black italic text-[#e5a93c] tracking-tighter ${isFullscreen ? 'text-5xl' : 'text-3xl'}`}>
+              #{player.auction_order ?? '?'}
             </span>
           </div>
           <div className="relative w-full aspect-square overflow-hidden rounded-[1.5rem] border-2 sm:border-4 border-[#e5a93c] bg-gradient-to-tr from-[#1a1409] to-[#0c0d14] shadow-xl flex items-center justify-center">
