@@ -131,3 +131,58 @@ export async function rejectTeamOwnerAction(applicationId: string, notes?: strin
   revalidatePath('/organizer/tournaments/[id]/participants', 'page');
   return { success: true };
 }
+
+// ─── Manual player registration (organizer adds a player directly) ─────────────
+
+export interface ManualRegisterPayload {
+  tournamentId: string;
+  displayName: string;
+  phone: string;
+  email?: string;
+  primaryPosition?: string;
+  secondaryPosition?: string;
+  jerseyName?: string;
+  jerseyNumber?: number | null;
+  jerseySize?: string;
+  heightCm?: number | null;
+  place?: string;
+  notes?: string;
+}
+
+const MANUAL_REG_ERRORS: Record<string, string> = {
+  UNAUTHORIZED:         'You no longer have permission to manage this tournament.',
+  TOURNAMENT_NOT_OPEN:  'This tournament is not currently open for registration.',
+  NAME_REQUIRED:        'Player name is required.',
+  PHONE_REQUIRED:       'Phone number is required.',
+};
+
+export async function manualRegisterPlayerAction(payload: ManualRegisterPayload) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('organizer_register_player', {
+    p_tournament_id:      payload.tournamentId,
+    p_display_name:       payload.displayName,
+    p_phone:              payload.phone,
+    p_email:              payload.email              || null,
+    p_primary_position:   payload.primaryPosition    || null,
+    p_secondary_position: payload.secondaryPosition  || null,
+    p_jersey_name:        payload.jerseyName         || null,
+    p_jersey_number:      payload.jerseyNumber       ?? null,
+    p_jersey_size:        payload.jerseySize         || null,
+    p_height_cm:          payload.heightCm           ?? null,
+    p_place:              payload.place              || null,
+    p_notes:              payload.notes              || null,
+  });
+
+  if (error) {
+    return { error: 'Unable to add player. Please try again.' };
+  }
+
+  const result = data as { ok: boolean; code?: string } | null;
+  if (!result?.ok) {
+    return { error: MANUAL_REG_ERRORS[result?.code ?? ''] ?? 'Unable to add player. Please try again.' };
+  }
+
+  revalidatePath('/organizer/tournaments/[id]/participants', 'page');
+  return { success: true };
+}
+

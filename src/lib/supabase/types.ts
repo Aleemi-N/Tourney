@@ -3051,6 +3051,23 @@ export type Database = {
         }
         Returns: Json
       }
+      organizer_register_player: {
+        Args: {
+          p_tournament_id: string
+          p_display_name: string
+          p_phone: string
+          p_email?: string | null
+          p_primary_position?: string | null
+          p_secondary_position?: string | null
+          p_jersey_name?: string | null
+          p_jersey_number?: number | null
+          p_jersey_size?: string | null
+          p_height_cm?: number | null
+          p_place?: string | null
+          p_notes?: string | null
+        }
+        Returns: Json
+      }
       approve_player_registration: {
         Args: {
           p_auction_category?: string

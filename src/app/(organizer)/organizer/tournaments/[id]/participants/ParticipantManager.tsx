@@ -12,7 +12,7 @@ import {
 } from '@/app/actions/participants';
 import { classifyAuctionPlayerAction } from '@/app/actions/auction';
 import Image from 'next/image';
-import { Loader2, Tag, RefreshCcw } from 'lucide-react';
+import { Loader2, Tag, RefreshCcw, UserPlus } from 'lucide-react';
 import { LockClosedIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -21,6 +21,7 @@ import { AnimatedSelect } from './AnimatedSelect';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlayerDetailModal, PlayerDetailData } from '@/components/player/PlayerDetailModal';
 import { downloadAllPlayerCardsZip } from '@/lib/generate-player-card';
+import { AddPlayerModal } from './AddPlayerModal';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -213,6 +214,9 @@ export function ParticipantManager({
   // Bulk zip download state
   const [isDownloadingZip, setIsDownloadingZip] = useState(false);
   const [zipProgress, setZipProgress] = useState<{ current: number; total: number } | null>(null);
+
+  // Manual add player modal
+  const [showAddPlayer, setShowAddPlayer] = useState(false);
 
   const handleDownloadAllZip = async () => {
     if (players.length === 0) return;
@@ -455,6 +459,18 @@ export function ParticipantManager({
                   <span>Download All Cards (ZIP)</span>
                 </>
               )}
+            </button>
+          )}
+
+          {tab === 'PLAYERS' && (
+            <button
+              type="button"
+              onClick={() => setShowAddPlayer(true)}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-md transition-all active:scale-95 border border-emerald-400/30"
+              title="Manually register a player who has trouble registering themselves"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span>Add Player</span>
             </button>
           )}
 
@@ -898,6 +914,13 @@ export function ParticipantManager({
           </section>
         </div>
       )}
+
+      {/* Add Player Modal */}
+      <AddPlayerModal
+        tournamentId={tournament.id}
+        open={showAddPlayer}
+        onClose={() => setShowAddPlayer(false)}
+      />
 
       {/* Player Detail Card Modal */}
       <PlayerDetailModal
