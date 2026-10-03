@@ -33,9 +33,12 @@ export function interleaveMatchesForMaxRest(matches: Match[]): Match[] {
   const result: Match[] = [...lockedMatches];
   const lastPlayed = new Map<string, number>();
 
+  const getHomeKey = (m: Match) => m.home_team_id || m.home_team?.name || `home_${m.id}`;
+  const getAwayKey = (m: Match) => m.away_team_id || m.away_team?.name || `away_${m.id}`;
+
   result.forEach((m, idx) => {
-    if (m.home_team_id) lastPlayed.set(m.home_team_id, idx);
-    if (m.away_team_id) lastPlayed.set(m.away_team_id, idx);
+    lastPlayed.set(getHomeKey(m), idx);
+    lastPlayed.set(getAwayKey(m), idx);
   });
 
   const remaining = [...unlockableMatches];
@@ -46,11 +49,11 @@ export function interleaveMatchesForMaxRest(matches: Match[]): Match[] {
 
     for (let i = 0; i < remaining.length; i++) {
       const match = remaining[i];
-      const homeId = match.home_team_id ?? `home_${match.id}`;
-      const awayId = match.away_team_id ?? `away_${match.id}`;
+      const homeKey = getHomeKey(match);
+      const awayKey = getAwayKey(match);
 
-      const homeLast = lastPlayed.has(homeId) ? result.length - lastPlayed.get(homeId)! : 999;
-      const awayLast = lastPlayed.has(awayId) ? result.length - lastPlayed.get(awayId)! : 999;
+      const homeLast = lastPlayed.has(homeKey) ? result.length - lastPlayed.get(homeKey)! : 999;
+      const awayLast = lastPlayed.has(awayKey) ? result.length - lastPlayed.get(awayKey)! : 999;
 
       const minRest = Math.min(homeLast, awayLast);
       const sumRest = homeLast + awayLast;
@@ -65,8 +68,8 @@ export function interleaveMatchesForMaxRest(matches: Match[]): Match[] {
 
     const [chosen] = remaining.splice(bestIndex, 1);
     result.push(chosen);
-    if (chosen.home_team_id) lastPlayed.set(chosen.home_team_id, result.length - 1);
-    if (chosen.away_team_id) lastPlayed.set(chosen.away_team_id, result.length - 1);
+    lastPlayed.set(getHomeKey(chosen), result.length - 1);
+    lastPlayed.set(getAwayKey(chosen), result.length - 1);
   }
 
   return result;
