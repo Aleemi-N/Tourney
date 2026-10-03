@@ -292,6 +292,7 @@ export function AuctionPlayerCard({
 
   return (
     <motion.div
+      suppressHydrationWarning
       key={player.auction_player_id || player.player.id}
       initial={!reduceMotion ? { opacity: 0, scale: 0.95 } : false}
       animate={{ opacity: 1, scale: 1 }}
