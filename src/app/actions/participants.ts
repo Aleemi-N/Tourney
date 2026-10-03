@@ -138,6 +138,7 @@ export interface ManualRegisterPayload {
   tournamentId: string;
   displayName: string;
   phone: string;
+  photoPath?: string;
   email?: string;
   primaryPosition?: string;
   secondaryPosition?: string;
@@ -162,6 +163,7 @@ export async function manualRegisterPlayerAction(payload: ManualRegisterPayload)
     p_tournament_id:      payload.tournamentId,
     p_display_name:       payload.displayName,
     p_phone:              payload.phone,
+    p_photo_path:         payload.photoPath          || null,
     p_email:              payload.email              || null,
     p_primary_position:   payload.primaryPosition    || null,
     p_secondary_position: payload.secondaryPosition  || null,
