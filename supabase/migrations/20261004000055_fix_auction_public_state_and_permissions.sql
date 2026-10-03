@@ -1,10 +1,59 @@
 -- 20261004000055_fix_auction_public_state_and_permissions.sql
 -- 1. Fix get_auction_public_state highest_bid & recent_bids filtering to current live player
 -- 2. Include player_display_name in get_auction_organizer_state queue items
--- 3. Sync prepare_auction team wallet starting balances & manual assignment spent amounts
--- 4. Trigger to automatically sync auction_team_wallets when tournament_settings auction_starting_purse updates
--- 5. Update set_auction_lifecycle to set tournament status to LIVE on auction start
--- 6. Restore execute permissions to anon for public spectator live views
+-- 3. Dynamic auction_team_finance RPC using starting purse from tournament settings
+-- 4. Sync prepare_auction team wallet starting balances & manual assignment spent amounts
+-- 5. Trigger to automatically sync auction_team_wallets when tournament_settings auction_starting_purse updates
+-- 6. Direct backfill update to fix existing production auction_team_wallets starting balance
+-- 7. Update set_auction_lifecycle to set tournament status to LIVE on auction start
+-- 8. Restore execute permissions to anon for public spectator live views
+
+-- Immediate backfill to resync all existing auction_team_wallets starting_balance to match tournament_settings auction_starting_purse
+UPDATE public.auction_team_wallets w
+SET starting_balance = s.auction_starting_purse,
+    spent_amount = COALESCE((SELECT sum(tp.acquisition_amount) FROM public.team_players tp WHERE tp.tournament_id = a.tournament_id AND tp.team_id = w.team_id AND tp.status = 'ACTIVE'), 0),
+    remaining_balance = s.auction_starting_purse - COALESCE((SELECT sum(tp.acquisition_amount) FROM public.team_players tp WHERE tp.tournament_id = a.tournament_id AND tp.team_id = w.team_id AND tp.status = 'ACTIVE'), 0),
+    updated_at = now()
+FROM public.auctions a
+JOIN public.tournament_settings s ON s.tournament_id = a.tournament_id
+WHERE a.id = w.auction_id;
+
+-- Dynamic auction_team_finance RPC using starting purse from tournament settings
+CREATE OR REPLACE FUNCTION public.auction_team_finance(p_auction_id uuid, p_team_id uuid, p_purchase numeric DEFAULT 0)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = pg_catalog, public AS $$
+DECLARE v_tournament uuid; v_starting numeric; v_remaining numeric; v_spent numeric; v_min integer; v_max integer; v_floor numeric; v_squad integer; v_missing integer; v_reserve numeric; v_max_bid numeric;
+BEGIN
+  SELECT a.tournament_id, COALESCE(s.auction_starting_purse, w.starting_balance), w.spent_amount, s.min_squad_size, s.max_squad_size, a.minimum_acquisition_reserve_price
+  INTO v_tournament, v_starting, v_spent, v_min, v_max, v_floor
+  FROM public.auctions a 
+  JOIN public.auction_team_wallets w ON w.auction_id=a.id AND w.team_id=p_team_id
+  JOIN public.tournament_settings s ON s.tournament_id=a.tournament_id 
+  WHERE a.id=p_auction_id;
+
+  IF v_tournament IS NULL OR COALESCE(v_floor,0)<=0 THEN RAISE EXCEPTION 'Auction wallet/settings unavailable'; END IF;
+
+  SELECT COALESCE(sum(tp.acquisition_amount), 0) INTO v_spent
+  FROM public.team_players tp
+  WHERE tp.tournament_id = v_tournament AND tp.team_id = p_team_id AND tp.status = 'ACTIVE';
+
+  v_remaining := v_starting - v_spent;
+
+  SELECT count(*) INTO v_squad FROM public.team_players WHERE tournament_id=v_tournament AND team_id=p_team_id AND status='ACTIVE';
+  v_missing := greatest(v_min - (v_squad + CASE WHEN p_purchase > 0 THEN 1 ELSE 0 END), 0);
+  v_reserve := v_missing * v_floor;
+  v_max_bid := v_remaining - v_reserve;
+
+  RETURN jsonb_build_object(
+    'remaining', v_remaining,
+    'spent', v_spent,
+    'active_squad', v_squad,
+    'minimum_squad', v_min,
+    'maximum_squad', v_max,
+    'reserve', v_reserve,
+    'max_allowed_bid', v_max_bid
+  );
+END;
+$$;
 
 CREATE OR REPLACE FUNCTION public.get_auction_public_state(p_auction_id uuid)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = pg_catalog, public AS $$
@@ -100,7 +149,7 @@ BEGIN
 END;
 $$;
 
--- Enrich get_auction_organizer_state queue with player_display_name
+-- Enrich get_auction_organizer_state queue with player_display_name and updated team finance
 CREATE OR REPLACE FUNCTION public.get_auction_organizer_state(p_auction_id uuid)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = pg_catalog, public AS $$
 DECLARE a public.auctions%ROWTYPE; pub jsonb;
@@ -130,7 +179,7 @@ BEGIN
       JOIN public.player_profiles p ON p.id=ap.player_id
       WHERE ap.auction_id=a.id
     ),'[]'::jsonb),
-    'teams',COALESCE((SELECT jsonb_agg(jsonb_build_object('team_id',w.team_id,'starting_purse',w.starting_balance,'spent',w.spent_amount,'remaining',w.remaining_balance,'finance',public.auction_team_finance(a.id,w.team_id,1))) FROM public.auction_team_wallets w WHERE w.auction_id=a.id),'[]'::jsonb)
+    'teams',COALESCE((SELECT jsonb_agg(jsonb_build_object('team_id',w.team_id,'starting_purse',(public.auction_team_finance(a.id,w.team_id,1))->'starting','spent',(public.auction_team_finance(a.id,w.team_id,1))->'spent','remaining',(public.auction_team_finance(a.id,w.team_id,1))->'remaining','finance',public.auction_team_finance(a.id,w.team_id,1))) FROM public.auction_team_wallets w WHERE w.auction_id=a.id),'[]'::jsonb)
   );
 END;
 $$;
