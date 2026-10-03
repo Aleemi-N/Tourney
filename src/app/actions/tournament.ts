@@ -153,13 +153,13 @@ export async function reopenRegistration(tournamentId: string) {
     .single();
 
   if (!tourny) return { error: 'Tournament not found.' };
-  if (tourny.status !== 'PREPARATION') return { error: 'Tournament is not in preparation state.' };
+  if (!['PREPARATION', 'LIVE'].includes(tourny.status)) return { error: 'Tournament cannot be moved back to registration from its current state.' };
 
   const { error } = await supabase
     .from('tournaments')
     .update({ status: 'REGISTRATION' })
     .eq('id', tournamentId)
-    .eq('status', 'PREPARATION'); // optimistic concurrency guard
+    .in('status', ['PREPARATION', 'LIVE']); // accept both states
 
   if (error) return { error: error.message };
 

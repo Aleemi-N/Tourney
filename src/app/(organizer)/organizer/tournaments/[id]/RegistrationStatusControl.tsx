@@ -16,7 +16,8 @@ export function RegistrationStatusControl({ tournamentId, status }: Registration
 
   const isOpen = status === 'REGISTRATION';
   const canClose = isOpen;
-  const canReopen = status === 'PREPARATION';
+  // Allow reopening from PREPARATION or LIVE
+  const canReopen = status === 'PREPARATION' || status === 'LIVE';
 
   if (!canClose && !canReopen) return null;
 
