@@ -21,18 +21,22 @@ export function DownloadCardsModal({
   auctionCategories,
   supabase,
 }: DownloadCardsModalProps) {
-  const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'APPROVED' | 'PENDING'>('APPROVED');
+  const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'APPROVED' | 'AUCTION' | 'PENDING'>('AUCTION');
   const [isDownloading, setIsDownloading] = useState(false);
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const approvedCount = players.filter(p => p.status === 'APPROVED').length;
+  const auctionCount = players.filter(p => p.status === 'APPROVED' && p.auction_price_category_id !== null).length;
   const pendingCount = players.filter(p => p.status === 'PENDING').length;
   const totalCount = players.length;
 
   const getTargetPlayers = () => {
     if (selectedFilter === 'APPROVED') {
       return players.filter(p => p.status === 'APPROVED');
+    }
+    if (selectedFilter === 'AUCTION') {
+      return players.filter(p => p.status === 'APPROVED' && p.auction_price_category_id !== null);
     }
     if (selectedFilter === 'PENDING') {
       return players.filter(p => p.status === 'PENDING');
@@ -135,6 +139,31 @@ export function DownloadCardsModal({
               )}
 
               <div className="grid grid-cols-1 gap-3">
+                {/* Option 0: Auction Players */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedFilter('AUCTION')}
+                  disabled={isDownloading}
+                  className={`flex items-center justify-between rounded-2xl border p-4 text-left transition-all ${
+                    selectedFilter === 'AUCTION'
+                      ? 'border-fuchsia-500/60 bg-fuchsia-500/10 ring-1 ring-fuchsia-500/40'
+                      : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-fuchsia-500/20 text-fuchsia-400">
+                      <Users className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-white text-sm">Main Auction Players Only</div>
+                      <div className="text-xs text-white/50">Only players assigned to an auction category</div>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-fuchsia-500/20 px-3 py-1 text-xs font-black text-fuchsia-400 border border-fuchsia-500/30">
+                    {auctionCount} {auctionCount === 1 ? 'card' : 'cards'}
+                  </span>
+                </button>
+
                 {/* Option 1: Approved Only */}
                 <button
                   type="button"
