@@ -23,7 +23,8 @@ import {
   List,
   UserPlus,
   Hash,
-  Search
+  Search,
+  Settings
 } from 'lucide-react';
 import { AuctionPlayerCard } from '@/components/auction/AuctionPlayerCard';
 import { createClient } from '@/lib/supabase/client';
