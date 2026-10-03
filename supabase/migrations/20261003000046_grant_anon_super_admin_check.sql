@@ -1,0 +1,22 @@
+﻿-- 20261003000046_grant_anon_super_admin_check.sql
+--
+-- Problem: Migration 20260930000036_security_linter_fixes.sql revoked EXECUTE
+-- on ALL security-definer functions from the `anon` role, including
+-- is_platform_super_admin(). This function is used in RLS USING clauses on
+-- 27+ tables. Because PostgreSQL does NOT guarantee short-circuit evaluation
+-- of OR expressions, the anon role received a permission error when evaluating
+-- any RLS policy on those tables, making ALL anonymous reads fail silently.
+--
+-- Symptom: Anonymous users saw "Tournament not found" on the player
+-- registration page even when the tournament was public and in REGISTRATION
+-- status, because the query returned null due to the RLS evaluation error.
+--
+-- Fix: Grant EXECUTE on is_platform_super_admin() to anon.
+-- This is safe because:
+--   1. The function is SECURITY DEFINER -- it runs as its owner, not anon.
+--   2. For unauthenticated requests, auth.uid() is null, so the function
+--      always returns false. Anon users can never satisfy the super-admin
+--      condition -- they just need to be able to call the function without
+--      a permission error so that the OR evaluation can proceed correctly.
+
+GRANT EXECUTE ON FUNCTION public.is_platform_super_admin() TO anon;
