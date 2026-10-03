@@ -590,7 +590,7 @@ function WaitingQueuePanel({
           >
             <div className="mt-3 space-y-1.5">
               {waiting.map((p, idx) => {
-                const name = playerNameMap[p.player_id] ?? p.player_display_name ?? `Player ${p.player_id.substring(0, 8)}…`;
+                const name = p.player_display_name ?? playerNameMap[p.player_id] ?? `Player #${p.auction_order}`;
                 return (
                   <div key={p.auction_player_id} className="flex items-center gap-3 rounded-lg bg-surface-muted px-3 py-2 text-sm">
                     <span className="shrink-0 h-5 w-5 flex items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
@@ -1390,7 +1390,7 @@ export function OrganizerAuctionClient({
               {(() => {
                 const waitingPlayers = (snapshot?.queue ?? []).filter((p) => p.status === 'WAITING');
                 const filtered = waitingPlayers.filter((p) => {
-                  const name = (playerNameMap[p.player_id] || '').toLowerCase();
+                  const name = (p.player_display_name || playerNameMap[p.player_id] || '').toLowerCase();
                   const q = pickSearchQuery.toLowerCase().trim().replace(/^#/, '');
                   if (!q) return true;
                   const numMatch = String(p.auction_order) === q || String(p.auction_order).includes(q);
@@ -1408,7 +1408,7 @@ export function OrganizerAuctionClient({
                 }
 
                 return filtered.map((p) => {
-                  const name = playerNameMap[p.player_id] || 'Player';
+                  const name = p.player_display_name || playerNameMap[p.player_id] || `Player #${p.auction_order}`;
                   return (
                     <div
                       key={p.auction_player_id}

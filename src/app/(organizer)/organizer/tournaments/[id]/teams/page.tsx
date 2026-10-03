@@ -34,7 +34,7 @@ export default async function OrganizerTeamsPage({
         { data: liveAuctionPlayers }
     ] = await Promise.all([
         supabase.from('tournaments').select('id, name, status').eq('id', id).single(),
-        supabase.from('tournament_settings').select('min_squad_size, max_squad_size').eq('tournament_id', id).single(),
+        supabase.from('tournament_settings').select('min_squad_size, max_squad_size, auction_starting_purse').eq('tournament_id', id).single(),
         supabase.from('teams').select('id, name, short_name, logo_path, status').eq('tournament_id', id).order('name'),
         auction ? supabase.from('auction_team_wallets').select('team_id, starting_balance, spent_amount, remaining_balance').eq('auction_id', auction.id) : Promise.resolve({ data: [] }),
         supabase.from('team_players').select('id, team_id, player_id, acquisition_type, acquisition_amount, player_profiles(id, display_name, photo_path, primary_position, secondary_position, place, height_cm, phone, date_of_birth, playing_history, jersey_name, jersey_number, jersey_size)').eq('tournament_id', id).eq('status', 'ACTIVE'),
@@ -69,6 +69,8 @@ export default async function OrganizerTeamsPage({
             };
         });
 
+    const defaultPurse = Number(settings?.auction_starting_purse ?? 10000);
+
     const teams = (teamsData ?? []).map((t) => {
         const wallet = wallets?.find(w => w.team_id === t.id);
         const squadRaw = playersData?.filter(p => p.team_id === t.id) ?? [];
@@ -97,6 +99,11 @@ export default async function OrganizerTeamsPage({
         const min = settings?.min_squad_size ?? 0;
         const max = settings?.max_squad_size ?? 99;
         
+        const startingPurse = Number(wallet?.starting_balance ?? defaultPurse);
+        const squadSpent = squad.reduce((sum, p) => sum + Number(p.acquisition_amount || 0), 0);
+        const totalSpent = Math.max(Number(wallet?.spent_amount || 0), squadSpent);
+        const remaining = Math.max(0, startingPurse - totalSpent);
+
         let squadStatus = 'Valid squad';
         let statusColor = 'text-emerald-400 bg-emerald-400/10 border-emerald-400/30';
         
@@ -111,6 +118,9 @@ export default async function OrganizerTeamsPage({
         return {
             ...t,
             wallet,
+            startingPurse,
+            totalSpent,
+            remaining,
             squad,
             squadStatus,
             statusColor,
@@ -144,7 +154,7 @@ export default async function OrganizerTeamsPage({
                                             currentSquadCount={team.count}
                                             maxSquadSize={team.max}
                                             eligiblePlayers={eligiblePlayers}
-                                            remainingWalletBalance={team.wallet ? Number(team.wallet.remaining_balance) : null}
+                                            remainingWalletBalance={team.remaining}
                                         />
                                     </div>
                                     <div className="flex items-center gap-3 mt-2">
@@ -154,18 +164,16 @@ export default async function OrganizerTeamsPage({
                                         </span>
                                     </div>
                                 </div>
-                                {team.wallet && (
-                                    <div className="flex gap-6 text-right">
-                                        <div>
-                                            <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Total Spent</p>
-                                            <p className="font-mono text-sm font-bold text-text-primary">₹{Number(team.wallet.spent_amount).toLocaleString('en-IN')}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Remaining</p>
-                                            <p className="font-mono text-lg font-bold text-fuchsia-400">₹{Number(team.wallet.remaining_balance).toLocaleString('en-IN')}</p>
-                                        </div>
+                                <div className="flex gap-6 text-right">
+                                    <div>
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Total Spent</p>
+                                        <p className="font-mono text-sm font-bold text-text-primary">₹{team.totalSpent.toLocaleString('en-IN')}</p>
                                     </div>
-                                )}
+                                    <div>
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Remaining</p>
+                                        <p className="font-mono text-lg font-bold text-fuchsia-400">₹{team.remaining.toLocaleString('en-IN')}</p>
+                                    </div>
+                                </div>
                             </div>
                             <div className="p-6">
                                 <OrganizerTeamsSquadRoster squad={team.squad} teamName={team.name} tournamentId={id} />
