@@ -2,8 +2,9 @@
 -- 1. Fix get_auction_public_state highest_bid & recent_bids filtering to current live player
 -- 2. Include player_display_name in get_auction_organizer_state queue items
 -- 3. Sync prepare_auction team wallet starting balances & manual assignment spent amounts
--- 4. Update set_auction_lifecycle to set tournament status to LIVE on auction start
--- 5. Restore execute permissions to anon for public spectator live views
+-- 4. Trigger to automatically sync auction_team_wallets when tournament_settings auction_starting_purse updates
+-- 5. Update set_auction_lifecycle to set tournament status to LIVE on auction start
+-- 6. Restore execute permissions to anon for public spectator live views
 
 CREATE OR REPLACE FUNCTION public.get_auction_public_state(p_auction_id uuid)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = pg_catalog, public AS $$
@@ -191,6 +192,26 @@ BEGIN
 END;
 $$;
 
+-- Trigger to sync wallets when tournament_settings starting_purse updates
+CREATE OR REPLACE FUNCTION public.sync_auction_team_wallets_starting_purse()
+RETURNS trigger LANGUAGE plpgsql SET search_path = pg_catalog, public AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' AND NEW.auction_starting_purse IS DISTINCT FROM OLD.auction_starting_purse THEN
+    UPDATE public.auction_team_wallets w
+    SET starting_balance = NEW.auction_starting_purse,
+        remaining_balance = NEW.auction_starting_purse - w.spent_amount,
+        updated_at = now()
+    WHERE w.auction_id IN (SELECT a.id FROM public.auctions a WHERE a.tournament_id = NEW.tournament_id);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS sync_auction_team_wallets_starting_purse_trigger ON public.tournament_settings;
+CREATE TRIGGER sync_auction_team_wallets_starting_purse_trigger
+  AFTER UPDATE OF auction_starting_purse ON public.tournament_settings
+  FOR EACH ROW EXECUTE FUNCTION public.sync_auction_team_wallets_starting_purse();
+
 -- Update set_auction_lifecycle to set tournament status to LIVE on auction start
 CREATE OR REPLACE FUNCTION public.set_auction_lifecycle(p_auction_id uuid, p_action text, p_expected_version bigint, p_request_key text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $$
@@ -207,7 +228,6 @@ BEGIN
   ELSE RAISE EXCEPTION 'Illegal auction lifecycle transition'; END IF;
   IF p_action='START' AND NOT (public.get_auction_readiness(v.tournament_id)->>'ready')::boolean THEN RAISE EXCEPTION 'Auction readiness changed'; END IF;
 
-  -- Update auction status
   UPDATE public.auctions 
   SET status=v_new,
       state_version=state_version+1,
@@ -215,7 +235,6 @@ BEGIN
       paused_at=CASE WHEN p_action='PAUSE' THEN now() ELSE NULL END 
   WHERE id=p_auction_id RETURNING state_version INTO p_expected_version;
 
-  -- Update tournament status to LIVE when starting auction
   IF p_action IN ('START', 'RESUME') THEN
     UPDATE public.tournaments SET status='LIVE', updated_at=now() WHERE id=v.tournament_id;
   END IF;

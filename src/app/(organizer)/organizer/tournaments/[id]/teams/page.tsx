@@ -99,7 +99,7 @@ export default async function OrganizerTeamsPage({
         const min = settings?.min_squad_size ?? 0;
         const max = settings?.max_squad_size ?? 99;
         
-        const startingPurse = Number(wallet?.starting_balance ?? defaultPurse);
+        const startingPurse = Number(settings?.auction_starting_purse ?? wallet?.starting_balance ?? defaultPurse);
         const squadSpent = squad.reduce((sum, p) => sum + Number(p.acquisition_amount || 0), 0);
         const totalSpent = Math.max(Number(wallet?.spent_amount || 0), squadSpent);
         const remaining = Math.max(0, startingPurse - totalSpent);
