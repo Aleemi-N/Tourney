@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 export const metadata: Metadata = { title: 'Player Home' };
 
 export default async function PlayerHomePage() {
-  const supabase = await createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) redirect('/login');
+  const supabase = await createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) redirect('/login?next=/player');
   const { data: profile } = await supabase.from('player_profiles').select('id,display_name,primary_position,secondary_position').eq('user_id', user.id).maybeSingle();
   const { data: registrations } = profile ? await supabase.from('player_tournament_registrations').select('id,status,auction_category,auction_price_category_id,tournaments(id,name,slug,format,league_mode,status)').eq('player_id', profile.id).order('created_at', { ascending: false }) : { data: [] };
   const { data: assignments } = profile ? await supabase.from('public_player_view').select('tournament_id,team_id,acquisition_type,tournaments(name),teams(name)').eq('id', profile.id) : { data: [] };

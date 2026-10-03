@@ -90,6 +90,8 @@ export async function proxy(request: NextRequest) {
   const isProtectedAccountRoute =
     request.nextUrl.pathname === '/player' ||
     request.nextUrl.pathname.startsWith('/player/') ||
+    request.nextUrl.pathname === '/scorer' ||
+    request.nextUrl.pathname.startsWith('/scorer/') ||
     request.nextUrl.pathname.startsWith('/owner/');
 
   if (isOrganizerRoute || isSuperAdminRoute || isProtectedAccountRoute) {
