@@ -5,6 +5,10 @@ import { RegistrationShell, registrationCardClass, registrationStatusClass } fro
 import type { Metadata } from 'next';
 import { buildTournamentMetadata } from '@/lib/public-tournament-metadata';
 
+// This page reads auth session (cookies) and live tournament status.
+// It must never be statically cached — force dynamic rendering on every request.
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   return buildTournamentMetadata(slug, 'player');
