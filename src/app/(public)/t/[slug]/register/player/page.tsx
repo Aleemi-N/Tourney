@@ -45,10 +45,40 @@ export default async function PlayerRegistrationPage({ params }: { params: Promi
     return (
       <RegistrationShell slug={slug} tournamentName={tournament.name} title="Player Registration">
         <div className={registrationCardClass}>
-          <h2 className="text-lg font-semibold text-text-primary">Sign in required</h2>
-          <p className="mt-2 text-sm text-text-secondary">Sign in to your Tourny account to register as a player.</p>
-          <Link href={`/login?next=/t/${slug}/register/player`} className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+          {/* Icon */}
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15">
+            <svg className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+            </svg>
+          </div>
+
+          <h2 className="text-xl font-bold text-text-primary">Register as a Player</h2>
+          <p className="mt-2 text-sm text-text-secondary leading-relaxed">
+            To register for <span className="font-semibold text-text-primary">{tournament.name}</span>, you need a free Tourny account.
+            Sign in if you already have one, or create a new account — it only takes a minute.
+          </p>
+
+          {/* Primary CTA — for existing users */}
+          <Link
+            href={`/login?next=/t/${slug}/register/player`}
+            className="mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
             Sign in to continue
+          </Link>
+
+          {/* Divider */}
+          <div className="my-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs font-medium text-text-muted">New to Tourny?</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          {/* Secondary CTA — for new users */}
+          <Link
+            href={`/register?next=/t/${slug}/register/player`}
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface-muted px-4 py-2.5 text-sm font-semibold text-text-primary transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            Create a free account
           </Link>
         </div>
       </RegistrationShell>
