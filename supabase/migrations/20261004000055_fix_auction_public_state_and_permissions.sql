@@ -425,7 +425,7 @@ GRANT EXECUTE ON FUNCTION public.generate_stage_fixtures(uuid) TO authenticated;
 
 -- Update qualification_count to 4 for all LEAGUE stages
 UPDATE public.tournament_stages
-SET qualification_count = 4, updated_at = now()
+SET qualification_count = 4
 WHERE stage_type = 'LEAGUE' OR qualification_count > 4;
 
 -- Update get_stage_standings to ALWAYS return all active teams (0-0-0 initial standing)
