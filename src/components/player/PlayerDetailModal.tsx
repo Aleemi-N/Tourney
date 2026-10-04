@@ -11,6 +11,7 @@ import {
   TagIcon,
   AcademicCapIcon,
   InformationCircleIcon,
+  ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
@@ -71,6 +72,27 @@ export function PlayerDetailModal({ isOpen, onClose, player }: PlayerDetailModal
   async function downloadCardPNG() {
     if (!player) return;
     await downloadSinglePlayerCardPNG(player, supabase);
+  }
+
+  async function downloadPhoto() {
+    if (!photoUrl) return;
+    try {
+      const res = await fetch(photoUrl);
+      if (!res.ok) throw new Error('Failed to fetch photo');
+      const blob = await res.blob();
+      const ext = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
+      const safeName = player?.display_name.replace(/[^a-z0-9]/gi, '_').toLowerCase() ?? 'player';
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${safeName}_photo.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      /* silently ignore — photo may be cross-origin restricted */
+    }
   }
 
   const primaryPosFormatted = player.primary_position
@@ -298,14 +320,27 @@ export function PlayerDetailModal({ isOpen, onClose, player }: PlayerDetailModal
           </div>
 
           {/* Footer Action */}
-          <div className="border-t border-white/10 p-4 bg-white/[0.02] flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => void downloadCardPNG()}
-              className="rounded-xl border border-amber-500/40 bg-amber-500/15 px-4 py-2 text-xs font-bold uppercase tracking-wider text-amber-300 hover:bg-amber-500/30 transition-all flex items-center gap-1.5"
-            >
-              📥 Download Auction Card PNG
-            </button>
+          <div className="border-t border-white/10 p-4 bg-white/[0.02] flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void downloadCardPNG()}
+                className="rounded-xl border border-amber-500/40 bg-amber-500/15 px-4 py-2 text-xs font-bold uppercase tracking-wider text-amber-300 hover:bg-amber-500/30 transition-all flex items-center gap-1.5"
+              >
+                📥 Download Auction Card PNG
+              </button>
+              {photoUrl && (
+                <button
+                  type="button"
+                  id="download-player-photo-btn"
+                  onClick={() => void downloadPhoto()}
+                  className="rounded-xl border border-sky-500/40 bg-sky-500/15 px-4 py-2 text-xs font-bold uppercase tracking-wider text-sky-300 hover:bg-sky-500/30 transition-all flex items-center gap-1.5"
+                >
+                  <ArrowDownTrayIcon className="h-3.5 w-3.5" />
+                  Download Photo
+                </button>
+              )}
+            </div>
             <button
               type="button"
               onClick={onClose}

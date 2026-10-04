@@ -500,3 +500,70 @@ export async function downloadAllPlayerCardsZip(
   link.click();
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Downloads all player photos as a single ZIP file.
+ * Players without a photo_path are skipped silently.
+ */
+export async function downloadAllPlayerPhotosZip(
+  players: any[],
+  supabase: any,
+  onProgress?: (current: number, total: number) => void
+): Promise<void> {
+  const zip = new JSZip();
+  const folder = zip.folder('player_photos');
+
+  let downloaded = 0;
+  const total = players.length;
+
+  for (let i = 0; i < players.length; i++) {
+    const rawPlayer = players[i];
+
+    // player_profiles can be an array (Supabase join) or an object — handle both
+    const profilesRaw = rawPlayer.player_profiles;
+    const profile = Array.isArray(profilesRaw)
+      ? profilesRaw[0]
+      : (profilesRaw || rawPlayer.profile || null);
+
+    const photoPath: string | null | undefined =
+      profile?.photo_path ?? rawPlayer.photo_path ?? null;
+    const displayName: string =
+      profile?.display_name ?? rawPlayer.display_name ?? `Player_${i + 1}`;
+
+    if (onProgress) onProgress(i + 1, total);
+
+    if (!photoPath) continue;
+
+    try {
+      const photoUrl = resolvePublicStorageUrl(supabase, 'avatars', photoPath);
+      if (!photoUrl) continue;
+
+      const res = await fetch(photoUrl);
+      if (!res.ok) continue;
+
+      const blob = await res.blob();
+      const ext = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
+      const safeName = displayName.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const indexStr = String(i + 1).padStart(2, '0');
+      const fileName = `${indexStr}_${safeName}_photo.${ext}`;
+
+      const arrayBuffer = await blob.arrayBuffer();
+      folder?.file(fileName, arrayBuffer);
+      downloaded++;
+    } catch {
+      // skip failed individual photo
+    }
+  }
+
+  if (downloaded === 0) {
+    throw new Error('No photos available to download.');
+  }
+
+  const content = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(content);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `player_photos_${Date.now()}.zip`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
