@@ -16,7 +16,7 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = pg_catalog, public
-AS $
+AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.match_scorers
     WHERE match_id = m_id AND user_id = (SELECT auth.uid())
@@ -24,7 +24,7 @@ AS $
     NOT EXISTS (SELECT 1 FROM public.match_scorers WHERE match_id = m_id)
     AND (SELECT auth.uid()) IS NOT NULL
   );
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.is_tournament_member(tourn_id uuid)
 RETURNS boolean
