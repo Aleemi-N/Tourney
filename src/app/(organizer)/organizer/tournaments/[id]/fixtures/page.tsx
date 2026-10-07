@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Fixtures & Scorers' };
 
 export default async function OrganizerFixturesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params; const supabase = await createClient();
-  const { data: tournament } = await supabase.from('tournaments').select('id,name,slug,format,venue').eq('id', id).maybeSingle();
+  const { data: tournament } = await supabase.from('tournaments').select('id,name,slug,format,venue,start_date,end_date').eq('id', id).maybeSingle();
   if (!tournament) notFound();
   const [{ data: stages }, { data: rawMatches }, { data: staff }, { count: teamCount }, { data: rules }, { data: fullRules }, { data: branding }, { data: orderScopes }, { data: progressionPlans }] = await Promise.all([
     supabase.from('tournament_stages').select('id,name,stage_type,sequence,qualification_count,status,standings_rules(win_points,loss_points,tie_break_rules),standings(team_id,played,won,lost,league_points,sets_won,sets_lost,points_for,points_against,teams(name))').eq('tournament_id', id).order('sequence'),

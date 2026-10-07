@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { shareFixturesPoster } from '@/lib/share-posters';
+import { PlanDaysModal } from '@/components/organizer/PlanDaysModal';
 
 type Standing = { rank: number; team_id: string; team_name: string; league_points: number };
 type Stage = { id: string; name: string; stage_type: string; sequence: number; qualification_count: number | null; status: string; standings_rules: { win_points: number; loss_points: number; tie_break_rules: string[] } | null };
@@ -13,7 +14,7 @@ type Match = { id: string; stage_id: string | null; match_number: number | null;
 type Scorer = { user_id: string; display_name: string; email: string; roles: string[] };
 type Scope = { stage_id: string | null; round_number: number | null; revision: number };
 type Preview = { standings: Standing[]; matches: Array<{ label: string; home?: Standing; away?: Standing; home_source?: string; away_source?: string }> };
-type Tournament = { id: string; name: string; slug: string; format: string; venue: string | null; teamCount: number; rulesReady: boolean; logoUrl: string | null; primaryColor: string | null; secondaryColor: string | null };
+type Tournament = { id: string; name: string; slug: string; format: string; venue: string | null; start_date: string | null; end_date: string | null; teamCount: number; rulesReady: boolean; logoUrl: string | null; primaryColor: string | null; secondaryColor: string | null };
 
 export function interleaveMatchesForMaxRest(matches: Match[]): Match[] {
   if (matches.length <= 2) return [...matches];
@@ -92,6 +93,7 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
   const [confirmationKey, setConfirmationKey] = useState(() => crypto.randomUUID());
   const [reorderModalGroup, setReorderModalGroup] = useState<{ stageId: string | null; round: number | null; stageName: string; items: Match[] } | null>(null);
   const [copiedMatchId, setCopiedMatchId] = useState<string | null>(null);
+  const [planDaysGroup, setPlanDaysGroup] = useState<{ stage: Stage; items: Match[] } | null>(null);
 
   function copyScorerLink(matchId: string) {
     const url = `${window.location.origin}/scorer/matches/${matchId}`;
@@ -240,7 +242,7 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
           <p className="text-sm text-text-secondary">Saved program order is authoritative.</p>
         </div>
         {matches.length > 0 && (
-          <button onClick={() => void shareFixturesPoster(tournament, matches)} className="min-h-11 rounded-lg border border-primary/40 px-4 text-sm font-bold text-primary hover:bg-primary/5 transition-colors">
+          <button onClick={() => void shareFixturesPoster(tournament, stages, matches)} className="min-h-11 rounded-lg border border-primary/40 px-4 text-sm font-bold text-primary hover:bg-primary/5 transition-colors">
             📋 Share Fixtures
           </button>
         )}
@@ -268,6 +270,12 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
                     className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition-colors flex items-center gap-1.5"
                   >
                     ⚡ Easy Reorder ({items.length})
+                  </button>
+                  <button
+                    onClick={() => setPlanDaysGroup({ stage, items })}
+                    className="rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-1.5 text-xs font-bold text-sky-400 hover:bg-sky-500/20 transition-colors flex items-center gap-1.5"
+                  >
+                    📅 Plan Days
                   </button>
                 </div>
               )}
@@ -411,6 +419,19 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
         )}
       </div>
     </section>
+
+    {planDaysGroup && (
+      <PlanDaysModal
+        stageName={planDaysGroup.stage.name}
+        stageType={planDaysGroup.stage.stage_type}
+        hasNextStage={!!planDaysGroup.stage.qualification_count}
+        startDate={tournament.start_date}
+        endDate={tournament.end_date}
+        items={planDaysGroup.items}
+        onClose={() => setPlanDaysGroup(null)}
+        onSaved={(text) => { setPlanDaysGroup(null); setMessage(text); router.refresh(); }}
+      />
+    )}
 
     {reorderModalGroup && (
       <EasyReorderModal

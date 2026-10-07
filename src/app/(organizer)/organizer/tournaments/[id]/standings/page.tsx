@@ -7,10 +7,12 @@ type Standing = { rank: number; team_id: string; team_name: string; played: numb
 export default async function OrganizerStandingsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: tournament }, { data: stages }] = await Promise.all([
-    supabase.from('tournaments').select('id,name,slug').eq('id', id).maybeSingle(),
+  const [{ data: tournament }, { data: stages }, { data: branding }] = await Promise.all([
+    supabase.from('tournaments').select('id,name,slug,venue').eq('id', id).maybeSingle(),
     supabase.from('tournament_stages').select('id,name,status,sequence,qualification_count').eq('tournament_id', id).eq('stage_type', 'LEAGUE').order('sequence'),
+    supabase.from('tournament_branding').select('logo_path').eq('tournament_id', id).maybeSingle(),
   ]);
+  const logoUrl = branding?.logo_path ? supabase.storage.from('logos').getPublicUrl(branding.logo_path).data.publicUrl : null;
   if (!tournament) notFound();
   const tables = await Promise.all((stages ?? []).map(async (stage) => {
     const { data } = await supabase.rpc('get_stage_standings', { p_stage_id: stage.id });
@@ -34,7 +36,7 @@ export default async function OrganizerStandingsPage({ params }: { params: Promi
                   <h2 className="text-xl font-bold">{stage.name}</h2>
                   <p className="text-sm text-text-muted">{stage.status}{q ? ` · Top ${q} qualify` : ''}</p>
                 </div>
-                {rows.length ? <ShareStandingsButton tournament={{ name: tournament.name, slug: tournament.slug }} stage={stage} rows={rows} /> : null}
+                {rows.length ? <ShareStandingsButton tournament={{ name: tournament.name, slug: tournament.slug, venue: tournament.venue, logoUrl }} stage={stage} rows={rows} /> : null}
               </div>
               {rows.length ? (
                 <>
