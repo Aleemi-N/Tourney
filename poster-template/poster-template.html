@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root { --bg: #14070c; --panel: #22101a; --line: #3d2230; --text: #f5e9ee; --muted: #b9a2ad; --accent: #2dd4bf; }
+  :root { --bg: #14070c; --panel: #22101a; --line: #3d2230; --text: #f5e9ee; --muted: #b9a2ad; --accent: #0a0a0a; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.4 'League Spartan', system-ui, sans-serif; }
   .wrap { display: grid; grid-template-columns: 400px 1fr; min-height: 100vh; }
@@ -22,8 +22,8 @@
   .tabs, .row { display: flex; gap: 8px; }
   .row > * { flex: 1; }
   button { flex: 1; border: 1px solid var(--line); background: #12070c; color: var(--text); border-radius: 8px; padding: 10px; font: inherit; font-weight: 700; cursor: pointer; }
-  button.on { background: var(--accent); color: #06302b; border-color: var(--accent); }
-  button.primary { background: var(--accent); color: #06302b; border-color: var(--accent); width: 100%; margin-top: 18px; padding: 13px; font-size: 16px; }
+  button.on { background: #0a0a0a; color: #ffffff; border-color: #d6b46a; }
+  button.primary { background: #0a0a0a; color: #ffffff; border-color: #d6b46a; width: 100%; margin-top: 18px; padding: 13px; font-size: 16px; }
   .colors input { padding: 2px; height: 38px; }
   .hidden { display: none; }
   @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } aside { max-height: none; border-right: 0; border-bottom: 1px solid var(--line); } }
@@ -74,7 +74,7 @@
     <div class="row colors">
       <input id="c1" type="color" value="#8a1838">
       <input id="c2" type="color" value="#5c0d26">
-      <input id="c3" type="color" value="#2dd4bf">
+      <input id="c3" type="color" value="#0a0a0a">
     </div>
 
     <button id="download" class="primary">Download PNG</button>

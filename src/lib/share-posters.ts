@@ -8,8 +8,8 @@ const X1 = W - 88;
 const MIN_H = 1350;
 const BG_TOP = '#8a1838';
 const BG_BOTTOM = '#5c0d26';
-const ACCENT = '#2dd4bf';
-const ACCENT_TEXT = '#06302b';
+const ACCENT = '#0a0a0a';
+const ACCENT_TEXT = '#ffffff';
 const GOLD = '#d6b46a';
 
 type Ctx = CanvasRenderingContext2D;
