@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poster Template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #14070c; --panel: #22101a; --line: #3d2230; --text: #f5e9ee; --muted: #b9a2ad; --accent: #2dd4bf; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.4 'League Spartan', system-ui, sans-serif; }
+  .wrap { display: grid; grid-template-columns: 400px 1fr; min-height: 100vh; }
+  aside { background: var(--panel); border-right: 1px solid var(--line); padding: 20px; overflow-y: auto; max-height: 100vh; }
+  main { padding: 20px; display: flex; justify-content: center; align-items: flex-start; overflow: auto; }
+  canvas { width: min(100%, 560px); height: auto; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.hint { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+  label { display: block; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 14px 0 6px; }
+  input, textarea, select { width: 100%; background: #12070c; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; font: inherit; }
+  textarea { min-height: 220px; font-size: 13px; line-height: 1.6; white-space: pre; }
+  .tabs, .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+  button { flex: 1; border: 1px solid var(--line); background: #12070c; color: var(--text); border-radius: 8px; padding: 10px; font: inherit; font-weight: 700; cursor: pointer; }
+  button.on { background: var(--accent); color: #06302b; border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #06302b; border-color: var(--accent); width: 100%; margin-top: 18px; padding: 13px; font-size: 16px; }
+  .colors input { padding: 2px; height: 38px; }
+  .hidden { display: none; }
+  @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } aside { max-height: none; border-right: 0; border-bottom: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside>
+    <h1>Poster Template</h1>
+    <p class="hint">Edit the fields — the preview updates live. Download saves a 1080px-wide PNG.</p>
+
+    <div class="tabs">
+      <button id="tab-fixtures" class="on">Fixtures</button>
+      <button id="tab-table">Points Table</button>
+    </div>
+
+    <label>Tournament name</label>
+    <input id="name" value="EDAVA VOLLEYBALL LEAGUE">
+    <label>Venue (footer)</label>
+    <input id="venue" value="RR GROUND EDAVA">
+    <label>Logo</label>
+    <input id="logo" type="file" accept="image/*">
+
+    <label>Title</label>
+    <input id="title" value="FIXTURES">
+    <label>Black pill text</label>
+    <input id="pill" value="FRIDAY OCTOBER 9">
+
+    <div id="fixtures-fields">
+      <label>Preset</label>
+      <div class="row">
+        <button data-preset="day1">Day 1</button>
+        <button data-preset="day2">Day 2</button>
+        <button data-preset="knockout">Knockout</button>
+      </div>
+      <label>Matches — one per line: Home | Away | Time | Label | Court</label>
+      <textarea id="matches"></textarea>
+    </div>
+
+    <div id="table-fields" class="hidden">
+      <label>Teams qualifying (0 = no line)</label>
+      <input id="qualify" type="number" min="0" value="4">
+      <label>Rows — one per line: Team | P | W | L | Sets | PD | Pts</label>
+      <textarea id="rows"></textarea>
+    </div>
+
+    <label>Colors (background top · bottom · accent)</label>
+    <div class="row colors">
+      <input id="c1" type="color" value="#8a1838">
+      <input id="c2" type="color" value="#5c0d26">
+      <input id="c3" type="color" value="#2dd4bf">
+    </div>
+
+    <button id="download" class="primary">Download PNG</button>
+  </aside>
+  <main><canvas id="poster"></canvas></main>
+</div>
+
+<script>
+const W = 1080, X0 = 88, X1 = W - 88, MIN_H = 1350, FOOTER_H = 96, GOLD = '#d6b46a';
+const FAMILY = "'League Spartan', sans-serif";
+const $ = (id) => document.getElementById(id);
+let mode = 'fixtures';
+let logo = null;
+
+const TEAMS = ['TEAM SMASHERS', 'local legends', 'PUDOLZ EDAVA', 'Team Thaalam Edava', 'EDAVA SPORTS CLUB', 'LEGENDZ'];
+const ORDER = ['01', '23', '45', '02', '13', '04', '25', '03', '14', '05', '12', '34', '15', '24', '35'];
+const slotTime = (i) => { const m = 9 * 60 + i * 45; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
+const line = (n, i) => { const p = ORDER[n]; return `${TEAMS[+p[0]]} | ${TEAMS[+p[1]]} | ${slotTime(i)} | MATCH ${n + 1} |`; };
+const PRESETS = {
+  day1: { pill: 'FRIDAY OCTOBER 9', matches: Array.from({ length: 8 }, (_, i) => line(i, i)).join('\n') },
+  day2: { pill: 'SATURDAY OCTOBER 10', matches: Array.from({ length: 7 }, (_, i) => line(i + 8, i)).join('\n') },
+  knockout: { pill: 'SUNDAY OCTOBER 11', matches: [
+    '1st Place | 4th Place | 09:00 | SEMI FINAL 1 |',
+    '2nd Place | 3rd Place | 09:45 | SEMI FINAL 2 |',
+    'Loser SF1 | Loser SF2 | 11:15 | 3RD PLACE |',
+    'Winner SF1 | Winner SF2 | 12:00 | FINAL |',
+  ].join('\n') },
+};
+$('matches').value = PRESETS.day1.matches;
+$('rows').value = TEAMS.map((t) => `${t} | 0 | 0 | 0 | 0-0 | 0 | 0`).join('\n');
+
+function setFont(c, weight, size, spacing = 0) {
+  c.font = `${weight} ${size}px ${FAMILY}`;
+  c.letterSpacing = `${spacing}px`;
+}
+
+// Shrinks the font down to minSize, then truncates with an ellipsis, so text never leaves its box.
+function fit(c, text, maxW, weight, size, minSize = 16, spacing = 0) {
+  let s = size;
+  setFont(c, weight, s, spacing);
+  while (s > minSize && c.measureText(text).width > maxW) setFont(c, weight, --s, spacing);
+  if (c.measureText(text).width <= maxW) return text;
+  let t = text;
+  while (t.length > 1 && c.measureText(`${t}…`).width > maxW) t = t.slice(0, -1);
+  return `${t.trimEnd()}…`;
+}
+
+function pattern(c, h) {
+  c.save();
+  c.strokeStyle = 'rgba(255,255,255,0.07)';
+  c.lineWidth = 2;
+  const step = 180;
+  for (let y = -step; y < h + step; y += step) {
+    for (let x = -step; x < W + step; x += step) {
+      c.save();
+      c.translate(x + ((y / step) % 2 ? step / 2 : 0), y);
+      for (const angle of [0, Math.PI / 4]) { c.save(); c.rotate(angle); c.strokeRect(-48, -48, 96, 96); c.restore(); }
+      c.beginPath();
+      c.moveTo(-step / 2, 0); c.lineTo(-68, 0); c.moveTo(68, 0); c.lineTo(step / 2, 0);
+      c.moveTo(0, -step / 2); c.lineTo(0, -68); c.moveTo(0, 68); c.lineTo(0, step / 2);
+      c.stroke();
+      c.restore();
+    }
+  }
+  c.restore();
+}
+
+function background(c, h) {
+  const bg = c.createLinearGradient(0, 0, 0, h);
+  bg.addColorStop(0, $('c1').value);
+  bg.addColorStop(1, $('c2').value);
+  c.fillStyle = bg;
+  c.fillRect(0, 0, W, h);
+  pattern(c, h - FOOTER_H);
+  const shine = c.createRadialGradient(540, 200, 0, 540, 200, 700);
+  shine.addColorStop(0, 'rgba(255,255,255,0.10)');
+  shine.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = shine;
+  c.fillRect(0, 0, W, h);
+}
+
+function footer(c, h) {
+  const y = h - FOOTER_H;
+  c.fillStyle = 'rgba(0,0,0,0.25)';
+  c.fillRect(0, y, W, FOOTER_H);
+  c.fillStyle = GOLD;
+  c.fillRect(0, y - 14, W, 3);
+  c.fillRect(0, y - 6, W, 2);
+  c.textAlign = 'left';
+  c.fillStyle = '#ffffff';
+  setFont(c, 800, 44, -1);
+  c.save(); c.translate(X0, y + 64); c.transform(1, 0, -0.18, 1, 0, 0); c.fillText('tourny', 0, 0); c.restore();
+  c.textAlign = 'right';
+  c.fillStyle = GOLD;
+  setFont(c, 700, 20, 1);
+  c.fillText('VENUE', X1, y + 42);
+  c.fillText(fit(c, ($('venue').value || 'To be announced').toUpperCase(), 520, 700, 24, 14, 1), X1, y + 70);
+}
+
+const headHeight = () => (logo ? 150 : 0) + 56 + 312;
+
+function header(c) {
+  let y = 56;
+  if (logo) {
+    const size = 136, cy = y + size / 2;
+    c.save();
+    c.beginPath(); c.arc(540, cy, size / 2, 0, Math.PI * 2); c.clip();
+    const scale = Math.max(size / logo.width, size / logo.height);
+    c.drawImage(logo, 540 - (logo.width * scale) / 2, cy - (logo.height * scale) / 2, logo.width * scale, logo.height * scale);
+    c.restore();
+    c.strokeStyle = 'rgba(255,255,255,0.85)';
+    c.lineWidth = 4;
+    c.beginPath(); c.arc(540, cy, size / 2 + 2, 0, Math.PI * 2); c.stroke();
+    y += size + 14;
+  }
+  c.textAlign = 'center';
+  c.fillStyle = '#ffffff';
+  c.fillText(fit(c, $('name').value.toUpperCase(), 760, 700, 26, 16, 3), 540, y + 26);
+  c.fillStyle = GOLD;
+  c.fillRect(470, y + 40, 140, 2);
+  c.fillStyle = '#ffffff';
+  c.shadowColor = 'rgba(0,0,0,0.35)'; c.shadowOffsetY = 6; c.shadowBlur = 18;
+  c.fillText(fit(c, $('title').value, X1 - X0, 800, 150, 80, 2), 540, y + 182);
+  c.shadowColor = 'transparent';
+  const pill = $('pill').value.toUpperCase();
+  if (pill) {
+    const text = fit(c, pill, 760, 700, 36, 20, 1);
+    const pw = c.measureText(text).width + 84;
+    c.fillStyle = '#0a0a0a';
+    c.beginPath(); c.roundRect(540 - pw / 2, y + 212, pw, 62, 12); c.fill();
+    c.fillStyle = '#ffffff';
+    c.fillText(text, 540, y + 255);
+  }
+  return y + 312;
+}
+
+function initials(name) {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  return (words.length > 1 ? words[0][0] + words[1][0] : name.slice(0, 2)).toUpperCase();
+}
+function teamColor(name) {
+  let hash = 0;
+  for (const ch of name.toLowerCase()) hash = (hash * 31 + ch.charCodeAt(0)) % 360;
+  return `hsl(${hash}, 70%, 45%)`;
+}
+function badge(c, name, x, y, r = 27) {
+  const known = name && !/^(winner|loser|tbd|\d+(st|nd|rd|th) place)/i.test(name);
+  c.fillStyle = known ? teamColor(name) : 'rgba(255,255,255,0.18)';
+  c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+  c.strokeStyle = '#ffffff'; c.lineWidth = 3; c.stroke();
+  c.fillStyle = '#ffffff';
+  c.textAlign = 'center';
+  setFont(c, 800, Math.round(r * 0.7));
+  c.fillText(known ? initials(name) : '?', x, y + r * 0.26);
+}
+function bar(c, y, h) {
+  c.fillStyle = 'rgba(25,4,12,0.55)';
+  c.beginPath(); c.roundRect(X0, y, X1 - X0, h, 8); c.fill();
+}
+function accentText() {
+  const hex = $('c3').value.slice(1);
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return r * 0.299 + g * 0.587 + b * 0.114 > 150 ? '#06302b' : '#ffffff';
+}
+const parse = (text) => text.split('\n').map((l) => l.split('|').map((s) => s.trim())).filter((p) => p[0]);
+
+function drawFixtures(el) {
+  const rows = parse($('matches').value).map(([home, away = '', time = '', label = '', court = ''], i) => ({ home, away, time, label: label || `MATCH ${i + 1}`, court }));
+  const ROW_H = 68, BOX_H = 84, ROW_GAP = 30, LABEL_H = 50;
+  const withCourts = rows.some((r) => r.court);
+  const body = rows.length * (ROW_H + ROW_GAP + (withCourts ? LABEL_H : 0));
+  const h = Math.max(MIN_H, headHeight() + body + FOOTER_H + 60);
+  el.width = W; el.height = h;
+  const c = el.getContext('2d');
+  background(c, h);
+  let y = header(c);
+  y += Math.max(0, (h - FOOTER_H - 50 - y - body) / 2);
+
+  const boxW = 236, boxX = 540 - boxW / 2, side = boxX - (X0 + 84) - 16;
+  // One name size for the whole poster (the longest name decides), so rows look even.
+  const nameSize = Math.max(26, Math.min(36, ...rows.flatMap((r) => [r.home, r.away]).map((n) => {
+    let size = 36;
+    setFont(c, 700, size);
+    while (size > 26 && c.measureText(n).width > side) setFont(c, 700, --size);
+    return size;
+  })));
+  for (const r of rows) {
+    if (withCourts) {
+      c.textAlign = 'center';
+      c.fillStyle = '#ffffff';
+      c.fillText(fit(c, r.court, 400, 700, 28, 16), 540, y + 24);
+      y += LABEL_H;
+    }
+    bar(c, y, ROW_H);
+    badge(c, r.home, X0 + 42, y + ROW_H / 2);
+    badge(c, r.away, X1 - 42, y + ROW_H / 2);
+    c.fillStyle = '#ffffff';
+    c.textAlign = 'center';
+    c.fillText(fit(c, r.home, side, 700, nameSize, 18), X0 + 84 + side / 2, y + ROW_H / 2 + 12);
+    c.fillText(fit(c, r.away, side, 700, nameSize, 18), X1 - 84 - side / 2, y + ROW_H / 2 + 12);
+    c.fillStyle = $('c3').value;
+    c.beginPath(); c.roundRect(boxX, y - (BOX_H - ROW_H) / 2, boxW, BOX_H, 10); c.fill();
+    c.fillStyle = accentText();
+    c.fillText(fit(c, r.label.toUpperCase(), boxW - 24, 700, 15, 11, 2), 540, y + 13);
+    c.fillText(fit(c, r.time || 'TBA', boxW - 24, 800, 48, 24), 540, y + ROW_H / 2 + 27);
+    y += ROW_H + ROW_GAP;
+  }
+  footer(c, h);
+}
+
+function drawTable(el) {
+  const rows = parse($('rows').value).map(([team, p = '', w = '', l = '', sets = '', pd = '', pts = ''], i) => ({ rank: i + 1, team, values: [p, w, l, sets, pd], pts }));
+  const q = Number($('qualify').value) || 0;
+  const cutoff = q > 0 && q < rows.length;
+  const ROW = 68, GAP = 22;
+  const body = 44 + rows.length * (ROW + GAP) + (cutoff ? 34 : 0);
+  const h = Math.max(MIN_H, headHeight() + body + FOOTER_H + 60);
+  el.width = W; el.height = h;
+  const c = el.getContext('2d');
+  background(c, h);
+  let y = header(c);
+  y += Math.max(0, (h - FOOTER_H - 50 - y - body) / 2);
+
+  const cols = [['P', 556], ['W', 612], ['L', 668], ['SETS', 746], ['PD', 830]];
+  const PTS_X = X1 - 48, accent = $('c3').value, onAccent = accentText();
+  c.fillStyle = 'rgba(255,255,255,0.7)';
+  setFont(c, 700, 18, 2);
+  c.textAlign = 'center';
+  for (const [name, x] of cols) c.fillText(name, x, y + 20);
+  c.fillText('PTS', PTS_X, y + 20);
+  c.textAlign = 'left';
+  c.fillText('TEAM', X0 + 128, y + 20);
+  y += 44;
+
+  for (const row of rows) {
+    const qualified = row.rank <= q;
+    bar(c, y, ROW);
+    c.fillStyle = qualified ? accent : 'rgba(255,255,255,0.16)';
+    c.beginPath(); c.roundRect(X0, y, 56, ROW, [8, 0, 0, 8]); c.fill();
+    c.fillStyle = qualified ? onAccent : '#ffffff';
+    c.textAlign = 'center';
+    setFont(c, 800, 34);
+    c.fillText(String(row.rank), X0 + 28, y + ROW / 2 + 12);
+    badge(c, row.team, X0 + 96, y + ROW / 2, 24);
+    c.fillStyle = '#ffffff';
+    c.textAlign = 'left';
+    c.fillText(fit(c, row.team, 300, 700, 32, 16), X0 + 132, y + ROW / 2 + 11);
+    c.textAlign = 'center';
+    row.values.forEach((v, i) => c.fillText(fit(c, v, 60, 600, 26, 14), cols[i][1], y + ROW / 2 + 9));
+    c.fillStyle = qualified ? accent : 'rgba(255,255,255,0.22)';
+    c.beginPath(); c.roundRect(PTS_X - 48, y - 8, 96, ROW + 16, 10); c.fill();
+    c.fillStyle = qualified ? onAccent : '#ffffff';
+    c.fillText(fit(c, row.pts, 80, 800, 40, 20), PTS_X, y + ROW / 2 + 14);
+    y += ROW + GAP;
+    if (cutoff && row.rank === q) {
+      c.strokeStyle = accent; c.lineWidth = 2; c.setLineDash([12, 10]);
+      c.beginPath(); c.moveTo(X0, y + 4); c.lineTo(X1, y + 4); c.stroke();
+      c.setLineDash([]);
+      c.fillStyle = $('c2').value;
+      c.fillRect(410, y - 8, 260, 24);
+      c.fillStyle = accent;
+      setFont(c, 700, 15, 3);
+      c.fillText('QUALIFICATION LINE', 540, y + 10);
+      y += 34;
+    }
+  }
+  footer(c, h);
+}
+
+function render() {
+  const el = $('poster');
+  if (mode === 'fixtures') drawFixtures(el); else drawTable(el);
+}
+
+function setMode(next) {
+  mode = next;
+  $('tab-fixtures').classList.toggle('on', next === 'fixtures');
+  $('tab-table').classList.toggle('on', next === 'table');
+  $('fixtures-fields').classList.toggle('hidden', next !== 'fixtures');
+  $('table-fields').classList.toggle('hidden', next !== 'table');
+  $('title').value = next === 'fixtures' ? 'FIXTURES' : 'POINTS TABLE';
+  $('pill').value = next === 'fixtures' ? PRESETS.day1.pill : 'LEAGUE STAGE · TOP 4 QUALIFY';
+  render();
+}
+
+$('tab-fixtures').onclick = () => setMode('fixtures');
+$('tab-table').onclick = () => setMode('table');
+document.querySelectorAll('[data-preset]').forEach((b) => b.onclick = () => {
+  const p = PRESETS[b.dataset.preset];
+  $('pill').value = p.pill;
+  $('matches').value = p.matches;
+  render();
+});
+document.querySelectorAll('input:not([type=file]), textarea').forEach((el) => el.addEventListener('input', render));
+$('logo').onchange = (e) => {
+  const file = e.target.files[0];
+  if (!file) { logo = null; render(); return; }
+  const img = new Image();
+  img.onload = () => { logo = img; render(); };
+  img.src = URL.createObjectURL(file);
+};
+$('download').onclick = () => {
+  const link = document.createElement('a');
+  const base = $('pill').value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'poster';
+  link.download = `${mode === 'fixtures' ? 'fixtures' : 'points-table'}-${base}.png`;
+  link.href = $('poster').toDataURL('image/png');
+  link.click();
+};
+
+document.fonts.load("800 40px 'League Spartan'").finally(render);
+render();
+</script>
+</body>
+</html>
