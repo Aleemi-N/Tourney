@@ -4,6 +4,31 @@
 -- 2. Organizers opening a match no longer get auto-assigned as its scorer (it locked out the real scorer).
 -- 3. Undo replays the set log instead of reading the newest row, which after one undo is the UNDO itself,
 --    and skips an empty just-started set so a set-winning point can be undone.
+-- 4. Unassigned match links only open for the tournament's SCORER staff (20261002000044 allowed any
+--    logged-in user to claim and score them).
+-- 5. Undoing the last point of a finished knockout match takes the advanced teams back out of the
+--    next matches (refused once those have started), reopens the stage/tournament, and is refused
+--    for a league whose next stage was already created from its standings.
+
+CREATE OR REPLACE FUNCTION public.is_assigned_scorer(m_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $
+  SELECT EXISTS (
+    SELECT 1 FROM public.match_scorers
+    WHERE match_id = m_id AND user_id = (SELECT auth.uid())
+  ) OR (
+    NOT EXISTS (SELECT 1 FROM public.match_scorers WHERE match_id = m_id)
+    AND EXISTS (
+      SELECT 1 FROM public.matches m
+      JOIN public.tournament_members tm ON tm.tournament_id = m.tournament_id
+      WHERE m.id = m_id AND tm.user_id = (SELECT auth.uid()) AND tm.role = 'SCORER' AND tm.status = 'ACTIVE'
+    )
+  );
+$;
 
 CREATE OR REPLACE FUNCTION public.is_tournament_member(tourn_id uuid)
 RETURNS boolean
@@ -50,9 +75,12 @@ BEGIN
     RAISE EXCEPTION 'Match not found';
   END IF;
 
-  -- Auto-assign the first non-organizer who opens an unassigned match link, so an organizer
-  -- previewing the match never locks out the real scorer.
-  IF v_actor IS NOT NULL AND NOT public.is_tournament_organizer(v_tournament_id) AND NOT EXISTS (SELECT 1 FROM public.match_scorers WHERE match_id = p_match_id) THEN
+  -- Auto-assign the first tournament scorer who opens an unassigned match link. Organizers are never
+  -- auto-assigned, so previewing a match does not lock out the real scorer.
+  IF v_actor IS NOT NULL
+     AND NOT public.is_tournament_organizer(v_tournament_id)
+     AND NOT EXISTS (SELECT 1 FROM public.match_scorers WHERE match_id = p_match_id)
+     AND EXISTS (SELECT 1 FROM public.tournament_members WHERE tournament_id = v_tournament_id AND user_id = v_actor AND role = 'SCORER' AND status = 'ACTIVE') THEN
     INSERT INTO public.match_scorers (match_id, user_id, assigned_by)
     VALUES (p_match_id, v_actor, v_actor)
     ON CONFLICT (match_id, user_id) DO NOTHING;
@@ -169,6 +197,8 @@ DECLARE
   v_away_team_id uuid;
   v_stack uuid[] := '{}';
   v_event record;
+  v_match public.matches%ROWTYPE;
+  v_next record;
 BEGIN
   -- 1. Exclusively serialize all scoring actions on this match domain
   PERFORM pg_advisory_xact_lock(hashtext('match_scoring:' || p_match_id::text));
@@ -260,9 +290,34 @@ BEGIN
   SET status = 'PENDING', started_at = NULL, home_score = 0, away_score = 0
   WHERE match_id = p_match_id AND set_number > v_active_set_number;
 
-  -- Ensure match state is reverted if it was completed
+  -- Reopen a completed match and roll back what its result already caused.
   IF v_match_status = 'COMPLETED' THEN
+    SELECT * INTO v_match FROM public.matches WHERE id = p_match_id;
+
+    IF EXISTS (SELECT 1 FROM public.tournament_progression_plans WHERE source_stage_id = v_match.stage_id) THEN
+      RAISE EXCEPTION 'This league result is locked: the next stage was already created from these standings';
+    END IF;
+
+    FOR v_next IN
+      SELECT nm.id, nm.status, x.slot
+      FROM (VALUES (v_match.next_match_id, v_match.next_match_slot),
+                   (v_match.loser_next_match_id, v_match.loser_next_match_slot)) AS x(id, slot)
+      JOIN public.matches nm ON nm.id = x.id
+      FOR UPDATE OF nm
+    LOOP
+      IF v_next.status <> 'SCHEDULED' OR EXISTS (SELECT 1 FROM public.score_events WHERE match_id = v_next.id) THEN
+        RAISE EXCEPTION 'The next knockout match has already started, so this result can no longer be undone';
+      END IF;
+      UPDATE public.matches
+      SET home_team_id = CASE WHEN v_next.slot = 'HOME' THEN NULL ELSE home_team_id END,
+          away_team_id = CASE WHEN v_next.slot = 'AWAY' THEN NULL ELSE away_team_id END,
+          updated_at = now()
+      WHERE id = v_next.id;
+    END LOOP;
+
     UPDATE public.matches SET status = 'LIVE', winner_team_id = NULL, updated_at = now() WHERE id = p_match_id;
+    UPDATE public.tournament_stages SET status = 'ACTIVE' WHERE id = v_match.stage_id AND status = 'COMPLETED';
+    UPDATE public.tournaments SET status = 'LIVE', updated_at = now() WHERE id = v_tournament_id AND status = 'COMPLETED';
   END IF;
 
   RETURN jsonb_build_object('home_score', v_new_home_score, 'away_score', v_new_away_score);
