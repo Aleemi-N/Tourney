@@ -4,8 +4,8 @@
 -- 2. Organizers opening a match no longer get auto-assigned as its scorer (it locked out the real scorer).
 -- 3. Undo replays the set log instead of reading the newest row, which after one undo is the UNDO itself,
 --    and skips an empty just-started set so a set-winning point can be undone.
--- 4. Unassigned match links only open for the tournament's SCORER staff (20261002000044 allowed any
---    logged-in user to claim and score them).
+-- 4. Unassigned match links stay open to any logged-in person (share the link with anyone); the first
+--    non-organizer to open it becomes the match's scorer.
 -- 5. Undoing the last point of a finished knockout match takes the advanced teams back out of the
 --    next matches (refused once those have started), reopens the stage/tournament, and is refused
 --    for a league whose next stage was already created from its standings.
@@ -22,11 +22,7 @@ AS $
     WHERE match_id = m_id AND user_id = (SELECT auth.uid())
   ) OR (
     NOT EXISTS (SELECT 1 FROM public.match_scorers WHERE match_id = m_id)
-    AND EXISTS (
-      SELECT 1 FROM public.matches m
-      JOIN public.tournament_members tm ON tm.tournament_id = m.tournament_id
-      WHERE m.id = m_id AND tm.user_id = (SELECT auth.uid()) AND tm.role = 'SCORER' AND tm.status = 'ACTIVE'
-    )
+    AND (SELECT auth.uid()) IS NOT NULL
   );
 $;
 
@@ -75,12 +71,11 @@ BEGIN
     RAISE EXCEPTION 'Match not found';
   END IF;
 
-  -- Auto-assign the first tournament scorer who opens an unassigned match link. Organizers are never
-  -- auto-assigned, so previewing a match does not lock out the real scorer.
+  -- Auto-assign the first logged-in person who opens an unassigned match link. Organizers are never
+  -- auto-assigned, so previewing a match does not lock out the person the link was sent to.
   IF v_actor IS NOT NULL
      AND NOT public.is_tournament_organizer(v_tournament_id)
-     AND NOT EXISTS (SELECT 1 FROM public.match_scorers WHERE match_id = p_match_id)
-     AND EXISTS (SELECT 1 FROM public.tournament_members WHERE tournament_id = v_tournament_id AND user_id = v_actor AND role = 'SCORER' AND status = 'ACTIVE') THEN
+     AND NOT EXISTS (SELECT 1 FROM public.match_scorers WHERE match_id = p_match_id) THEN
     INSERT INTO public.match_scorers (match_id, user_id, assigned_by)
     VALUES (p_match_id, v_actor, v_actor)
     ON CONFLICT (match_id, user_id) DO NOTHING;
