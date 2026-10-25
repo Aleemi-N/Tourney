@@ -1,7 +1,7 @@
 import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { Body, Card, ErrorText, Heading, Loading, Pill, Screen } from '@/components/ui';
+import { Body, Card, ErrorText, Heading, Loading, Screen, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useOrganizerTournaments } from '@/lib/organizer';
@@ -36,9 +36,9 @@ export default function OrganizerHome() {
         <Link key={t.id} href={{ pathname: '/organizer/[id]', params: { id: t.id } }} asChild>
           <Pressable accessibilityRole="link" accessibilityLabel={`${t.name}, ${pending[t.id] ?? 0} waiting for review`}>
             <Card>
-              <Heading>{t.name}</Heading>
+              <Heading small>{t.name}</Heading>
               <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                <Pill label={t.status.toLowerCase()} tone={t.status === 'LIVE' ? 'live' : 'neutral'} />
+                <StatusPill status={t.status} />
                 {pending[t.id] ? <Body>{pending[t.id]} waiting for review</Body> : <Body muted>Nothing waiting</Body>}
               </View>
             </Card>

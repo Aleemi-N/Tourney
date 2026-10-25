@@ -1,7 +1,7 @@
 import { Link } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { Body, Button, Card, ErrorText, Heading, Loading, Pill, Screen } from '@/components/ui';
+import { Body, Button, Card, ErrorText, Heading, Loading, Screen, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import type { MatchState } from '@/lib/live';
@@ -47,9 +47,9 @@ export default function MyMatchesScreen() {
             <Card>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Body muted>Match {m.match.match_number ?? '—'}</Body>
-                <Pill label={m.match.status === 'LIVE' ? 'Live' : m.match.status.toLowerCase()} tone={m.match.status === 'LIVE' ? 'live' : 'neutral'} />
+                <StatusPill status={m.match.status} />
               </View>
-              <Heading>{m.home_team.name} vs {m.away_team.name}</Heading>
+              <Heading small>{m.home_team.name} vs {m.away_team.name}</Heading>
               {m.match.venue ? <Body muted>{m.match.venue}{m.match.court ? ` · Court ${m.match.court}` : ''}</Body> : null}
             </Card>
           </Pressable>

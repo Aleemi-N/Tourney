@@ -2,7 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Choice } from '@/components/form';
-import { Body, Button, Card, ErrorText, Heading, Loading, Pill, Screen } from '@/components/ui';
+import { Body, Button, Card, ErrorText, Heading, Loading, Screen, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 
 type PlayerReg = { id: string; status: string; player_profiles: { display_name: string; primary_position: string | null; place: string | null } | null };
@@ -58,8 +58,8 @@ export default function OrganizerTournamentScreen() {
         return (
           <Card key={r.id}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-              <Heading>{r.player_profiles?.display_name ?? 'Player'}</Heading>
-              {r.status === 'CHANGES_REQUESTED' ? <Pill label="changes requested" /> : null}
+              <Heading small>{r.player_profiles?.display_name ?? 'Player'}</Heading>
+              {r.status === 'CHANGES_REQUESTED' ? <StatusPill status="CHANGES_REQUESTED" /> : null}
             </View>
             <Body muted>{[r.player_profiles?.primary_position?.replace('_', ' ').toLowerCase(), r.player_profiles?.place].filter(Boolean).join(' · ')}</Body>
             <Choice label="Route" value={chosen ?? ''} options={[...ROUTES]} onChange={(v) => setRoute({ ...route, [r.id]: v })} />
@@ -89,7 +89,7 @@ export default function OrganizerTournamentScreen() {
               <View style={{ width: 16, height: 16, backgroundColor: a.primary_color }} />
               {a.secondary_color ? <View style={{ width: 16, height: 16, backgroundColor: a.secondary_color }} /> : null}
             </View> : null}
-            <Heading>{a.proposed_team_name}</Heading>
+            <Heading small>{a.proposed_team_name}</Heading>
           </View>
           <Body muted>{[a.team_short_name, a.place].filter(Boolean).join(' · ')}</Body>
           <View style={{ flexDirection: 'row', gap: 8 }}>

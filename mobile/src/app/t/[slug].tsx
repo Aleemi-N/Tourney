@@ -1,7 +1,8 @@
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { Body, Button, Card, ErrorText, Heading, Loading, Pill, Screen } from '@/components/ui';
+import { Pressable, View } from 'react-native';
+import { Text } from '@/components/text';
+import { Body, Button, Card, ErrorText, Heading, Loading, Screen, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useTheme } from '@/theme';
 
@@ -81,10 +82,10 @@ export default function TournamentScreen() {
             <Card>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Body muted>Match {f.match_number ?? '—'}</Body>
-                {f.status === 'LIVE' ? <Pill label="Live" tone="live" /> : f.status === 'COMPLETED' ? <Pill label="Final" tone="success" /> : null}
+                {f.status === 'LIVE' ? <StatusPill status="LIVE" /> : f.status === 'COMPLETED' ? <StatusPill tone="success" label="Final" /> : <StatusPill status={f.status} />}
               </View>
-              <Heading>{teamName(f.home_team_id)}{f.status === 'COMPLETED' ? `  ${f.home_sets_won ?? 0}` : ''}</Heading>
-              <Heading>{teamName(f.away_team_id)}{f.status === 'COMPLETED' ? `  ${f.away_sets_won ?? 0}` : ''}</Heading>
+              <Heading small>{teamName(f.home_team_id)}{f.status === 'COMPLETED' ? `  ${f.home_sets_won ?? 0}` : ''}</Heading>
+              <Heading small>{teamName(f.away_team_id)}{f.status === 'COMPLETED' ? `  ${f.away_sets_won ?? 0}` : ''}</Heading>
               {f.scheduled_at ? <Body muted>{new Date(f.scheduled_at).toLocaleString()}</Body> : null}
             </Card>
           </Pressable>

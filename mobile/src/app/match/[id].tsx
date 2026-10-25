@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
-import { Text, View } from 'react-native';
-import { Body, Card, ErrorText, Heading, Loading, Pill, Screen } from '@/components/ui';
+import { View } from 'react-native';
+import { Text } from '@/components/text';
+import { Body, Card, ErrorText, Heading, Loading, Screen, StatusPill } from '@/components/ui';
 import { deriveCourt } from '@/lib/court';
 import { useLiveMatch } from '@/lib/live';
 import { useTheme } from '@/theme';
@@ -25,15 +26,15 @@ export default function PublicMatchScreen() {
   return (
     <Screen>
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        {completed ? <Pill label="Final" tone="success" /> : match.status === 'LIVE' ? <Pill label="Live" tone="live" /> : <Pill label={match.status.toLowerCase()} />}
-        {!live && !completed ? <Pill label="Reconnecting" /> : null}
+        <StatusPill status={match.status} label={completed ? 'Final' : undefined} tone={completed ? 'success' : undefined} />
+        {!live && !completed ? <StatusPill tone="warning" label="Reconnecting" /> : null}
       </View>
       <Card>
         {[left, right].map((team) => (
           <View key={team.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <View style={{ flex: 1 }}>
-              <Heading>{team.name}</Heading>
-              {!completed && court.servingId === team.id ? <Pill label="Serving" /> : null}
+              <Heading small>{team.name}</Heading>
+              {!completed && court.servingId === team.id ? <StatusPill tone="primary" label="Serving" /> : null}
             </View>
             <Text accessibilityLabel={`${team.name} sets won ${won(team.id)}`} style={{ color: t.textSecondary, fontSize: 20, fontWeight: '700' }}>{won(team.id)}</Text>
             {!completed ? <Text accessibilityLabel={`${team.name} points ${points(team.id)}`} style={{ color: t.text, fontSize: 44, fontWeight: '800', minWidth: 70, textAlign: 'right' }}>{points(team.id)}</Text> : null}

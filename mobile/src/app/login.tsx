@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Text, TextInput } from 'react-native';
+import { TextInput } from 'react-native';
+import { Text } from '@/components/text';
 import { Button, ErrorText, Heading, Screen } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/theme';

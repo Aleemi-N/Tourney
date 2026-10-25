@@ -1,14 +1,25 @@
 import { useLocalSearchParams } from 'expo-router';
+import { Clock, Undo2 } from 'lucide-react-native';
 import { useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { Body, Button, Card, ErrorText, Heading, Loading, Pill, Screen } from '@/components/ui';
+import { Pressable, View } from 'react-native';
+import { Text } from '@/components/text';
+import { Body, Button, Card, ErrorText, Heading, Loading, Screen, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { deriveCourt } from '@/lib/court';
 import { useLiveMatch, type Team } from '@/lib/live';
-import { onColor, useTheme } from '@/theme';
+import { onColor, radius, tint, useTheme } from '@/theme';
 
 const HOME_COLOR = '#4f46e5';
 const AWAY_COLOR = '#0f766e';
+
+/** A team's short name in its colour, like the web TeamChip. */
+function TeamChip({ team, color }: { team: Team; color: string }) {
+  return (
+    <View style={{ backgroundColor: color, borderRadius: radius.md, paddingHorizontal: 8, paddingVertical: 2 }}>
+      <Text style={{ color: onColor(color), fontSize: 12, fontWeight: '700' }}>{(team.short_name ?? team.name).slice(0, 4).toUpperCase()}</Text>
+    </View>
+  );
+}
 
 export default function ScorerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,6 +49,7 @@ export default function ScorerScreen() {
   const timeoutRunning = !!state.timeouts?.active && state.timeouts.active.remaining_seconds > 0;
   const locked = busy || completed || timeoutRunning;
   const startedPoints = sets.some((s) => s.home_score + s.away_score > 0);
+  const switchNow = court.switchedSides && active && Math.max(active.home_score, active.away_score) === Math.ceil(active.target_points / 2);
 
   async function run(action: () => PromiseLike<{ error: { message: string } | null }>) {
     if (working.current) return; // a second tap while one is in flight would double-score
@@ -53,20 +65,20 @@ export default function ScorerScreen() {
 
   const award = (team: Team) => run(() => api.rpc('award_point', { p_match_id: match.id, p_team_id: team.id, p_idempotency_key: `${Date.now()}-${Math.random().toString(36).slice(2)}` }));
   const saveToss = () => run(async () => {
-    const result = await api.rpc('set_match_setup', { p_match_id: match.id, p_set_number: active.set_number, p_left_team_id: tossLeft ?? home.id, p_first_serve_team_id: tossServe ?? home.id });
+    const result = await api.rpc('set_match_setup', { p_match_id: match.id, p_set_number: active.set_number, p_left_team_id: tossLeft ?? court.leftId ?? home.id, p_first_serve_team_id: tossServe ?? court.servingId ?? home.id });
     if (!result.error) setEditingToss(false);
     return result;
   });
 
   const choice = (label: string, value: string | null, set: (id: string) => void) => (
     <View style={{ gap: 8 }}>
-      <Body muted>{label}</Body>
+      <Text style={{ color: t.textSecondary, fontSize: 14, fontWeight: '600' }}>{label}</Text>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {[home, away].map((team) => {
           const selected = (value ?? home.id) === team.id;
           return (
             <Pressable key={team.id} accessibilityRole="radio" accessibilityState={{ selected }} accessibilityLabel={`${label}: ${team.name}`} onPress={() => set(team.id)}
-              style={{ flex: 1, minHeight: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', padding: 8, backgroundColor: selected ? colorOf(team) : t.surfaceMuted }}>
+              style={{ flex: 1, minHeight: 48, borderRadius: radius.xl, alignItems: 'center', justifyContent: 'center', padding: 8, backgroundColor: selected ? colorOf(team) : t.surface, borderWidth: 1, borderColor: selected ? colorOf(team) : t.border }}>
               <Text style={{ fontWeight: '600', color: selected ? onColor(colorOf(team)) : t.text, textAlign: 'center' }}>{team.name}</Text>
             </Pressable>
           );
@@ -77,52 +89,121 @@ export default function ScorerScreen() {
 
   return (
     <Screen>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        {completed ? <Pill label="Final" tone="success" /> : <Pill label={match.status === 'LIVE' ? 'Live' : match.status.toLowerCase()} tone={match.status === 'LIVE' ? 'live' : 'neutral'} />}
-        {!live ? <Pill label="Reconnecting" /> : null}
-        {active ? <Body muted>Set {active.set_number} · to {active.target_points} · Best of {sets.length}</Body> : null}
-      </View>
+      {/* Header: match context and connection state */}
+      <Card>
+        <Text style={{ color: t.textMuted, fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+          Match {match.match_number ?? '—'}{match.court ? ` · Court ${match.court}` : ''}
+        </Text>
+        <Text style={{ color: t.text, fontSize: 18, fontWeight: '700' }}>{home.name} <Text style={{ color: t.textMuted, fontWeight: '400' }}>vs</Text> {away.name}</Text>
+        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+          <StatusPill status={match.status} />
+          {!live ? <StatusPill tone="warning" label="Reconnecting" /> : <StatusPill tone="success" label="Connected" />}
+        </View>
+      </Card>
       {error ? <ErrorText>{error}</ErrorText> : null}
 
       {!completed && (court.needsSetup || editingToss) && active ? (
-        <Card>
-          <Heading>Set {active.set_number}: sides and serve</Heading>
+        <Card style={{ gap: 14 }}>
+          <Heading small>Set {active.set_number}: sides and serve</Heading>
           {choice('Team on the left', tossLeft ?? court.leftId, setTossLeft)}
           {choice('Serves first', tossServe ?? court.servingId, setTossServe)}
           <Button title="Save" onPress={() => void saveToss()} loading={busy} />
         </Card>
       ) : null}
 
-      <View style={{ flexDirection: 'row', gap: 12 }}>
-        {[left, right].map((team) => (
-          <Pressable key={team.id} disabled={locked} onPress={() => void award(team)}
-            accessibilityRole="button" accessibilityLabel={`Award point to ${team.name}. Current score ${scoreOf(team)}${court.servingId === team.id ? '. Serving' : ''}`}
-            style={({ pressed }) => ({ flex: 1, minHeight: 260, borderRadius: 20, padding: 12, alignItems: 'center', justifyContent: 'space-between', opacity: locked ? 0.5 : pressed ? 0.88 : 1, backgroundColor: colorOf(team), borderWidth: 1, borderColor: t.border })}>
-            <View style={{ alignItems: 'center', gap: 6 }}>
-              <Text style={{ color: onColor(colorOf(team)), fontWeight: '700', fontSize: 16, textAlign: 'center' }} numberOfLines={2}>{team.name}</Text>
-              <Text style={{ color: onColor(colorOf(team)), fontSize: 13, height: 18 }}>{!completed && court.servingId === team.id ? 'Serving' : ''}</Text>
-            </View>
-            <Text style={{ color: onColor(colorOf(team)), fontSize: 84, fontWeight: '800' }}>{scoreOf(team)}</Text>
-            <Text style={{ color: onColor(colorOf(team)), fontSize: 15, fontWeight: '600' }}>Sets {won(team)} · +1 point</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {court.switchedSides && active && Math.max(active.home_score, active.away_score) === Math.ceil(active.target_points / 2) ? (
-        <Card><Body style={{ color: t.warning, fontWeight: '700' }}>Teams switch sides now</Body></Card>
+      {switchNow ? (
+        <View style={{ backgroundColor: tint(t.warning, 0.1), borderRadius: radius.xl, padding: 12 }} accessibilityRole="alert">
+          <Text style={{ color: t.warning, fontWeight: '700', textAlign: 'center' }}>Teams switch sides now</Text>
+        </View>
       ) : null}
 
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        {[left, right].map((team) => (
-          <View key={team.id} style={{ flex: 1 }}>
-            <Button tone="secondary" title={`Timeout ${timeoutsUsed(team)}/${maxTimeouts}`} accessibilityLabel={`Call timeout for ${team.name}`}
-              disabled={locked || timeoutsUsed(team) >= maxTimeouts} onPress={() => void run(() => api.rpc('call_match_timeout', { p_match_id: match.id, p_team_id: team.id }))} />
+      {/* Score: sets won on top, then one big tinted button per team with a coloured top edge */}
+      <Card style={{ padding: 12, gap: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TeamChip team={left} color={colorOf(left)} />
+            <Text accessibilityLabel={`${left.name} sets won: ${won(left)}`} style={{ color: t.text, fontSize: 24, fontWeight: '700' }}>{won(left)}</Text>
           </View>
-        ))}
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ color: t.textSecondary, fontSize: 14, fontWeight: '600' }}>Set {active?.set_number ?? 1}</Text>
+            <Text style={{ color: t.textMuted, fontSize: 12 }}>to {active?.target_points ?? 25} · Best of {sets.length}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text accessibilityLabel={`${right.name} sets won: ${won(right)}`} style={{ color: t.text, fontSize: 24, fontWeight: '700' }}>{won(right)}</Text>
+            <TeamChip team={right} color={colorOf(right)} />
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {[left, right].map((team) => {
+            const serving = !completed && court.servingId === team.id;
+            const color = colorOf(team);
+            return (
+              <Pressable key={team.id} disabled={locked} onPress={() => void award(team)}
+                accessibilityRole="button" accessibilityLabel={`Award point to ${team.name}. Current score ${scoreOf(team)}${serving ? '. Serving' : ''}`}
+                style={({ pressed }) => ({
+                  flex: 1, minHeight: 250, borderRadius: radius['2xl'], borderWidth: 1, borderTopWidth: 6, borderColor: t.border, borderTopColor: color,
+                  backgroundColor: tint(color, 0.08), paddingTop: 20, paddingBottom: 16, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'space-between',
+                  opacity: locked ? 0.5 : 1, transform: [{ scale: pressed ? 0.98 : 1 }],
+                })}>
+                <View style={{ alignItems: 'center', gap: 6 }}>
+                  <Text numberOfLines={2} style={{ color: t.text, fontSize: 15, fontWeight: '600', textAlign: 'center' }}>{team.name}</Text>
+                  {serving ? (
+                    <View style={{ backgroundColor: color, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 2 }}>
+                      <Text style={{ color: onColor(color), fontSize: 12, fontWeight: '600' }}>Serving</Text>
+                    </View>
+                  ) : <View style={{ height: 22 }} />}
+                </View>
+                <Text style={{ color: t.text, fontSize: 80, fontWeight: '700', lineHeight: 88 }}>{scoreOf(team)}</Text>
+                <View style={{ backgroundColor: color, borderRadius: 999, minHeight: 44, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: onColor(color), fontSize: 14, fontWeight: '600' }}>+1 point</Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Card>
+
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        {[left, right].map((team) => {
+          const disabled = locked || timeoutsUsed(team) >= maxTimeouts;
+          return (
+            <Pressable key={team.id} disabled={disabled} accessibilityRole="button" accessibilityLabel={`Call timeout for ${team.name}`}
+              onPress={() => void run(() => api.rpc('call_match_timeout', { p_match_id: match.id, p_team_id: team.id }))}
+              style={{ flex: 1, minHeight: 56, borderRadius: radius.xl, borderWidth: 1, borderColor: t.borderStrong, backgroundColor: t.surface, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.5 : 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Clock size={16} color={t.text} />
+                <Text style={{ color: t.text, fontSize: 14, fontWeight: '600' }}>Timeout</Text>
+              </View>
+              <Text style={{ color: t.textMuted, fontSize: 12 }}>{timeoutsUsed(team)} of {maxTimeouts} used</Text>
+            </Pressable>
+          );
+        })}
       </View>
       {timeoutRunning ? <Button title="End timeout" onPress={() => void run(() => api.rpc('end_match_timeout', { p_match_id: match.id }))} /> : null}
-      {startedPoints && !completed ? <Button tone="secondary" title="Undo last point" disabled={busy || timeoutRunning} onPress={() => void run(() => api.rpc('undo_last_score_event', { p_match_id: match.id }))} /> : null}
-      {!completed && !court.needsSetup && !editingToss ? <Button tone="secondary" title="Sides & serve" onPress={() => { setTossLeft(court.leftId); setTossServe(court.servingId); setEditingToss(true); }} /> : null}
+      {startedPoints && !completed ? (
+        <Button tone="secondary" title="Undo last point" disabled={busy || timeoutRunning} icon={<Undo2 size={18} color={t.text} />}
+          onPress={() => void run(() => api.rpc('undo_last_score_event', { p_match_id: match.id }))} />
+      ) : null}
+
+      {/* Sets history */}
+      <Card style={{ paddingVertical: 4 }}>
+        <Text style={{ color: t.textSecondary, fontSize: 14, fontWeight: '600', paddingTop: 12, paddingBottom: 4 }}>Sets</Text>
+        {sets.map((s, index) => (
+          <View key={s.set_number} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 48, borderTopWidth: index === 0 ? 0 : 1, borderTopColor: t.border }}>
+            <Text style={{ color: t.textSecondary, fontSize: 14, fontWeight: '500', width: 56 }}>Set {s.set_number}</Text>
+            <Text style={{ color: s.status === 'PENDING' ? t.textMuted : t.text, fontSize: 16, fontWeight: '700' }}>{s.home_score} – {s.away_score}</Text>
+            <View style={{ width: 90, alignItems: 'flex-end' }}>
+              {s.winner_team_id ? <TeamChip team={s.winner_team_id === home.id ? home : away} color={colorOf(s.winner_team_id === home.id ? home : away)} />
+                : s.status === 'LIVE' ? <StatusPill status="LIVE" /> : <Text style={{ color: t.textMuted, fontSize: 12 }}>Not started</Text>}
+            </View>
+          </View>
+        ))}
+      </Card>
+
+      {!completed && !court.needsSetup && !editingToss ? (
+        <Button tone="ghost" title="Sides & serve" onPress={() => { setTossLeft(court.leftId); setTossServe(court.servingId); setEditingToss(true); }} />
+      ) : null}
+      <Body muted>Teams are shown on the sides chosen at the toss.</Body>
     </Screen>
   );
 }
