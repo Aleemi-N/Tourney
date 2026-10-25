@@ -4,10 +4,12 @@ import { View } from 'react-native';
 import { Body, Button, Card, Heading, Loading, Pill, Screen } from '@/components/ui';
 import { api, apiUrl } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useOrganizerTournaments } from '@/lib/organizer';
 
 export default function AccountScreen() {
   const { session, ready, signOut } = useAuth();
   const [name, setName] = useState<string | null>(null);
+  const { tournaments: organized } = useOrganizerTournaments(session?.user.id);
   const [applications, setApplications] = useState<{ key: string; title: string; status: string }[]>([]);
 
   useEffect(() => {
@@ -47,6 +49,12 @@ export default function AccountScreen() {
           <Link href="/login" asChild><Button title="Sign in" onPress={() => {}} /></Link>
         </Card>
       )}
+      {organized && organized.length > 0 ? (
+        <Card>
+          <Heading>Organizer</Heading>
+          <Link href="/organizer" asChild><Button title="Review registrations" onPress={() => {}} /></Link>
+        </Card>
+      ) : null}
       {applications.length > 0 ? (
         <Card>
           <Heading>My registrations</Heading>

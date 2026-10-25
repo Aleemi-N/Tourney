@@ -13,6 +13,8 @@ function Navigation() {
       <Stack.Screen name="t/[slug]" options={{ title: 'Tournament' }} />
       <Stack.Screen name="match/[id]" options={{ title: 'Match' }} />
       <Stack.Screen name="scorer/[id]" options={{ title: 'Scoring' }} />
+      <Stack.Screen name="organizer/index" options={{ title: 'Organizer' }} />
+      <Stack.Screen name="organizer/[id]" options={{ title: 'Review' }} />
       <Stack.Screen name="register/player/[slug]" options={{ title: 'Player registration' }} />
       <Stack.Screen name="register/team/[slug]" options={{ title: 'Team application' }} />
     </Stack>
