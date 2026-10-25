@@ -16,6 +16,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
 /**
  * Runs against the local Supabase database seeded by supabase/seed.sql (supabase db reset --local);
@@ -29,6 +31,20 @@ class ApiIntegrationTest {
 
     @LocalServerPort
     int port;
+
+    // The local Supabase PostgREST verifies tokens with its own secret and sits behind Kong's anon key.
+    @DynamicPropertySource
+    static void localSupabase(DynamicPropertyRegistry registry) throws Exception {
+        registry.add("tourny.jwt.secret", () -> "super-secret-jwt-token-with-at-least-32-characters-long");
+        var env = Pattern.compile("NEXT_PUBLIC_SUPABASE_ANON_KEY=\"?([^\"\\s]+)").matcher(Files.readString(Path.of("../.env.local")));
+        if (env.find()) registry.add("tourny.postgrest.api-key", () -> env.group(1));
+    }
+
+    private HttpResponse<String> get(String path, String token) throws Exception {
+        var builder = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path)).GET();
+        if (token != null) builder.header("Authorization", "Bearer " + token);
+        return HTTP.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+    }
 
     @BeforeAll
     static void seededDatabase() throws Exception {
@@ -66,7 +82,8 @@ class ApiIntegrationTest {
 
     @Test
     void rpcRequiresATokenAndAnAllowListedFunction() throws Exception {
-        assertEquals(401, post("/rpc/get_public_standings", "{}", null).statusCode());
+        assertEquals(200, post("/rpc/get_public_standings", "{\"p_tournament_id\":\"90200000-0000-0000-0000-000000000003\"}", null).statusCode()); // public data needs no token
+        assertEquals(403, post("/rpc/get_scorer_match_state", "{\"p_match_id\":\"90700000-0000-0000-0000-000000000001\"}", null).statusCode()); // anon has no execute grant
         String token = login("organizer@tourny.local");
         assertEquals(404, post("/rpc/pg_sleep", "{\"seconds\":1}", token).statusCode());
         assertTrue(post("/rpc/get_public_standings;drop", "{}", token).statusCode() >= 400);
@@ -91,5 +108,24 @@ class ApiIntegrationTest {
         assertEquals(200, standings.statusCode(), standings.body());
         assertTrue(standings.body().startsWith("["));
         assertEquals(400, post("/rpc/get_public_standings", "{\"bogus\":1}", organizer).statusCode());
+    }
+
+    @Test
+    void restKeepsThePostgrestQueryLanguageAndRowSecurity() throws Exception {
+        // Public data is readable signed out, with embedding and filters as supabase-js sends them.
+        var teams = get("/rest/teams?select=id,name,tournaments(name)&limit=3", null);
+        assertEquals(200, teams.statusCode(), "status " + teams.statusCode() + " " + teams.body());
+        assertTrue(teams.body().startsWith("["));
+
+        // Signed in, the caller's own row-level security applies: a player sees only their own applications.
+        var player = login("player@tourny.local");
+        var own = get("/rest/team_owner_applications?select=user_id", player);
+        assertEquals(200, own.statusCode(), own.body());
+        var organizer = login("organizer@tourny.local");
+        var all = get("/rest/team_owner_applications?select=user_id", organizer);
+        assertTrue(all.body().length() >= own.body().length());
+
+        // A forged token never reaches the database.
+        assertEquals(401, get("/rest/teams?select=id", "not-a-token").statusCode());
     }
 }

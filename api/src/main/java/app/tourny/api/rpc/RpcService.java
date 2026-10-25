@@ -55,9 +55,9 @@ public class RpcService {
         Overload overload = pick(function, input.keySet());
 
         // Run as the caller: transaction-local claims and role, reset automatically at commit.
-        jdbc.sql("SELECT set_config('request.jwt.claims', :claims, true), set_config('request.jwt.claim.sub', :sub, true), set_config('role', 'authenticated', true)")
-                .param("claims", mapper.writeValueAsString(Map.of("sub", userId, "role", "authenticated")))
-                .param("sub", userId).query().singleRow();
+        jdbc.sql("SELECT set_config('request.jwt.claims', :claims, true), set_config('request.jwt.claim.sub', :sub, true), set_config('role', :role, true)")
+                .param("claims", mapper.writeValueAsString(userId == null ? Map.of("role", "anon") : Map.of("sub", userId, "role", "authenticated")))
+                .param("sub", userId == null ? "" : userId).param("role", userId == null ? "anon" : "authenticated").query().singleRow();
 
         List<String> parts = new ArrayList<>();
         List<String> values = new ArrayList<>();

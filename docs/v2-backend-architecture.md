@@ -9,7 +9,7 @@ Decision: a single Spring Boot API in front of PostgreSQL serves **both** the Ne
 ## Components
 | Concern | Supabase today | v2 on the VPS |
 |---|---|---|
-| API | PostgREST + RPC | Spring Boot 3 (Java 24 present locally, Maven/Gradle to install), JDBC + Flyway |
+| API | PostgREST + RPC | Spring Boot 4 (Maven wrapper in `api/`, Java 21+), JDBC + Flyway |
 | Auth | Supabase Auth (email/password, JWT) | Spring Security + own JWT (access 15 min, refresh rotation); `auth.users` data migrated with bcrypt hashes kept |
 | Row security | RLS via `auth.uid()` | Per request: `SET LOCAL request.jwt.claim.sub = <user>` in the transaction so existing RLS and `auth.uid()` keep working |
 | Storage | `logos`, `player-photos` buckets | `POST /uploads` to disk or S3-compatible store behind nginx; same public paths |
@@ -21,6 +21,14 @@ Decision: a single Spring Boot API in front of PostgreSQL serves **both** the Ne
 - `GET /views/{name}?filters`: allow-listed reads of public views and the handful of table selects the pages use (`public_fixture_view`, `public_team_view`, `standings`...).
 - `POST /auth/login|register|refresh|logout`, `POST /uploads`, `GET /events/...` (SSE).
 - Shared TypeScript client package `@tourny/api` (typed from the DB) used by Next.js and Expo, so there is one implementation of auth, retry and realtime.
+
+## Revision: keep supabase-js as the client
+Rewriting 95 files to a new client is avoidable. supabase-js (also works in React Native) only needs three things from its server, and the API provides them:
+- **`/rest/v1/*`**: forwarded to a self-hosted PostgREST with the caller's token, so the PostgREST query language the pages use (embedding, filters, Range) works unchanged and row-level security decides access. Implemented (`RestProxyController`).
+- **`/rest/v1/rpc/{fn}`**: handled by the API itself against the 76-function allow-list (same transaction/role context). Implemented (`RpcController`). Signed-out callers run as `anon`.
+- **`/auth/v1/*`** (GoTrue-compatible subset: `token` password + refresh, `user`, `logout`, `signup`, `recover`): not yet built. `/auth/login` is the first step.
+Realtime (Phoenix websocket) and storage have no cheap compatible subset: the 7 realtime channels move to SSE and the 21 storage calls to `POST /uploads`.
+Web and mobile then differ from today only by the project URL, which is how "one backend for both" is met.
 
 ## Order of work
 1. Spring Boot skeleton, Flyway baseline from `supabase/migrations` 1-67 (dropping the destructive 52/53), JWT auth, `/rpc` with RLS context. Tests against a throwaway Postgres.

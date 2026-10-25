@@ -38,7 +38,7 @@ class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // bearer tokens only, no cookies
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/auth/login", "/actuator/health").permitAll()
+                        .requestMatchers("/auth/login", "/actuator/health", "/rest/**", "/rpc/**").permitAll() // a token is decoded when sent; the database roles decide what is allowed
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(o -> o.jwt(Customizer.withDefaults()))
                 .build();

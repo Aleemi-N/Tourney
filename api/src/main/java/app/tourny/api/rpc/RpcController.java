@@ -25,9 +25,9 @@ class RpcController {
         this.rpc = rpc;
     }
 
-    @PostMapping(value = "/rpc/{function}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = {"/rpc/{function}", "/rest/v1/rpc/{function}"}, produces = MediaType.APPLICATION_JSON_VALUE)
     String call(@PathVariable String function, @RequestBody(required = false) Map<String, Object> args, @AuthenticationPrincipal Jwt jwt) {
-        return rpc.call(function, args, jwt.getSubject());
+        return rpc.call(function, args, jwt == null ? null : jwt.getSubject());
     }
 
     /** Database errors keep the shape clients already handle: {message, code}. */
