@@ -16,6 +16,8 @@ One server, five containers: PostgreSQL, PostgREST, the Spring Boot API (`../api
 - The compose database init and the API image were run end to end (signup, sign-in, profile created by trigger, row-level security through PostgREST).
 - Not run here: the web image build and Caddy/HTTPS (they need real domains).
 
+See [CUTOVER.md](CUTOVER.md) for the full migration-day checklist.
+
 ## Moving production data from Supabase (rehearse on a copy first)
 1. Take a fresh dump of the Supabase database: the `public` schema data and `auth.users` / `auth.identities` rows (bcrypt hashes are kept, so passwords keep working).
 2. Load the data into the new database after `initdb.sh` has created the schema (`pg_restore --data-only`, `auth` first, then `public`; disable triggers during the load: `--disable-triggers`).
