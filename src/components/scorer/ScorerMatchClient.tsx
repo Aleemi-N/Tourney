@@ -86,10 +86,12 @@ export function ScorerMatchClient({
   const isSubmittingRef = useRef(false);
   const nextIkey = useRef(crypto.randomUUID());
 
-  // Derive active set (first PENDING/LIVE or the last completed one)
+  // Derive active set: the first PENDING/LIVE one while playing; once the match is over, the last
+  // completed set (a 3–1 finish leaves set 5 PENDING, which would otherwise show a blank 0–0).
   const activeSet =
-    state.sets.find((s) => s.status === 'PENDING' || s.status === 'LIVE') ??
-    state.sets[state.sets.length - 1];
+    state.match.status === 'COMPLETED'
+      ? [...state.sets].reverse().find((s) => s.status === 'COMPLETED') ?? state.sets[state.sets.length - 1]
+      : state.sets.find((s) => s.status === 'PENDING' || s.status === 'LIVE') ?? state.sets[state.sets.length - 1];
 
   const refresh = useCallback(async () => {
     const { data, error } = await supabase.rpc('get_scorer_match_state', {

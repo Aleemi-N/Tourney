@@ -21,10 +21,6 @@ export function PhotoCropModal({ file, onCancel, onApply }: { file: File; onCanc
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    return () => URL.revokeObjectURL(sourceUrl);
-  }, [sourceUrl]);
-
-  useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
     const observer = new ResizeObserver(([entry]) => setViewportSize({ width: entry.contentRect.width, height: entry.contentRect.height }));
@@ -111,7 +107,12 @@ export function PhotoCropModal({ file, onCancel, onApply }: { file: File; onCanc
           >
             {/* Canvas needs the decoded source element at its intrinsic resolution. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {sourceUrl && <img ref={imageRef} src={sourceUrl} alt="Photo crop preview" draggable={false} onLoad={(event) => setNaturalSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} className="pointer-events-none absolute left-1/2 top-1/2 max-w-none select-none" style={{ width: displaySize.width, height: displaySize.height, transform: `translate(calc(-50% + ${effectiveOffset.x}px), calc(-50% + ${effectiveOffset.y}px))` }} />}
+            {sourceUrl && <img ref={imageRef} src={sourceUrl} alt="Photo crop preview" draggable={false} onLoad={(event) => {
+              setNaturalSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight });
+              // Free the blob once decoded: the crop draws from this <img>. Revoking in an effect cleanup
+              // broke the preview under StrictMode, whose dev remount ran the cleanup before the image loaded.
+              URL.revokeObjectURL(sourceUrl);
+            }} className="pointer-events-none absolute left-1/2 top-1/2 max-w-none select-none" style={{ width: displaySize.width, height: displaySize.height, transform: `translate(calc(-50% + ${effectiveOffset.x}px), calc(-50% + ${effectiveOffset.y}px))` }} />}
             <div className="pointer-events-none absolute inset-0 border border-border-strong shadow-card" />
             <div className="pointer-events-none absolute inset-y-0 left-1/3 border-l border-dashed border-border-strong" /><div className="pointer-events-none absolute inset-y-0 right-1/3 border-l border-dashed border-border-strong" />
             <div className="pointer-events-none absolute inset-x-0 top-1/3 border-t border-dashed border-border-strong" /><div className="pointer-events-none absolute inset-x-0 bottom-1/3 border-t border-dashed border-border-strong" />

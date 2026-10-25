@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Menu, X } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { APP_CONFIG } from '@/lib/config';
 import { VolleyballIcon } from './VolleyballIcon';
 import { logout } from '@/app/actions/auth';
@@ -61,6 +62,7 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
           </div>
 
           <div className="hidden md:flex items-center gap-4">
+            <ThemeToggle />
             {!isAuthenticated ? (
               <>
                 <PwaInstallAction className="flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-text-primary" />
@@ -130,10 +132,11 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-4">
+          <div className="md:hidden flex items-center gap-1">
+            <ThemeToggle />
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="p-2 text-text-secondary hover:text-text-primary"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-text-secondary hover:bg-surface-muted hover:text-text-primary"
               aria-label="Toggle menu"
               aria-expanded={isOpen}
             >
