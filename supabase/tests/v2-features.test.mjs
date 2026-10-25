@@ -229,3 +229,16 @@ test('team profiles: reused across tournaments, owner-only, created on first app
   assert.equal((await db.one('SELECT primary_color FROM public.team_profiles WHERE id=$1', [team.team_profile_id])).primary_color, '#445566');
   await assert.rejects(db.as(owner, "SELECT public.submit_team_owner_application($1, 'Reuse VC', NULL, 'logos/a.png', NULL, NULL, NULL, NULL, NULL, $2)", [T1, team.team_profile_id]), /already in the tournament|Application already exists/);
 }));
+
+test('stats: team and player totals come from completed public matches', () => inTransaction(async (db) => {
+  const team = await db.one("SELECT id FROM public.teams WHERE name='Mangrove Mavericks'");
+  const { s } = await db.one('SELECT public.get_team_stats($1) AS s', [team.id]);
+  const standing = await db.one('SELECT played, won, lost, sets_won, sets_lost, points_for, points_against FROM public.standings WHERE team_id=$1', [team.id]);
+  const t = s.stats.totals;
+  assert.deepEqual([t.played, t.won, t.lost, t.sets_for, t.sets_against, t.points_for, t.points_against],
+    [standing.played, standing.won, standing.lost, standing.sets_won, standing.sets_lost, standing.points_for, standing.points_against]);
+  const player = await db.one('SELECT player_id FROM public.team_players WHERE team_id=$1 AND status=\'ACTIVE\' LIMIT 1', [team.id]);
+  const { s: p } = await db.one('SELECT public.get_player_stats($1) AS s', [player.player_id]);
+  assert.equal(p.stats.totals.played, t.played);
+  await assert.rejects(db.one("SELECT public.get_player_stats('90400000-0000-0000-0000-00000000dead')"), /Player not available/);
+}));

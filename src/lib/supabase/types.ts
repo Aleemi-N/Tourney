@@ -3454,6 +3454,14 @@ export type Database = {
         Args: { p_match_id: string; p_sets_to_win?: number | null }
         Returns: Json
       }
+      get_team_stats: {
+        Args: { p_team_id: string }
+        Returns: Json
+      }
+      get_player_stats: {
+        Args: { p_player_id: string }
+        Returns: Json
+      }
       set_team_colors: {
         Args: { p_primary_color: string; p_secondary_color?: string | null; p_team_id: string }
         Returns: Json

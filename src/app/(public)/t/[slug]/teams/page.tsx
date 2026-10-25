@@ -5,6 +5,7 @@ import { PublicTournamentFrame } from '@/components/public/PublicTournamentFrame
 import { TournamentNotFound, EmptyState } from '@/components/public/TournamentNotFound';
 import { buildTournamentMetadata, TOURNY_PRODUCTION_ORIGIN } from '@/lib/public-tournament-metadata';
 import Image from 'next/image';
+import Link from 'next/link';
 import { MapPin } from 'lucide-react';
 
 type Props = { params: Promise<{ slug: string }> };
@@ -101,7 +102,9 @@ export default async function PublicTeamsPage({ params }: Props) {
                   </div>
                 )}
 
-                <h2 className="text-lg font-black leading-tight">{team.name}</h2>
+                <h2 className="text-lg font-black leading-tight">
+                  <Link href={`/t/${slug}/teams/${team.id}`} className="hover:text-primary hover:underline">{team.name}</Link>
+                </h2>
                 {team.short_name && team.short_name !== team.name && (
                   <p className="text-text-muted mt-0.5 text-xs font-bold uppercase tracking-widest">
                     {team.short_name}

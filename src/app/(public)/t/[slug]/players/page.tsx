@@ -6,6 +6,7 @@ import { TournamentNotFound, EmptyState } from '@/components/public/TournamentNo
 import { buildTournamentMetadata, TOURNY_PRODUCTION_ORIGIN } from '@/lib/public-tournament-metadata';
 import { formatVolleyballPosition } from '@/lib/volleyball-positions';
 import Image from 'next/image';
+import Link from 'next/link';
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -130,7 +131,9 @@ export default async function PublicPlayersPage({ params }: Props) {
 
                 {/* Info */}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-bold text-sm">{player.display_name}</p>
+                  <p className="truncate font-bold text-sm">
+                    <Link href={`/t/${slug}/players/${player.id}`} className="hover:text-primary hover:underline">{player.display_name}</Link>
+                  </p>
 
                   {posLabel && (
                     <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${posCfg ?? 'bg-primary/10 text-primary'}`}>
