@@ -12,11 +12,11 @@ INSERT INTO auth.users (
   is_sso_user, is_anonymous
 )
 VALUES
-  ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'organizer@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"QA Organizer"}', now(), now(), false, false),
-  ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'owner@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"QA Team Owner"}', now(), now(), false, false),
-  ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'player@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"QA Player"}', now(), now(), false, false),
-  ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'scorer@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"QA Scorer"}', now(), now(), false, false),
-  ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000005', 'authenticated', 'authenticated', 'super-admin@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"QA Super Admin"}', now(), now(), false, false)
+  ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'organizer@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Riya Menon"}', now(), now(), false, false),
+  ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'owner@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Aditya Nair"}', now(), now(), false, false),
+  ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'player@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Kiran Joseph"}', now(), now(), false, false),
+  ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'scorer@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Sneha Thomas"}', now(), now(), false, false),
+  ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000005', 'authenticated', 'authenticated', 'super-admin@tourny.local', extensions.crypt('TournyTest123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Platform Admin"}', now(), now(), false, false)
 ON CONFLICT (id) DO UPDATE SET
   email = EXCLUDED.email,
   instance_id = EXCLUDED.instance_id,
@@ -213,11 +213,6 @@ INSERT INTO auth.identities (provider_id, user_id, identity_data, provider, crea
 SELECT u.id::text, u.id, jsonb_build_object('sub', u.id::text, 'email', u.email), 'email', now(), now()
 FROM auth.users u JOIN seed_people p ON u.id = pg_temp.uid('90000000', p.n)
 ON CONFLICT (provider_id, provider) DO NOTHING;
-
--- Friendlier names for the five role accounts from the base seed.
-UPDATE public.profiles SET full_name = v.name
-FROM (VALUES (1, 'Riya Menon'), (2, 'Aditya Nair'), (3, 'Kiran Joseph'), (4, 'Sneha Thomas'), (5, 'Platform Admin')) v(n, name)
-WHERE id = pg_temp.uid('90000000', v.n);
 
 UPDATE public.profiles pr SET full_name = p.full_name, phone = p.phone
 FROM seed_people p WHERE pr.id = pg_temp.uid('90000000', p.n);

@@ -1,131 +1,109 @@
 /**
- * Tournament Platform — Global Design Tokens
+ * Tourny — Global Design Tokens (direction A: refined, calm, indigo + Geist)
  *
- * Design system from docs/design.md.
- * All semantic tokens are CSS custom properties; Tailwind maps to them.
+ * All semantic tokens are CSS custom properties; Tailwind maps to them in
+ * `@theme inline` below, so components use classes like `bg-surface` and
+ * `text-text-secondary` and never raw palette colours.
  *
  * Two token layers:
  *   1. Application UI tokens  — stable across all tournaments
  *   2. Tournament brand slots — set per tournament on a wrapping element
  *
+ * Theme: light by default; `data-theme="dark"` on <html> switches to dark.
+ * The inline script in app/layout.tsx sets it from the saved choice or the
+ * OS preference before first paint.
+ *
  * Rules:
- *   - Status is NEVER communicated by color alone; always include a label/icon.
- *   - Tournament brand colors must never destroy accessibility of operational controls.
- *   - Dark mode is supported via .dark class (or OS preference fallback).
+ *   - Status is NEVER communicated by colour alone; always include a label/icon.
+ *   - Text tokens meet WCAG AA (4.5:1) on background, surface and surface-muted.
+ *   - The smallest text size is 12px (`text-xs`).
  */
 
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* ─────────────────────────────────────────────────────────────────────────────
-   1. LIGHT MODE — Application UI Tokens
+   1. LIGHT — Application UI tokens
    ───────────────────────────────────────────────────────────────────────────── */
 :root {
+  color-scheme: light;
+
   /* Surfaces */
-  --background:        #f8fafc;
-  --surface:           rgba(255, 255, 255, 0.7);
-  --surface-raised:    rgba(255, 255, 255, 0.95);
-  --surface-muted:     rgba(241, 245, 249, 0.6);
-  --glass-border:      rgba(0, 0, 0, 0.05);
+  --background:        #f6f7fb;
+  --surface:           #ffffff;
+  --surface-raised:    #ffffff;
+  --surface-muted:     #eef1f7;
+  --glass-border:      #e3e6ef;
 
   /* Text */
   --text-primary:      #0f172a;
   --text-secondary:    #475569;
-  --text-muted:        #94a3b8;
+  --text-muted:        #5f6b80;
   --text-inverse:      #ffffff;
 
   /* Borders */
-  --border:            #e2e8f0;
-  --border-strong:     #cbd5e1;
+  --border:            #e3e6ef;
+  --border-strong:     #cfd5e2;
 
   /* Brand / primary action */
-  --primary:           #4f46e5;   /* Indigo-600 */
+  --primary:           #4f46e5;
   --primary-hover:     #4338ca;
   --primary-foreground:#ffffff;
 
-  /* Semantic status */
-  --success:           #16a34a;
-  --warning:           #d97706;
-  --danger:            #dc2626;
-  --info:              #0284c7;
+  /* Semantic status (text-safe on surface; use /10 tints for fills) */
+  --success:           #137333;
+  --warning:           #b45309;
+  --danger:            #c81e1e;
+  --info:              #0369a1;
 
   /* Live-operation states */
-  --live:              #ef4444;   /* Red — clearly "happening now" */
-  --sold:              #16a34a;   /* Green */
-  --unsold:            #6b7280;   /* Gray */
-  --offline:           #f59e0b;   /* Amber */
+  --live:              #c81e1e;
+  --sold:              #137333;
+  --unsold:            #5f6b80;
+  --offline:           #b45309;
 
-  /* Radius scale (used by Tailwind) */
-  --radius-sm:   8px;
-  --radius-md:   10px;
-  --radius-lg:   14px;
-  --radius-xl:   18px;
-  --radius-2xl:  24px;
+  /* Elevation */
+  --shadow-card:       0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
+  --shadow-overlay:    0 12px 32px rgb(15 23 42 / 0.16);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   2. DARK MODE — Application UI Tokens
-   System preference respected by default; explicit .dark class overrides.
+   2. DARK — Application UI tokens
    ───────────────────────────────────────────────────────────────────────────── */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background:        #020617;
-    --surface:           rgba(15, 23, 42, 0.65);
-    --surface-raised:    rgba(30, 41, 59, 0.75);
-    --surface-muted:     rgba(30, 41, 59, 0.4);
-    --glass-border:      rgba(255, 255, 255, 0.08);
+:root[data-theme="dark"] {
+  color-scheme: dark;
 
-    --text-primary:      #f8fafc;
-    --text-secondary:    #94a3b8;
-    --text-muted:        #64748b;
-    --text-inverse:      #0f172a;
+  --background:        #0b1020;
+  --surface:           #131a2e;
+  --surface-raised:    #1a2238;
+  --surface-muted:     #1a2238;
+  --glass-border:      #253049;
 
-    --border:            rgba(255, 255, 255, 0.1);
-    --border-strong:     rgba(255, 255, 255, 0.2);
+  --text-primary:      #f1f5f9;
+  --text-secondary:    #b4bfd2;
+  --text-muted:        #8f9bb3;
+  --text-inverse:      #0b1020;
 
-    --primary:           #6366f1;
-    --primary-hover:     #818cf8;
-    --primary-foreground:#ffffff;
+  --border:            #253049;
+  --border-strong:     #344061;
 
-    --success:           #22c55e;
-    --warning:           #f59e0b;
-    --danger:            #f87171;
-    --info:              #38bdf8;
+  --primary:           #8b93f8;
+  --primary-hover:     #a5abfa;
+  --primary-foreground:#0b1020;
 
-    --live:              #f87171;
-    --sold:              #22c55e;
-    --unsold:            #9ca3af;
-    --offline:           #fbbf24;
-  }
-}
-
-.dark {
-  --background:        #020617;
-  --surface:           rgba(15, 23, 42, 0.65);
-  --surface-raised:    rgba(30, 41, 59, 0.75);
-  --surface-muted:     rgba(30, 41, 59, 0.4);
-  --glass-border:      rgba(255, 255, 255, 0.08);
-
-  --text-primary:      #f8fafc;
-  --text-secondary:    #94a3b8;
-  --text-muted:        #64748b;
-  --text-inverse:      #0f172a;
-
-  --border:            rgba(255, 255, 255, 0.1);
-  --border-strong:     rgba(255, 255, 255, 0.2);
-
-  --primary:           #6366f1;
-  --primary-hover:     #818cf8;
-  --primary-foreground:#ffffff;
-
-  --success:           #22c55e;
-  --warning:           #f59e0b;
+  --success:           #4ade80;
+  --warning:           #fbbf24;
   --danger:            #f87171;
   --info:              #38bdf8;
 
   --live:              #f87171;
-  --sold:              #22c55e;
-  --unsold:            #9ca3af;
+  --sold:              #4ade80;
+  --unsold:            #94a3b8;
   --offline:           #fbbf24;
+
+  --shadow-card:       0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-overlay:    0 16px 40px rgb(0 0 0 / 0.5);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -142,7 +120,6 @@
 
 /* ─────────────────────────────────────────────────────────────────────────────
    4. TAILWIND v4 THEME INLINE MAPPING
-   Maps CSS custom properties to Tailwind utility classes.
    ───────────────────────────────────────────────────────────────────────────── */
 @theme inline {
   /* Fonts (loaded via next/font — variables injected by layout.tsx) */
@@ -184,12 +161,18 @@
   --color-tournament-accent:     var(--tournament-accent);
   --color-tournament-background: var(--tournament-background);
 
-  /* Border radius (softer, more accessible feel) */
-  --radius-sm:   10px;
-  --radius-md:   14px;
-  --radius-lg:   18px;
-  --radius-xl:   24px;
-  --radius-2xl:  32px;
+  /* Elevation */
+  --shadow-card:     var(--shadow-card);
+  --shadow-overlay:  var(--shadow-overlay);
+
+  /* Radius — calm, consistent corners */
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   10px;
+  --radius-xl:   12px;
+  --radius-2xl:  16px;
+  --radius-3xl:  20px;
+  --radius-4xl:  24px;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -202,7 +185,6 @@
 }
 
 html {
-  color-scheme: dark;
   background-color: var(--background);
   -webkit-text-size-adjust: 100%;
   tab-size: 4;
@@ -215,12 +197,11 @@ body {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-feature-settings: "rlig" 1, "calt" 1;
   background-color: var(--background);
-  background-image: radial-gradient(circle at top right, rgba(99, 102, 241, 0.08), transparent 40%), radial-gradient(circle at bottom left, rgba(168, 85, 247, 0.05), transparent 40%);
-  background-attachment: fixed;
   color: var(--text-primary);
   line-height: 1.5;
   min-width: 320px;
   overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
@@ -245,7 +226,7 @@ button:disabled,
 
 .app-shell-content {
   min-width: 0;
-  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom));
 }
 
 @media (min-width: 768px) {
