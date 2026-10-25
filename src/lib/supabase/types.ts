@@ -1014,6 +1014,7 @@ export type Database = {
           bracket_position: number | null
           court: string | null
           created_at: string
+          format_override: boolean
           home_team_id: string | null
           id: string
           loser_next_match_id: string | null
@@ -1024,11 +1025,13 @@ export type Database = {
           program_order: number
           round_number: number | null
           scheduled_at: string | null
+          sets_to_win: number | null
           stage_id: string | null
           status: string
           tournament_id: string
           updated_at: string
           venue: string | null
+          win_by_two: boolean | null
           winner_team_id: string | null
         }
         Insert: {
@@ -3377,6 +3380,10 @@ export type Database = {
       }
       rename_tournament_team: {
         Args: { p_name: string; p_team_id: string }
+        Returns: Json
+      }
+      set_match_format: {
+        Args: { p_match_id: string; p_sets_to_win?: number | null }
         Returns: Json
       }
       set_team_colors: {

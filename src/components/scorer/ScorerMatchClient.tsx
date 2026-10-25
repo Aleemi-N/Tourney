@@ -380,7 +380,7 @@ export function ScorerMatchClient({
           <SetsWon team={home} won={homeSetsWon} />
           <p className="text-center text-sm font-semibold text-text-secondary">
             Set {activeSet?.set_number ?? 1}
-            <span className="block text-xs font-medium text-text-muted">to {activeSet?.target_points ?? 25}</span>
+            <span className="block text-xs font-medium text-text-muted">to {activeSet?.target_points ?? 25} · Best of {state.sets.length}</span>
           </p>
           <SetsWon team={away} won={awaySetsWon} reverse />
         </div>

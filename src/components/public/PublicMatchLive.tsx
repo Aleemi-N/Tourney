@@ -221,7 +221,7 @@ export function PublicMatchLive({ matchId, initialState, tvMode = false, homeCol
         {current && !isCompleted ? (
           <div className="mt-5 rounded-xl bg-surface-muted px-5 py-4 text-center">
             <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-              Set {current.set_number} · to {current.target_points}
+              Set {current.set_number} · to {current.target_points} · Best of {state.sets.length}
             </p>
             <p className="mt-1 text-4xl font-bold tabular-nums">
               {current.home_score}

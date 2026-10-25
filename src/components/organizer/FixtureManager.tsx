@@ -7,10 +7,11 @@ import { ArrowDown, ArrowUp } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { shareFixturesPoster } from '@/lib/share-posters';
 import { PlanDaysModal } from '@/components/organizer/PlanDaysModal';
+import { PRESETS, presetRuleArgs, type PresetKey } from '@/components/organizer/MatchFormatSection';
 
 type Standing = { rank: number; team_id: string; team_name: string; league_points: number };
 type Stage = { id: string; name: string; stage_type: string; sequence: number; qualification_count: number | null; status: string; standings_rules: { win_points: number; loss_points: number; tie_break_rules: string[] } | null };
-type Match = { id: string; stage_id: string | null; match_number: number | null; program_order: number; round_number: number | null; bracket_match_type: string; status: string; scheduled_at: string | null; venue: string | null; court: string | null; home_team_id: string | null; away_team_id: string | null; home_team: { name: string } | null; away_team: { name: string } | null; scorer_user_id?: string | null };
+type Match = { id: string; stage_id: string | null; match_number: number | null; program_order: number; round_number: number | null; bracket_match_type: string; status: string; scheduled_at: string | null; venue: string | null; court: string | null; home_team_id: string | null; away_team_id: string | null; home_team: { name: string } | null; away_team: { name: string } | null; sets_to_win: number | null; format_override: boolean; scorer_user_id?: string | null };
 type Scorer = { user_id: string; display_name: string; email: string; roles: string[] };
 type Scope = { stage_id: string | null; round_number: number | null; revision: number };
 type Preview = { standings: Standing[]; matches: Array<{ label: string; home?: Standing; away?: Standing; home_source?: string; away_source?: string }> };
@@ -87,6 +88,8 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
   const [stageName, setStageName] = useState(tournament.format === 'KNOCKOUT' ? 'Knockout Stage' : 'League Stage');
   const [qualificationCount, setQualificationCount] = useState(Math.min(4, tournament.teamCount));
   const [confirmCreate, setConfirmCreate] = useState(false);
+  const [stageFormat, setStageFormat] = useState<PresetKey>('BO3');
+  const [nextFormat, setNextFormat] = useState<PresetKey>('BO3');
   const [decision, setDecision] = useState('FINISH_AFTER_LEAGUE');
   const [thirdPlace, setThirdPlace] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
@@ -126,7 +129,13 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
   }
   async function createStage() {
     if (!window.confirm(`Create “${stageName}” as the first stage?`)) return;
-    await call('setup', () => createClient().rpc('save_tournament_stage', { p_tournament_id: tournament.id, p_stage_id: null, p_name: stageName, p_stage_type: tournament.format, p_sequence: 1, p_qualification_count: tournament.format === 'LEAGUE' ? qualificationCount : undefined }), 'Competition stage created.');
+    const supabase = createClient();
+    // Every stage starts with a format, so its fixtures are created with the right number of sets.
+    await call('setup', async () => {
+      const { data: stageId, error } = await supabase.rpc('save_tournament_stage', { p_tournament_id: tournament.id, p_stage_id: null, p_name: stageName, p_stage_type: tournament.format, p_sequence: 1, p_qualification_count: tournament.format === 'LEAGUE' ? qualificationCount : undefined });
+      if (error) return { error };
+      return supabase.rpc('save_volleyball_rule', presetRuleArgs(tournament.id, stageId, stageFormat));
+    }, 'Competition stage created.');
   }
   async function schedule(event: React.FormEvent<HTMLFormElement>, matchId: string) {
     event.preventDefault(); const form = new FormData(event.currentTarget); const local = String(form.get('scheduled_at') || '');
@@ -161,13 +170,16 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
   }
   async function confirmNext(stageId: string) {
     if (!preview || !window.confirm('Confirm this authoritative progression decision?')) return;
-    setPending('progression'); const { error } = await createClient().rpc('apply_league_progression', { p_stage_id: stageId, p_decision: decision, p_include_third_place: thirdPlace, p_idempotency_key: confirmationKey }); setPending(null); setMessage(error?.message ?? 'Progression applied.');
+    setPending('progression'); const supabase = createClient(); const { data, error } = await supabase.rpc('apply_league_progression', { p_stage_id: stageId, p_decision: decision, p_include_third_place: thirdPlace, p_idempotency_key: confirmationKey });
+    const targetStageId = (data as { target_stage_id?: string | null } | null)?.target_stage_id;
+    const formatError = !error && targetStageId ? (await supabase.rpc('save_volleyball_rule', presetRuleArgs(tournament.id, targetStageId, nextFormat))).error : null;
+    setPending(null); setMessage(error?.message ?? (formatError ? `Next stage created, but its format was not saved: ${formatError.message}` : 'Progression applied.'));
     if (!error) { setPreview(null); setConfirmationKey(crypto.randomUUID()); router.refresh(); }
   }
   const completeLeague = stages.find((stage) => stage.stage_type==='LEAGUE' && stage.status==='COMPLETED' && !progressionPlans.some((plan) => plan.source_stage_id===stage.id));
 
   return <div className="space-y-10"><p role="status" className="min-h-5 text-sm text-text-secondary">{message}</p>
-    <section className="space-y-4"><h2 className="text-xl font-bold">Competition Structure</h2>{stages.length===0?<div className="rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-5"><h3 className="font-bold">No competition stage configured.</h3><p className="mt-2 text-sm">{tournament.format} · {tournament.teamCount} teams · Rules {tournament.rulesReady?'ready':'missing'}</p>{!showSetup?<button onClick={()=>setShowSetup(true)} className="mt-5 min-h-11 rounded-lg bg-primary px-4 font-bold">Set Up Competition</button>:<div className="mt-5 grid gap-3 sm:grid-cols-3"><input aria-label="Stage name" placeholder="Stage name (e.g. League Stage)" value={stageName} onChange={(e)=>setStageName(e.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />{tournament.format==='LEAGUE'&&<input aria-label="Teams qualifying" placeholder="Teams to qualify (e.g. 4)" type="number" min="1" max={tournament.teamCount} value={qualificationCount} onChange={(e)=>setQualificationCount(Number(e.target.value))} className="min-h-11 rounded-lg border border-border bg-background px-3"/>}<button disabled={pending!==null||!tournament.rulesReady} onClick={()=>void createStage()} className="min-h-11 rounded-lg bg-primary px-4 font-bold disabled:opacity-40">Confirm & Create</button></div>}</div>:stages.map((stage)=>{const count=matches.filter((m)=>m.stage_id===stage.id).length;return <article key={stage.id} className="rounded-xl border border-border bg-surface p-5"><div className="flex flex-wrap justify-between gap-3"><div><p className="text-xs font-bold text-primary">{stage.stage_type} STAGE</p><h3 className="text-lg font-bold">{stage.name}</h3><p className="text-sm text-text-secondary">Stage {stage.sequence} · {stage.status} · {count} fixtures{stage.qualification_count?` · Top ${stage.qualification_count} qualify`:''}</p></div><button disabled={pending!==null||count>0||!tournament.rulesReady} onClick={()=>void call(stage.id,()=>createClient().rpc('generate_stage_fixtures',{p_stage_id:stage.id}),'Fixtures generated.')} className="min-h-11 rounded-lg bg-primary px-4 font-bold disabled:opacity-40">{count?'Fixtures Generated':'Generate Fixtures'}</button></div>{stage.stage_type==='LEAGUE'&&<form onSubmit={(event)=>void saveRules(event,stage.id)} className="mt-4 border-t border-border pt-4 space-y-3"><p className="text-xs text-text-secondary font-semibold uppercase tracking-wider">Points Table Rules</p><div className="grid gap-3 sm:grid-cols-3"><label className="flex flex-col gap-1 text-xs text-text-secondary">Points for a Win<input name="win_points" type="number" min="0" defaultValue={stage.standings_rules?.win_points??2} className="min-h-10 rounded-lg border border-border bg-background px-3 text-text-primary text-base font-bold"/></label><label className="flex flex-col gap-1 text-xs text-text-secondary">Points for a Loss<input name="loss_points" type="number" min="0" defaultValue={stage.standings_rules?.loss_points??0} className="min-h-10 rounded-lg border border-border bg-background px-3 text-text-primary text-base font-bold"/></label><label className="flex flex-col gap-1 text-xs text-text-secondary">Tiebreaker order <span className="text-text-muted normal-case font-normal">(comma-separated)</span><input name="tie_break_rules" defaultValue={(stage.standings_rules?.tie_break_rules??['WINS','SET_DIFFERENCE','POINT_DIFFERENCE','NAME']).join(',')} className="min-h-10 rounded-lg border border-border bg-background px-3 text-text-primary text-sm"/></label></div><button disabled={pending!==null} className="min-h-10 rounded-lg border border-border px-4 font-semibold text-sm">Save Points Rules</button></form>}</article>;})}</section>
+    <section className="space-y-4"><h2 className="text-xl font-bold">Competition Structure</h2>{stages.length===0?<div className="rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-5"><h3 className="font-bold">No competition stage configured.</h3><p className="mt-2 text-sm">{tournament.format} · {tournament.teamCount} teams</p>{!showSetup?<button onClick={()=>setShowSetup(true)} className="mt-5 min-h-11 rounded-lg bg-primary px-4 font-bold">Set Up Competition</button>:<div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><input aria-label="Stage name" placeholder="Stage name (e.g. League Stage)" value={stageName} onChange={(e)=>setStageName(e.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />{tournament.format==='LEAGUE'&&<input aria-label="Teams qualifying" placeholder="Teams to qualify (e.g. 4)" type="number" min="1" max={tournament.teamCount} value={qualificationCount} onChange={(e)=>setQualificationCount(Number(e.target.value))} className="min-h-11 rounded-lg border border-border bg-background px-3"/>}<select aria-label="Match format" value={stageFormat} onChange={(e)=>setStageFormat(e.target.value as PresetKey)} className="min-h-11 rounded-lg border border-border bg-background px-3 text-text-primary">{(Object.keys(PRESETS) as PresetKey[]).map((key)=><option key={key} value={key}>{PRESETS[key].label}</option>)}</select><button disabled={pending!==null} onClick={()=>void createStage()} className="min-h-11 rounded-lg bg-primary px-4 font-bold disabled:opacity-40">Confirm & Create</button></div>}</div>:stages.map((stage)=>{const count=matches.filter((m)=>m.stage_id===stage.id).length;return <article key={stage.id} className="rounded-xl border border-border bg-surface p-5"><div className="flex flex-wrap justify-between gap-3"><div><p className="text-xs font-bold text-primary">{stage.stage_type} STAGE</p><h3 className="text-lg font-bold">{stage.name}</h3><p className="text-sm text-text-secondary">Stage {stage.sequence} · {stage.status} · {count} fixtures{stage.qualification_count?` · Top ${stage.qualification_count} qualify`:''}</p></div><button disabled={pending!==null||count>0||!tournament.rulesReady} onClick={()=>void call(stage.id,()=>createClient().rpc('generate_stage_fixtures',{p_stage_id:stage.id}),'Fixtures generated.')} className="min-h-11 rounded-lg bg-primary px-4 font-bold disabled:opacity-40">{count?'Fixtures Generated':'Generate Fixtures'}</button></div>{stage.stage_type==='LEAGUE'&&<form onSubmit={(event)=>void saveRules(event,stage.id)} className="mt-4 border-t border-border pt-4 space-y-3"><p className="text-xs text-text-secondary font-semibold uppercase tracking-wider">Points Table Rules</p><div className="grid gap-3 sm:grid-cols-3"><label className="flex flex-col gap-1 text-xs text-text-secondary">Points for a Win<input name="win_points" type="number" min="0" defaultValue={stage.standings_rules?.win_points??2} className="min-h-10 rounded-lg border border-border bg-background px-3 text-text-primary text-base font-bold"/></label><label className="flex flex-col gap-1 text-xs text-text-secondary">Points for a Loss<input name="loss_points" type="number" min="0" defaultValue={stage.standings_rules?.loss_points??0} className="min-h-10 rounded-lg border border-border bg-background px-3 text-text-primary text-base font-bold"/></label><label className="flex flex-col gap-1 text-xs text-text-secondary">Tiebreaker order <span className="text-text-muted normal-case font-normal">(comma-separated)</span><input name="tie_break_rules" defaultValue={(stage.standings_rules?.tie_break_rules??['WINS','SET_DIFFERENCE','POINT_DIFFERENCE','NAME']).join(',')} className="min-h-10 rounded-lg border border-border bg-background px-3 text-text-primary text-sm"/></label></div><button disabled={pending!==null} className="min-h-10 rounded-lg border border-border px-4 font-semibold text-sm">Save Points Rules</button></form>}</article>;})}</section>
 
     {completeLeague && (
       <section className="rounded-2xl border border-success/30 bg-success/10 p-5">
@@ -196,6 +208,12 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
               onChange={(e) => { setThirdPlace(e.target.checked); setPreview(null); setConfirmationKey(crypto.randomUUID()); }}
             />
             Include Third Place Match
+          </label>
+        )}
+        {decision !== 'FINISH_AFTER_LEAGUE' && (
+          <label className="mt-4 flex flex-wrap items-center gap-3 text-sm font-semibold">
+            Next stage format
+            <select aria-label="Next stage format" value={nextFormat} onChange={(e)=>setNextFormat(e.target.value as PresetKey)} className="min-h-11 rounded-lg border border-border bg-background px-3 text-text-primary">{(Object.keys(PRESETS) as PresetKey[]).map((key)=><option key={key} value={key}>{PRESETS[key].label}</option>)}</select>
           </label>
         )}
         <button
@@ -298,7 +316,10 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
                             <p className="min-w-0 truncate text-sm font-black text-text-primary sm:text-base">{match.away_team?.name ?? 'TBD'}</p>
                           </div>
                         </div>
-                        <span className={`shrink-0 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-black uppercase tracking-wider ${statusColor}`}>{match.status}</span>
+                        <div className="flex shrink-0 items-center gap-2">
+                          {match.sets_to_win ? <span className="rounded-full border border-border px-2.5 py-0.5 text-xs font-bold text-text-secondary" title={match.format_override ? 'Format chosen for this match' : 'Stage format'}>Best of {match.sets_to_win * 2 - 1}{match.format_override ? ' · custom' : ''}</span> : null}
+                          <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-black uppercase tracking-wider ${statusColor}`}>{match.status}</span>
+                        </div>
                       </div>
 
                       {/* Reorder & Action Bar Row */}
@@ -359,7 +380,7 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
 
                     <details className="border-t border-border">
                       <summary className="cursor-pointer select-none px-4 py-2.5 text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-muted transition-colors list-none flex items-center gap-2">
-                        <span className="opacity-60">▸</span>Schedule &amp; Assign Scorer
+                        <span className="opacity-60">▸</span>Schedule, Format &amp; Scorer
                       </summary>
                       <div className="px-4 pb-4 pt-3 space-y-3">
                         <form onSubmit={(e) => void schedule(e, match.id)} className="grid gap-2 sm:grid-cols-5">
@@ -372,6 +393,22 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
                           </select>
                           <button disabled={pending !== null || isLocked} className="min-h-10 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-40">{match.scheduled_at ? 'Update' : 'Schedule'}</button>
                         </form>
+                        <div>
+                          <label htmlFor={`format-${match.id}`} className="block text-xs text-text-secondary font-medium mb-1.5">
+                            Match format
+                          </label>
+                          <select
+                            id={`format-${match.id}`}
+                            value={match.format_override && match.sets_to_win ? String(match.sets_to_win) : ''}
+                            disabled={pending !== null || ['COMPLETED', 'CANCELLED'].includes(match.status)}
+                            onChange={(e) => void call(match.id, () => createClient().rpc('set_match_format', { p_match_id: match.id, p_sets_to_win: e.target.value ? Number(e.target.value) : null }), 'Match format updated.')}
+                            className="min-h-10 w-full max-w-xs rounded-lg border border-border bg-background px-3 text-sm font-medium text-text-primary cursor-pointer"
+                          >
+                            <option value="">Stage format</option>
+                            {(Object.keys(PRESETS) as PresetKey[]).map((key) => <option key={key} value={PRESETS[key].setsToWin}>{PRESETS[key].label}</option>)}
+                          </select>
+                          {match.status === 'LIVE' ? <p className="mt-1 text-xs text-text-muted">Played sets stay as they are. A format that would end the match or the current set is refused.</p> : null}
+                        </div>
                         <div>
                           <label className="block text-xs text-text-secondary font-medium mb-1.5">
                             Assigned scorer
