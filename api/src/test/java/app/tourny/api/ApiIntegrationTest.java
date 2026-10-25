@@ -26,6 +26,9 @@ import org.springframework.test.context.DynamicPropertySource;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "server.error.include-message=always")
 class ApiIntegrationTest {
 
+    // Defaults to the local Supabase stack; deploy/rehearse.sh gives a plain PostgreSQL + PostgREST setup:
+    //   TOURNY_TEST_DB_URL=jdbc:postgresql://127.0.0.1:55432/tourny TOURNY_DB_URL=$TOURNY_TEST_DB_URL TOURNY_POSTGREST_URL=http://127.0.0.1:3001
+    private static final String DB_URL = System.getenv().getOrDefault("TOURNY_TEST_DB_URL", "jdbc:postgresql://127.0.0.1:54322/postgres");
     private static final HttpClient HTTP = HttpClient.newHttpClient();
     private static String password;
 
@@ -48,10 +51,10 @@ class ApiIntegrationTest {
 
     @BeforeAll
     static void seededDatabase() throws Exception {
-        try (var c = DriverManager.getConnection("jdbc:postgresql://127.0.0.1:54322/postgres", "postgres", "postgres")) {
+        try (var c = DriverManager.getConnection(DB_URL, "postgres", "postgres")) {
             assumeTrue(c.isValid(2));
         } catch (Exception e) {
-            assumeTrue(false, "local database not running");
+            assumeTrue(false, "database not reachable at " + DB_URL + ": " + e);
         }
         var seed = Files.readString(Path.of("../supabase/seed.sql"));
         var m = Pattern.compile("extensions\\.crypt\\('([^']+)'").matcher(seed);
@@ -243,7 +246,7 @@ class ApiIntegrationTest {
 
     @Test
     void suspendedAccountsCannotSignInOrRefresh() throws Exception {
-        try (var c = DriverManager.getConnection("jdbc:postgresql://127.0.0.1:54322/postgres", "postgres", "postgres")) {
+        try (var c = DriverManager.getConnection(DB_URL, "postgres", "postgres")) {
             var first = post("/auth/v1/token?grant_type=password", "{\"email\":\"scorer@tourny.local\",\"password\":\"" + password + "\"}", null);
             assertEquals(200, first.statusCode(), first.body());
             String refresh = field(first.body(), "refresh_token");

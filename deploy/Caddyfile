@@ -1,0 +1,11 @@
+{$APP_DOMAIN} {
+	reverse_proxy web:3000
+}
+
+{$API_DOMAIN} {
+	# Websockets (realtime) and uploads pass through unchanged.
+	request_body {
+		max_size 4MB
+	}
+	reverse_proxy api:8080
+}

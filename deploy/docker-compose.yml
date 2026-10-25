@@ -1,0 +1,74 @@
+# Tourny v2 on one VPS: PostgreSQL, PostgREST, the Spring Boot API, the Next.js web app and Caddy
+# (automatic HTTPS). Copy .env.example to .env, fill it in, then: docker compose up -d --build
+name: tourny
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tourny
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      AUTHENTICATOR_PASSWORD: ${AUTHENTICATOR_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # First start only: bootstrap + migrations (see initdb.sh).
+      - ./initdb.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
+      - ./bootstrap.sql:/init/bootstrap.sql:ro
+      - ../supabase/migrations:/init/migrations:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tourny"]
+      interval: 5s
+      retries: 20
+
+  postgrest:
+    image: postgrest/postgrest:v12.2.3
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${AUTHENTICATOR_PASSWORD}@db:5432/tourny
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+
+  api:
+    build: ../api
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy }, postgrest: { condition: service_started } }
+    environment:
+      TOURNY_DB_URL: jdbc:postgresql://db:5432/tourny
+      TOURNY_DB_USER: postgres
+      TOURNY_DB_PASSWORD: ${DB_PASSWORD}
+      TOURNY_JWT_SECRET: ${JWT_SECRET}
+      TOURNY_POSTGREST_URL: http://postgrest:3000
+      TOURNY_CORS_ORIGINS: https://${APP_DOMAIN}
+    volumes:
+      - storage:/data/storage
+
+  web:
+    build:
+      context: ..
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: https://${API_DOMAIN}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
+        NEXT_PUBLIC_SITE_URL: https://${APP_DOMAIN}
+    restart: unless-stopped
+    environment:
+      # The server side reaches the API over the internal network.
+      NEXT_PUBLIC_SUPABASE_URL: https://${API_DOMAIN}
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    depends_on: [api, web]
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+      API_DOMAIN: ${API_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+
+volumes:
+  db-data:
+  storage:
+  caddy-data:
