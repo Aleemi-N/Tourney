@@ -22,6 +22,7 @@ import { WifiOff, RefreshCcw, Trophy } from 'lucide-react';
 import { cardClasses } from '@/components/ui/Card';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { cn, teamColorStyle } from '@/lib/utils';
+import { deriveCourt } from '@/lib/court';
 
 
 // ── Types (mirrors get_public_match_state output) ─────────────────────────────
@@ -38,6 +39,9 @@ interface SetState {
   away_score: number;
   status: string;
   winner_team_id: string | null;
+  left_team_id?: string | null;
+  first_serve_team_id?: string | null;
+  serving_team_id?: string | null;
 }
 
 interface MatchState {
@@ -132,6 +136,17 @@ export function PublicMatchLive({ matchId, initialState, tvMode = false, homeCol
   const current = activeSet(sets);
   const winner = match.winner_team_id === home.id ? home : match.winner_team_id === away.id ? away : null;
 
+  // Sides and server follow the scorer's toss; without one, home is on the left.
+  const court = deriveCourt(sets, current ?? undefined, home.id, away.id);
+  const side = (isHome: boolean) => ({
+    team: isHome ? home : away,
+    color: isHome ? homeColor : awayColor,
+    sets: isHome ? homeSets : awaySets,
+    score: isHome ? current?.home_score ?? 0 : current?.away_score ?? 0,
+  });
+  const [L, R] = court.leftId === away.id ? [side(false), side(true)] : [side(true), side(false)];
+  const serving = (teamId: string) => !isCompleted && court.servingId === teamId;
+
   const completedSets = sets.filter((s) => s.status === 'COMPLETED');
   const venueLabel = match.venue ? `${match.venue}${match.court ? ` · Court ${match.court}` : ''}` : 'Match';
 
@@ -149,15 +164,15 @@ export function PublicMatchLive({ matchId, initialState, tvMode = false, homeCol
         </p>
 
         <div className="grid w-full max-w-5xl grid-cols-[1fr_auto_1fr] items-center gap-8 px-8">
-          <TvTeam team={home} sets={homeSets} leading={homeSets > awaySets} color={homeColor} />
+          <TvTeam team={L.team} sets={L.sets} leading={L.sets > R.sets} color={L.color} serving={serving(L.team.id)} />
           <div className="flex flex-col items-center gap-4">
             {current && !isCompleted ? (
               <div className="text-center">
                 <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-text-muted">Set {current.set_number}</p>
                 <p className="text-5xl font-bold tabular-nums">
-                  {current.home_score}
+                  {L.score}
                   <span className="mx-2 text-text-muted">:</span>
-                  {current.away_score}
+                  {R.score}
                 </p>
               </div>
             ) : null}
@@ -168,7 +183,7 @@ export function PublicMatchLive({ matchId, initialState, tvMode = false, homeCol
               </p>
             ) : null}
           </div>
-          <TvTeam team={away} sets={awaySets} leading={awaySets > homeSets} color={awayColor} />
+          <TvTeam team={R.team} sets={R.sets} leading={R.sets > L.sets} color={R.color} serving={serving(R.team.id)} />
         </div>
 
         {completedSets.length > 0 ? (
@@ -206,16 +221,16 @@ export function PublicMatchLive({ matchId, initialState, tvMode = false, homeCol
         </div>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <TeamBadge team={home} color={homeColor} />
+          <TeamBadge team={L.team} color={L.color} serving={serving(L.team.id)} />
           <div className="flex flex-col items-center">
             <p className="flex items-center gap-3 text-5xl font-bold tabular-nums">
-              <span className={homeSets >= awaySets ? 'text-text-primary' : 'text-text-muted'}>{homeSets}</span>
+              <span className={L.sets >= R.sets ? 'text-text-primary' : 'text-text-muted'}>{L.sets}</span>
               <span className="text-xl text-text-muted">–</span>
-              <span className={awaySets >= homeSets ? 'text-text-primary' : 'text-text-muted'}>{awaySets}</span>
+              <span className={R.sets >= L.sets ? 'text-text-primary' : 'text-text-muted'}>{R.sets}</span>
             </p>
             <p className="text-xs font-medium text-text-muted">Sets</p>
           </div>
-          <TeamBadge team={away} color={awayColor} />
+          <TeamBadge team={R.team} color={R.color} serving={serving(R.team.id)} />
         </div>
 
         {current && !isCompleted ? (
@@ -224,9 +239,9 @@ export function PublicMatchLive({ matchId, initialState, tvMode = false, homeCol
               Set {current.set_number} · to {current.target_points} · Best of {state.sets.length}
             </p>
             <p className="mt-1 text-4xl font-bold tabular-nums">
-              {current.home_score}
+              {L.score}
               <span className="mx-3 text-xl text-text-muted">:</span>
-              {current.away_score}
+              {R.score}
             </p>
           </div>
         ) : null}
@@ -253,24 +268,30 @@ export function PublicMatchLive({ matchId, initialState, tvMode = false, homeCol
   );
 }
 
-function TeamBadge({ team, color }: { team: MatchTeam; color?: string | null }) {
+function ServingTag() {
+  return <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-primary">Serving</span>;
+}
+
+function TeamBadge({ team, color, serving = false }: { team: MatchTeam; color?: string | null; serving?: boolean }) {
   return (
     <div className="flex min-w-0 flex-col items-center gap-2 text-center">
       <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-sm font-bold text-primary" style={teamColorStyle(color)}>
         {(team.short_name ?? team.name).slice(0, 3).toUpperCase()}
       </span>
       <span className="text-sm font-semibold leading-tight text-text-primary">{team.name}</span>
+      {serving ? <ServingTag /> : <span className="h-5" aria-hidden="true" />}
     </div>
   );
 }
 
-function TvTeam({ team, sets, leading, color }: { team: MatchTeam; sets: number; leading: boolean; color?: string | null }) {
+function TvTeam({ team, sets, leading, color, serving = false }: { team: MatchTeam; sets: number; leading: boolean; color?: string | null; serving?: boolean }) {
   const style = teamColorStyle(color);
   return (
     <div className="text-center">
       <p className="mb-4 inline-flex rounded-xl bg-primary/15 px-4 py-1.5 text-2xl font-bold uppercase tracking-widest text-primary" style={style}>
         {team.short_name ?? team.name}
       </p>
+      <p className="mb-2 h-7">{serving ? <ServingTag /> : null}</p>
       <p className={cn('text-[clamp(6rem,20vw,14rem)] font-bold leading-none tabular-nums', leading ? 'text-text-primary' : 'text-text-muted')}>{sets}</p>
     </div>
   );

@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCcw, Undo2, Trophy, Clock, Wifi, WifiOff, Hourglass, MapPin } from 'lucide-react';
+import { RefreshCcw, Undo2, Trophy, Clock, Wifi, WifiOff, Hourglass, MapPin, ArrowLeftRight, Settings2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { cardClasses } from '@/components/ui/Card';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { ScoreFixPanel } from '@/components/scorer/ScoreFixPanel';
+import { CourtSetup } from '@/components/scorer/CourtSetup';
+import { deriveCourt } from '@/lib/court';
 import { cn, teamColorStyle } from '@/lib/utils';
 
 type ActiveTimeout = {
@@ -38,6 +40,9 @@ type MatchState = {
     away_score: number;
     status: string;
     winner_team_id: string | null;
+    left_team_id?: string | null;
+    first_serve_team_id?: string | null;
+    serving_team_id?: string | null;
   }>;
   timeouts?: {
     max_per_set: number;
@@ -78,6 +83,7 @@ export function ScorerMatchClient({
 }) {
   const [state, setState] = useState<MatchState>(initialState);
   const [pending, setPending] = useState(false);
+  const [editingSetup, setEditingSetup] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [conn, setConn] = useState<'connecting' | 'live' | 'reconnecting'>('connecting');
   const [now, setNow] = useState(() => Date.now());
@@ -310,6 +316,20 @@ export function ScorerMatchClient({
   const scoringLocked = pending || isCompleted || Boolean(activeTimeout);
   const home = { ...state.home_team, color: homeColor ?? DEFAULT_HOME_COLOR };
   const away = { ...state.away_team, color: awayColor ?? DEFAULT_AWAY_COLOR };
+  const court = deriveCourt(state.sets, activeSet, home.id, away.id);
+  const left = court.leftId === away.id ? away : home;
+  const right = left === home ? away : home;
+  const sideInfo = (team: ScorerTeam) => {
+    const isHome = team.id === home.id;
+    return {
+      score: (isHome ? activeSet?.home_score : activeSet?.away_score) ?? 0,
+      setsWon: isHome ? homeSetsWon : awaySetsWon,
+      timeoutsUsed: isHome ? homeTimeoutsUsed : awayTimeoutsUsed,
+      serving: court.servingId === team.id,
+    };
+  };
+  const showSetup = !isCompleted && Boolean(activeSet) && (court.needsSetup || editingSetup);
+  const switchNow = court.switchedSides && activeSet !== undefined && Math.max(activeSet.home_score, activeSet.away_score) === Math.ceil(activeSet.target_points / 2);
 
   return (
     <div className="mx-auto max-w-3xl select-none space-y-4" aria-busy={pending}>
@@ -376,19 +396,41 @@ export function ScorerMatchClient({
         )}
       </AnimatePresence>
 
+      {showSetup && activeSet ? (
+        <CourtSetup
+          key={activeSet.set_number}
+          matchId={state.match.id}
+          setNumber={activeSet.set_number}
+          home={home}
+          away={away}
+          initialLeftId={activeSet.left_team_id ?? court.leftId}
+          initialServeId={activeSet.first_serve_team_id ?? court.servingId}
+          onSaved={async () => { setEditingSetup(false); await refresh(); }}
+          onCancel={court.needsSetup ? undefined : () => setEditingSetup(false)}
+        />
+      ) : null}
+
+      {switchNow ? (
+        <p role="status" className="flex items-center justify-center gap-2 rounded-xl bg-warning/10 px-4 py-3 text-sm font-semibold text-warning">
+          <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
+          Teams switch sides now
+        </p>
+      ) : null}
+
       <section className={`${cardClasses} p-3 sm:p-4`} aria-label="Score">
         <div className="mb-3 flex items-center justify-between gap-2 px-1">
-          <SetsWon team={home} won={homeSetsWon} />
+          <SetsWon team={left} won={sideInfo(left).setsWon} />
           <p className="text-center text-sm font-semibold text-text-secondary">
             Set {activeSet?.set_number ?? 1}
             <span className="block text-xs font-medium text-text-muted">to {activeSet?.target_points ?? 25} · Best of {state.sets.length}</span>
           </p>
-          <SetsWon team={away} won={awaySetsWon} reverse />
+          <SetsWon team={right} won={sideInfo(right).setsWon} reverse />
         </div>
 
         <div className="relative grid grid-cols-2 gap-2 sm:gap-3">
-          <ScoreButton team={home} score={activeSet?.home_score ?? 0} disabled={scoringLocked} onClick={() => void awardPoint(home.id)} />
-          <ScoreButton team={away} score={activeSet?.away_score ?? 0} disabled={scoringLocked} onClick={() => void awardPoint(away.id)} />
+          {[left, right].map((team) => (
+            <ScoreButton key={team.id} team={team} score={sideInfo(team).score} serving={sideInfo(team).serving} disabled={scoringLocked} onClick={() => void awardPoint(team.id)} />
+          ))}
           {showUndo && (
             <button
               type="button"
@@ -404,20 +446,16 @@ export function ScorerMatchClient({
       </section>
 
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
-        <TimeoutButton
-          used={homeTimeoutsUsed}
-          max={maxTimeouts}
-          disabled={scoringLocked || homeTimeoutsUsed >= maxTimeouts}
-          onClick={() => void handleCallTimeout(home.id)}
-          label={`Call timeout for ${home.name}`}
-        />
-        <TimeoutButton
-          used={awayTimeoutsUsed}
-          max={maxTimeouts}
-          disabled={scoringLocked || awayTimeoutsUsed >= maxTimeouts}
-          onClick={() => void handleCallTimeout(away.id)}
-          label={`Call timeout for ${away.name}`}
-        />
+        {[left, right].map((team) => (
+          <TimeoutButton
+            key={team.id}
+            used={sideInfo(team).timeoutsUsed}
+            max={maxTimeouts}
+            disabled={scoringLocked || sideInfo(team).timeoutsUsed >= maxTimeouts}
+            onClick={() => void handleCallTimeout(team.id)}
+            label={`Call timeout for ${team.name}`}
+          />
+        ))}
       </div>
 
       <section className={`${cardClasses} px-4 py-1`} aria-labelledby="set-history">
@@ -458,7 +496,13 @@ export function ScorerMatchClient({
         onChanged={refresh}
       />
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        {!isCompleted && !showSetup && activeSet ? (
+          <Button variant="ghost" size="sm" onClick={() => setEditingSetup(true)}>
+            <Settings2 className="h-4 w-4" aria-hidden="true" />
+            Sides &amp; serve
+          </Button>
+        ) : null}
         <Button variant="ghost" size="sm" onClick={() => void refresh()}>
           <RefreshCcw className="h-4 w-4" aria-hidden="true" />
           Sync state
@@ -491,17 +535,20 @@ function SetsWon({ team, won, reverse = false }: { team: ScorerTeam; won: number
   );
 }
 
-function ScoreButton({ team, score, disabled, onClick }: { team: ScorerTeam; score: number; disabled: boolean; onClick: () => void }) {
+function ScoreButton({ team, score, serving, disabled, onClick }: { team: ScorerTeam; score: number; serving: boolean; disabled: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
-      aria-label={`Award point to ${team.name}. Current score ${score}`}
+      aria-label={`Award point to ${team.name}. Current score ${score}${serving ? '. Serving' : ''}`}
       className="flex min-h-64 min-w-0 flex-col items-center justify-between gap-3 rounded-2xl border border-border border-t-[6px] px-2 pb-4 pt-5 transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-80"
       style={{ borderTopColor: team.color, backgroundColor: `color-mix(in srgb, ${team.color} 8%, var(--surface))` }}
     >
-      <span className="line-clamp-2 max-w-full text-center text-sm font-semibold text-text-primary sm:text-base">{team.name}</span>
+      <span className="flex max-w-full flex-col items-center gap-1.5">
+        <span className="line-clamp-2 text-center text-sm font-semibold text-text-primary sm:text-base">{team.name}</span>
+        {serving ? <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold" style={teamColorStyle(team.color)}>Serving</span> : <span className="h-5" aria-hidden="true" />}
+      </span>
       <motion.span
         key={score}
         initial={{ scale: 1.08, opacity: 0.6 }}

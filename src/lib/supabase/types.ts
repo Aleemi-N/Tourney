@@ -3401,6 +3401,10 @@ export type Database = {
         Args: { p_match_id: string; p_reason: string }
         Returns: Json
       }
+      set_match_setup: {
+        Args: { p_first_serve_team_id: string; p_left_team_id: string; p_match_id: string; p_set_number: number }
+        Returns: Json
+      }
       set_match_format: {
         Args: { p_match_id: string; p_sets_to_win?: number | null }
         Returns: Json

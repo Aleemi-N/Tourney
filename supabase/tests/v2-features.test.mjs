@@ -185,3 +185,24 @@ test('draw is league-only; a knockout walkover advances the winner', () => inTra
   await db.as(ORGANIZER, "SELECT public.declare_match_result($1, 'WALKOVER', $2, 'forfeit')", [semi.id, teams[1]]);
   assert.equal((await db.one('SELECT home_team_id FROM public.matches WHERE id=$1', [final.id])).home_team_id, teams[1]);
 }));
+
+test('court setup: toss is stored, serve follows points and undo, reset forgets the toss', () => inTransaction(async (db) => {
+  const m = await db.one("SELECT id, home_team_id, away_team_id FROM public.matches WHERE stage_id=$1 AND status='SCHEDULED' AND home_team_id IS NOT NULL ORDER BY program_order LIMIT 1", [STAGE3]);
+  const state = async () => (await db.one('SELECT public.get_public_match_state($1) AS s', [m.id])).s.sets[0];
+  await assert.rejects(db.as('90000000-0000-0000-0000-000000000140', 'SELECT public.set_match_setup($1, 1, $2, $2)', [m.id, m.home_team_id]), /Unauthorized/);
+  await assert.rejects(db.as(ORGANIZER, 'SELECT public.set_match_setup($1, 1, $2, $3)', [m.id, m.home_team_id, '90300000-0000-0000-0000-00000000dead']), /one of the two teams/);
+
+  await db.as(ORGANIZER, 'SELECT public.set_match_setup($1, 1, $2, $3)', [m.id, m.away_team_id, m.home_team_id]);
+  let set1 = await state();
+  assert.deepEqual([set1.left_team_id, set1.first_serve_team_id, set1.serving_team_id], [m.away_team_id, m.home_team_id, m.home_team_id]);
+
+  await db.as(ORGANIZER, 'SELECT public.award_point($1, $2, $3)', [m.id, m.away_team_id, 'p1']);
+  await db.as(ORGANIZER, 'SELECT public.award_point($1, $2, $3)', [m.id, m.home_team_id, 'p2']);
+  assert.equal((await state()).serving_team_id, m.home_team_id);
+  await db.as(ORGANIZER, 'SELECT public.undo_last_score_event($1)', [m.id]);
+  assert.equal((await state()).serving_team_id, m.away_team_id);
+
+  await db.as(ORGANIZER, "SELECT public.reset_match($1, 'start again')", [m.id]);
+  set1 = await state();
+  assert.deepEqual([set1.left_team_id, set1.serving_team_id], [null, null]);
+}));
