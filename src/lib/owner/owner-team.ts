@@ -7,6 +7,7 @@ export type OwnerTeam = {
     short_name: string | null;
     logo_path: string | null;
     place: string | null;
+    primary_color: string | null;
     tournament_id: string;
     tournament_name: string;
 };
@@ -19,6 +20,7 @@ type TeamOwnerRow = {
         short_name: string | null;
         logo_path: string | null;
         place: string | null;
+        primary_color: string | null;
         tournament_id: string;
         tournaments: { name: string } | { name: string }[] | null;
     } | null;
@@ -30,7 +32,7 @@ export async function getOwnerTeams(
 ) {
     const { data, error } = await supabase
         .from('team_owners')
-        .select('team_id, teams!inner(id, name, short_name, logo_path, place, tournament_id, tournaments(name))')
+        .select('team_id, teams!inner(id, name, short_name, logo_path, place, primary_color, tournament_id, tournaments(name))')
         .eq('user_id', userId)
         .eq('status', 'ACTIVE');
 
@@ -47,6 +49,7 @@ export async function getOwnerTeams(
                 short_name: team.short_name,
                 logo_path: team.logo_path,
                 place: team.place,
+                primary_color: team.primary_color,
                 tournament_id: team.tournament_id,
                 tournament_name: tournament?.name ?? 'Tournament',
             } satisfies OwnerTeam;
@@ -66,7 +69,7 @@ export async function getOwnerTeam(
     // Allow tournament organizers to preview/access team pages
     const { data: teamData } = await supabase
         .from('teams')
-        .select('id, name, short_name, logo_path, place, tournament_id, tournaments!inner(name, created_by)')
+        .select('id, name, short_name, logo_path, place, primary_color, tournament_id, tournaments!inner(name, created_by)')
         .eq('id', teamId)
         .maybeSingle();
 
@@ -79,6 +82,7 @@ export async function getOwnerTeam(
                 short_name: teamData.short_name,
                 logo_path: teamData.logo_path,
                 place: teamData.place,
+                primary_color: teamData.primary_color,
                 tournament_id: teamData.tournament_id,
                 tournament_name: tournament.name ?? 'Tournament',
             } satisfies OwnerTeam;

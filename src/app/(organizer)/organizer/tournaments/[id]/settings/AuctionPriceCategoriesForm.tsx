@@ -42,7 +42,7 @@ function CategoryRow({
   if (locked) {
     const priceNum = Number(price);
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-border bg-surface-muted/60 p-4">
+      <div className="flex items-center gap-3 rounded-xl border border-border bg-surface-muted p-4">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-base font-bold text-primary">
           {code}
         </span>
@@ -200,7 +200,7 @@ export function AuctionPriceCategoriesForm({
       <div className="flex flex-wrap items-start justify-between gap-3 mb-1">
         <h2 className="text-lg font-semibold text-text-primary">Auction Price Categories</h2>
         {locked && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-warning/10 px-2.5 py-1 text-xs font-semibold text-warning dark:text-warning">
             <LockClosedIcon className="h-3.5 w-3.5" />
             Locked
           </span>
@@ -212,7 +212,7 @@ export function AuctionPriceCategoriesForm({
       </p>
 
       {locked && (
-        <div className="mb-5 rounded-lg border border-amber-500/20 bg-amber-500/8 p-4 text-sm text-amber-700 dark:text-amber-300">
+        <div className="mb-5 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm text-warning dark:text-warning">
           <LockClosedIcon className="mb-0.5 mr-1.5 inline h-4 w-4" />
           Category configuration is locked because the auction has been prepared. To reconfigure
           categories you would need to reset the auction preparation.
@@ -224,7 +224,7 @@ export function AuctionPriceCategoriesForm({
           role="status"
           className={`mb-5 rounded-lg border p-4 text-sm ${status.type === 'error'
               ? 'border-danger/20 bg-danger/10 text-danger'
-              : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600'
+              : 'border-success/30 bg-success/10 text-success'
             }`}
         >
           {status.text}

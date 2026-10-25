@@ -141,13 +141,13 @@ async function AuctionContent({ params }: { params: Promise<{ id: string }> }) {
     <main className="relative min-h-screen overflow-hidden p-4 sm:p-6 md:p-8">
       {/* 🌟 Dynamic Background Glows for Glassmorphism 🌟 */}
       <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-primary/20 blur-[120px] pointer-events-none mix-blend-screen" />
-      <div className="absolute bottom-[20%] right-[-10%] h-[600px] w-[600px] rounded-full bg-fuchsia-600/15 blur-[150px] pointer-events-none mix-blend-screen" />
+      <div className="absolute bottom-[20%] right-[-10%] h-[600px] w-[600px] rounded-full bg-primary/10 blur-[150px] pointer-events-none mix-blend-screen" />
       
       <div className="relative z-10 max-w-7xl mx-auto">
         <div className="mb-6 flex items-center gap-3">
           <Link
             href={`/organizer/tournaments/${id}`}
-            className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-text-secondary hover:text-primary transition-colors bg-surface-muted/50 px-4 py-2 rounded-xl backdrop-blur-md border border-glass-border shadow-sm"
+            className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-text-secondary hover:text-primary transition-colors bg-surface-muted px-4 py-2 rounded-xl border border-glass-border shadow-sm"
           >
             <ArrowLeftIcon className="h-4 w-4" />
             Back to Tournament
@@ -156,7 +156,7 @@ async function AuctionContent({ params }: { params: Promise<{ id: string }> }) {
         </div>
 
         <div className="mb-8">
-          <h1 className="text-4xl font-black tracking-tight sm:text-5xl bg-gradient-to-br from-white via-primary-100 to-primary/50 bg-clip-text text-transparent drop-shadow-sm">Auction Control</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">Auction control</h1>
           <p className="mt-2 text-lg font-bold text-text-secondary">{tournament.name as string}</p>
         </div>
 

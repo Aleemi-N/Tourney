@@ -298,17 +298,17 @@ export function AuctionPlayerCard({
       animate={{ opacity: 1, scale: 1 }}
       exit={!reduceMotion ? { opacity: 0, scale: 0.95 } : undefined}
       transition={{ duration: 0.4 }}
-      className={`relative mx-auto overflow-hidden rounded-[2rem] border-2 border-[#e5a93c]/60 bg-gradient-to-b from-[#0f121d] via-[#141826] to-[#0a0c14] shadow-[0_0_80px_rgba(229,169,60,0.2)] font-sans select-none transition-all duration-300 w-full
+      className={`relative mx-auto overflow-hidden rounded-2xl border-2 border-warning/60 bg-surface shadow-card font-sans select-none transition-all duration-300 w-full
         ${isFullscreen ? 'max-w-5xl my-auto p-10' : 'max-w-3xl p-5'}`}
     >
       {/* Background Glows */}
-      <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[450px] h-[450px] bg-amber-600/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-warning/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[450px] h-[450px] bg-warning/10 rounded-full blur-[100px] pointer-events-none" />
       
       {/* Header Bar */}
-      <div className={`relative z-10 flex items-center justify-between border-b border-white/10 ${isFullscreen ? 'pb-4 mb-6' : 'pb-3 mb-4'}`}>
+      <div className={`relative z-10 flex items-center justify-between border-b border-border ${isFullscreen ? 'pb-4 mb-6' : 'pb-3 mb-4'}`}>
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-300 p-0.5 shadow-lg ${isFullscreen ? 'h-11 w-11' : 'h-9 w-9'}`}>
+          <div className={`flex shrink-0 items-center justify-center rounded-2xl bg-warning p-0.5 shadow-card ${isFullscreen ? 'h-11 w-11' : 'h-9 w-9'}`}>
             <div className="relative flex h-full w-full items-center justify-center rounded-[14px] bg-black overflow-hidden">
               {tournamentLogoUrl ? (
                 <Image src={tournamentLogoUrl} alt={tournamentName || ''} fill unoptimized className="object-cover" />
@@ -318,10 +318,10 @@ export function AuctionPlayerCard({
             </div>
           </div>
           <div className="min-w-0">
-            <span className={`block font-black uppercase tracking-[0.2em] text-white truncate max-w-[200px] sm:max-w-[320px] ${isFullscreen ? 'text-xs' : 'text-[10px]'}`}>
+            <span className={`block font-black uppercase tracking-[0.2em] text-text-primary truncate max-w-[200px] sm:max-w-[320px] ${isFullscreen ? 'text-xs' : 'text-xs'}`}>
               {tournamentName || 'VOLLEYBALL'}
             </span>
-            <span className="block text-[9px] font-bold uppercase tracking-[0.3em] text-[#e5a93c]">
+            <span className="block text-xs font-bold uppercase tracking-[0.3em] text-warning">
               {tournamentName ? 'OFFICIAL AUCTION' : 'TOURNAMENT'}
             </span>
           </div>
@@ -330,13 +330,13 @@ export function AuctionPlayerCard({
           <button
             type="button"
             onClick={() => void downloadPlayerCardPoster()}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[#e5a93c]/50 bg-[#e5a93c]/15 px-2.5 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#e5a93c] hover:bg-[#e5a93c]/30 transition-colors shadow-md"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-warning/50 bg-warning/15 px-2.5 py-1 text-xs sm:text-xs font-bold uppercase tracking-wider text-warning hover:bg-warning/30 transition-colors shadow-md"
             title="Download high-resolution player auction poster card"
           >
             📥 Card PNG
           </button>
-          <div className={`flex shrink-0 items-center gap-2 rounded-full border border-red-500/60 bg-gradient-to-r from-red-600 to-rose-600 font-black uppercase tracking-wider text-white shadow-lg ${isFullscreen ? 'px-4 py-1.5 text-xs' : 'px-2.5 py-1 text-[10px]'}`}>
-            <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+          <div className={`flex shrink-0 items-center gap-2 rounded-full border border-danger/30 bg-danger font-black uppercase tracking-wider text-text-inverse shadow-card ${isFullscreen ? 'px-4 py-1.5 text-xs' : 'px-2.5 py-1 text-xs'}`}>
+            <span className="h-2 w-2 rounded-full bg-surface-muted animate-pulse" />
             LIVE
           </div>
         </div>
@@ -346,16 +346,16 @@ export function AuctionPlayerCard({
       <div className={`relative z-10 flex flex-row items-center justify-between ${isFullscreen ? 'gap-8 mb-7' : 'gap-4 mb-5'}`}>
         {/* Left: Photo */}
         <div className={`relative flex justify-center shrink-0 ${isFullscreen ? 'w-[40%] max-w-[280px]' : 'w-[120px] sm:w-[140px]'}`}>
-          <div className={`absolute z-30 flex items-center justify-center bg-black/95 border-2 border-[#e5a93c] rounded-xl shadow-[0_4px_12px_rgba(0,0,0,1)] ${isFullscreen ? '-top-5 -left-5 px-3 py-1' : '-top-3 -left-3 px-2 py-0.5'}`}>
-            <span className={`font-black italic text-[#e5a93c] tracking-tighter ${isFullscreen ? 'text-5xl' : 'text-3xl'}`}>
+          <div className={`absolute z-30 flex items-center justify-center bg-surface border-2 border-warning rounded-xl shadow-card ${isFullscreen ? '-top-5 -left-5 px-3 py-1' : '-top-3 -left-3 px-2 py-0.5'}`}>
+            <span className={`font-black italic text-warning tracking-tighter ${isFullscreen ? 'text-5xl' : 'text-3xl'}`}>
               #{player.auction_order ?? '?'}
             </span>
           </div>
-          <div className="relative w-full aspect-square overflow-hidden rounded-[1.5rem] border-2 sm:border-4 border-[#e5a93c] bg-gradient-to-tr from-[#1a1409] to-[#0c0d14] shadow-xl flex items-center justify-center">
+          <div className="relative w-full aspect-square overflow-hidden rounded-2xl border-2 sm:border-4 border-warning bg-surface-muted shadow-card flex items-center justify-center">
             {photoUrl ? (
               <Image src={photoUrl} alt={player.player.display_name} fill unoptimized className="object-cover object-top" sizes="256px" />
             ) : (
-              <span className={`font-black tracking-widest text-[#e5a93c] ${isFullscreen ? 'text-8xl' : 'text-5xl'}`}>{initial}</span>
+              <span className={`font-black tracking-widest text-warning ${isFullscreen ? 'text-8xl' : 'text-5xl'}`}>{initial}</span>
             )}
           </div>
         </div>
@@ -363,22 +363,22 @@ export function AuctionPlayerCard({
         {/* Right: Details */}
         <div className="flex-1 w-full text-left min-w-0">
           <div className="min-w-0 mb-3">
-            <h2 className={`font-black uppercase tracking-tight text-white italic drop-shadow-md break-words leading-[1.1] line-clamp-2 ${isFullscreen ? 'text-5xl' : 'text-2xl sm:text-3xl'}`}>
+            <h2 className={`font-black uppercase tracking-tight text-text-primary italic  break-words leading-[1.1] line-clamp-2 ${isFullscreen ? 'text-5xl' : 'text-2xl sm:text-3xl'}`}>
               {player.player.display_name}
             </h2>
-            <p className={`mt-1 font-bold uppercase tracking-[0.2em] text-[#e5a93c]/80 truncate ${isFullscreen ? 'text-sm' : 'text-[10px]'}`}>
+            <p className={`mt-1 font-bold uppercase tracking-[0.2em] text-warning/80 truncate ${isFullscreen ? 'text-sm' : 'text-xs'}`}>
               ID: VCA-{String(player.auction_player_id || player.player.id).substring(0, 4).toUpperCase()}
             </p>
           </div>
 
           <div className={`grid ${isFullscreen ? 'grid-cols-2 gap-y-5 gap-x-4 mt-2' : 'grid-cols-1 gap-2'}`}>
             <div className="flex items-center gap-2.5">
-              <div className={`flex shrink-0 items-center justify-center rounded-full border border-[#e5a93c]/50 bg-[#e5a93c]/15 text-[#e5a93c] ${isFullscreen ? 'h-10 w-10' : 'h-8 w-8'}`}>
+              <div className={`flex shrink-0 items-center justify-center rounded-full border border-warning/50 bg-warning/15 text-warning ${isFullscreen ? 'h-10 w-10' : 'h-8 w-8'}`}>
                 <User className={isFullscreen ? 'h-5 w-5' : 'h-4 w-4'} />
               </div>
               <div className="text-left min-w-0">
-                <span className={`block font-black uppercase tracking-wider text-white/50 ${isFullscreen ? 'text-[10px]' : 'text-[8px]'}`}>POSITION</span>
-                <span className={`block font-black uppercase text-white truncate ${isFullscreen ? 'text-lg' : 'text-xs'}`}>
+                <span className={`block font-black uppercase tracking-wider text-text-secondary ${isFullscreen ? 'text-xs' : 'text-xs'}`}>POSITION</span>
+                <span className={`block font-black uppercase text-text-primary truncate ${isFullscreen ? 'text-lg' : 'text-xs'}`}>
                   {player.player.primary_position ? formatVolleyballPosition(player.player.primary_position) : 'SPIKER'}
                 </span>
               </div>
@@ -386,12 +386,12 @@ export function AuctionPlayerCard({
 
             {isFullscreen && (
               <div className="flex items-center gap-2.5">
-                <div className="flex shrink-0 items-center justify-center rounded-full border border-[#e5a93c]/50 bg-[#e5a93c]/15 text-[#e5a93c] h-10 w-10">
+                <div className="flex shrink-0 items-center justify-center rounded-full border border-warning/50 bg-warning/15 text-warning h-10 w-10">
                   <Hand className="h-5 w-5" />
                 </div>
                 <div className="text-left min-w-0">
-                  <span className="block font-black uppercase tracking-wider text-white/50 text-[10px]">PLAYING STYLE</span>
-                  <span className="block font-black uppercase text-white truncate text-lg">
+                  <span className="block font-black uppercase tracking-wider text-text-secondary text-xs">PLAYING STYLE</span>
+                  <span className="block font-black uppercase text-text-primary truncate text-lg">
                     {player.player.secondary_position ? formatVolleyballPosition(player.player.secondary_position) : 'ATTACKER'}
                   </span>
                 </div>
@@ -399,23 +399,23 @@ export function AuctionPlayerCard({
             )}
 
             <div className="flex items-center gap-2.5">
-              <div className={`flex shrink-0 items-center justify-center rounded-full border border-[#e5a93c]/50 bg-[#e5a93c]/15 text-[#e5a93c] ${isFullscreen ? 'h-10 w-10' : 'h-8 w-8'}`}>
+              <div className={`flex shrink-0 items-center justify-center rounded-full border border-warning/50 bg-warning/15 text-warning ${isFullscreen ? 'h-10 w-10' : 'h-8 w-8'}`}>
                 <Award className={isFullscreen ? 'h-5 w-5' : 'h-4 w-4'} />
               </div>
               <div className="text-left min-w-0">
-                <span className={`block font-black uppercase tracking-wider text-white/50 ${isFullscreen ? 'text-[10px]' : 'text-[8px]'}`}>CATEGORY</span>
-                <span className={`block font-black uppercase text-white truncate ${isFullscreen ? 'text-lg' : 'text-xs'}`}>{player.category_code || 'A'}</span>
+                <span className={`block font-black uppercase tracking-wider text-text-secondary ${isFullscreen ? 'text-xs' : 'text-xs'}`}>CATEGORY</span>
+                <span className={`block font-black uppercase text-text-primary truncate ${isFullscreen ? 'text-lg' : 'text-xs'}`}>{player.category_code || 'A'}</span>
               </div>
             </div>
 
             {isFullscreen && (
               <div className="flex items-center gap-2.5">
-                <div className="flex shrink-0 items-center justify-center rounded-full border border-[#e5a93c]/50 bg-[#e5a93c]/15 text-[#e5a93c] h-10 w-10">
+                <div className="flex shrink-0 items-center justify-center rounded-full border border-warning/50 bg-warning/15 text-warning h-10 w-10">
                   <Phone className="h-5 w-5" />
                 </div>
                 <div className="text-left min-w-0">
-                  <span className="block font-black uppercase tracking-wider text-white/50 text-[10px]">PHONE NO.</span>
-                  <span className="block font-black uppercase text-white truncate text-lg">
+                  <span className="block font-black uppercase tracking-wider text-text-secondary text-xs">PHONE NO.</span>
+                  <span className="block font-black uppercase text-text-primary truncate text-lg">
                     {player.player.phone || '—'}
                   </span>
                 </div>
@@ -426,26 +426,26 @@ export function AuctionPlayerCard({
       </div>
 
       {/* Middle Section: Price & Bidding */}
-      <div className={`relative z-10 rounded-xl border border-[#e5a93c]/40 bg-black/70 backdrop-blur-md shadow-xl ${isFullscreen ? 'p-6 mb-6' : 'p-3 mb-4'}`}>
+      <div className={`relative z-10 rounded-xl border border-warning/40 bg-surface-muted  shadow-card ${isFullscreen ? 'p-6 mb-6' : 'p-3 mb-4'}`}>
         <div className="flex items-center justify-between text-center gap-2">
-          <div className="flex-1 border-r border-white/10 pr-2">
-            <span className={`block font-black uppercase tracking-wider text-white/50 ${isFullscreen ? 'text-xs' : 'text-[8px]'}`}>BASE</span>
-            <span className={`block font-black text-white mt-1 ${isFullscreen ? 'text-3xl' : 'text-sm sm:text-base'}`}>{formatMoney(player.base_price)}</span>
+          <div className="flex-1 border-r border-border pr-2">
+            <span className={`block font-black uppercase tracking-wider text-text-secondary ${isFullscreen ? 'text-xs' : 'text-xs'}`}>BASE</span>
+            <span className={`block font-black text-text-primary mt-1 ${isFullscreen ? 'text-3xl' : 'text-sm sm:text-base'}`}>{formatMoney(player.base_price)}</span>
           </div>
 
           <div className="flex-[2] px-2">
-            <span className={`block font-black uppercase tracking-[0.2em] text-[#e5a93c] mb-1.5 ${isFullscreen ? 'text-xs' : 'text-[8px]'}`}>CURRENT BID</span>
-            <div className={`inline-block w-full rounded-lg bg-gradient-to-r from-[#e5a93c] via-[#fcd34d] to-[#e5a93c] shadow-lg transform -skew-x-6 ${isFullscreen ? 'py-3 px-4' : 'py-1.5 px-2'}`}>
-              <span className={`font-black text-black tracking-tight transform skew-x-6 block ${isFullscreen ? 'text-5xl' : 'text-lg sm:text-xl'}`}>
+            <span className={`block font-black uppercase tracking-[0.2em] text-warning mb-1.5 ${isFullscreen ? 'text-xs' : 'text-xs'}`}>CURRENT BID</span>
+            <div className={`inline-block w-full rounded-lg bg-warning shadow-card transform -skew-x-6 ${isFullscreen ? 'py-3 px-4' : 'py-1.5 px-2'}`}>
+              <span className={`font-black text-text-inverse tracking-tight transform skew-x-6 block ${isFullscreen ? 'text-5xl' : 'text-lg sm:text-xl'}`}>
                 {highestBid ? formatMoney(highestBid.amount) : 'NO BIDS'}
               </span>
             </div>
           </div>
 
-          <div className="flex-1 border-l border-white/10 pl-2">
-            <span className={`block font-black uppercase tracking-wider text-white/50 ${isFullscreen ? 'text-xs' : 'text-[8px]'}`}>BIDS</span>
-            <span className={`flex items-center justify-center gap-1 font-black text-white mt-1 ${isFullscreen ? 'text-3xl' : 'text-sm sm:text-base'}`}>
-              <Gavel className={`text-[#e5a93c] ${isFullscreen ? 'h-6 w-6' : 'h-3.5 w-3.5'}`} />
+          <div className="flex-1 border-l border-border pl-2">
+            <span className={`block font-black uppercase tracking-wider text-text-secondary ${isFullscreen ? 'text-xs' : 'text-xs'}`}>BIDS</span>
+            <span className={`flex items-center justify-center gap-1 font-black text-text-primary mt-1 ${isFullscreen ? 'text-3xl' : 'text-sm sm:text-base'}`}>
+              <Gavel className={`text-warning ${isFullscreen ? 'h-6 w-6' : 'h-3.5 w-3.5'}`} />
               <span>{recentBidsCount ?? (highestBid ? 1 : 0)}</span>
             </span>
           </div>
@@ -453,18 +453,18 @@ export function AuctionPlayerCard({
       </div>
 
       {/* Bottom Section: Highest Bidder / Team Card */}
-      <div className="relative z-10 rounded-2xl border border-[#e5a93c]/40 bg-black/50 p-4 sm:p-5 backdrop-blur-md shadow-lg">
+      <div className="relative z-10 rounded-2xl border border-warning/40 bg-surface-muted p-4 sm:p-5 shadow-card">
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* Highest Bidder */}
           <div className="flex items-center gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#e5a93c]/50 bg-[#e5a93c]/20 text-[#e5a93c] shadow-md">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-warning/50 bg-warning/20 text-warning shadow-md">
               <Shield className="h-6 w-6" />
             </div>
             <div>
-              <span className="block text-[10px] font-black uppercase tracking-wider text-white/50">
+              <span className="block text-xs font-black uppercase tracking-wider text-text-secondary">
                 HIGHEST BIDDER
               </span>
-              <span className="block text-base sm:text-lg font-black uppercase text-[#e5a93c] truncate max-w-[200px]">
+              <span className="block text-base sm:text-lg font-black uppercase text-warning truncate max-w-[200px]">
                 {highestBid ? (highestBid.team.short_name ?? highestBid.team.name) : '—'}
               </span>
             </div>
@@ -472,14 +472,14 @@ export function AuctionPlayerCard({
 
           {/* Currently Bidding */}
           <div className="flex items-center gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-muted text-text-primary">
               <User className="h-6 w-6" />
             </div>
             <div>
-              <span className="block text-[10px] font-black uppercase tracking-wider text-white/50">
+              <span className="block text-xs font-black uppercase tracking-wider text-text-secondary">
                 CURRENTLY BIDDING
               </span>
-              <span className="block text-base sm:text-lg font-black uppercase text-white truncate max-w-[200px]">
+              <span className="block text-base sm:text-lg font-black uppercase text-text-primary truncate max-w-[200px]">
                 {currentlyBiddingTeamName || (highestBid ? (highestBid.team.short_name ?? highestBid.team.name) : '—')}
               </span>
             </div>

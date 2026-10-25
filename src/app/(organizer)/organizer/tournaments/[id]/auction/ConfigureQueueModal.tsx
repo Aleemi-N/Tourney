@@ -89,59 +89,59 @@ export function ConfigureQueueModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[60] bg-black/60"
             onClick={busy ? undefined : onClose}
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed left-1/2 top-1/2 z-[70] max-h-[85vh] w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-hidden flex flex-col rounded-3xl border border-glass-border bg-surface-raised shadow-2xl"
+            className="fixed left-1/2 top-1/2 z-[70] max-h-[85vh] w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-hidden flex flex-col rounded-3xl border border-glass-border bg-surface-raised shadow-card"
           >
-            <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-4">
+            <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/15 text-warning border border-warning/30">
                   <Settings className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-white">Configure Auction Order</h2>
-                  <p className="text-xs text-white/50">Manually set the exact sequence of players</p>
+                  <h2 className="text-lg font-black text-text-primary">Configure Auction Order</h2>
+                  <p className="text-xs text-text-secondary">Manually set the exact sequence of players</p>
                 </div>
               </div>
-              <button onClick={onClose} disabled={busy} className="rounded-lg p-2 text-white/50 hover:bg-white/10 hover:text-white">
+              <button onClick={onClose} disabled={busy} className="rounded-lg p-2 text-text-secondary hover:bg-surface-muted hover:text-text-primary">
                 <XMarkIcon className="h-6 w-6" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 bg-black/20">
+            <div className="flex-1 overflow-y-auto p-6 bg-surface-muted">
               {error && (
-                <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
+                <div className="mb-4 flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
                   <AlertTriangle className="h-4 w-4 shrink-0" />
                   {error}
                 </div>
               )}
 
-              <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+              <div className="rounded-2xl border border-border bg-surface overflow-hidden">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-white/5 border-b border-white/10 text-xs font-bold uppercase tracking-wider text-white/50">
+                  <thead className="bg-surface border-b border-border text-xs font-bold uppercase tracking-wider text-text-secondary">
                     <tr>
                       <th className="px-4 py-3">Player Name</th>
                       <th className="px-4 py-3">Category</th>
                       <th className="px-4 py-3 w-32 text-right">Auction #</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/10">
+                  <tbody className="divide-y divide-border">
                     {items.map((item, index) => (
-                      <tr key={item.id} className="hover:bg-white/5 transition-colors">
-                        <td className="px-4 py-2 font-bold text-white truncate max-w-[200px]">{item.name}</td>
-                        <td className="px-4 py-2 text-white/70">{item.category || '-'}</td>
+                      <tr key={item.id} className="hover:bg-surface-muted transition-colors">
+                        <td className="px-4 py-2 font-bold text-text-primary truncate max-w-[200px]">{item.name}</td>
+                        <td className="px-4 py-2 text-text-secondary">{item.category || '-'}</td>
                         <td className="px-4 py-2 text-right">
                           <input
                             type="number"
                             min="1"
                             value={item.order}
                             onChange={(e) => handleOrderChange(item.id, e.target.value)}
-                            className="w-20 rounded-lg border border-white/20 bg-black px-3 py-1.5 text-right font-mono font-bold text-[#e5a93c] focus:border-[#e5a93c] focus:outline-none focus:ring-1 focus:ring-[#e5a93c]"
+                            className="w-20 rounded-lg border border-border-strong bg-black px-3 py-1.5 text-right font-mono font-bold text-warning focus:border-warning focus:outline-none focus:ring-1 focus:ring-warning"
                           />
                         </td>
                       </tr>
@@ -151,11 +151,11 @@ export function ConfigureQueueModal({
               </div>
             </div>
 
-            <div className="flex shrink-0 items-center justify-end gap-3 border-t border-white/10 p-5 bg-surface-raised">
-              <button onClick={onClose} disabled={busy} className="rounded-xl px-5 py-2.5 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white transition-colors">
+            <div className="flex shrink-0 items-center justify-end gap-3 border-t border-border p-5 bg-surface-raised">
+              <button onClick={onClose} disabled={busy} className="rounded-xl px-5 py-2.5 text-sm font-bold text-text-secondary hover:bg-surface-muted hover:text-text-primary transition-colors">
                 Cancel
               </button>
-              <button onClick={handleSave} disabled={busy} className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg hover:shadow-emerald-500/25 disabled:opacity-50 transition-all">
+              <button onClick={handleSave} disabled={busy} className="flex items-center gap-2 rounded-xl bg-success px-6 py-2.5 text-sm font-bold text-text-inverse shadow-card disabled:opacity-50 transition-all">
                 <Save className="h-4 w-4" />
                 {busy ? 'Saving...' : 'Save Order'}
               </button>

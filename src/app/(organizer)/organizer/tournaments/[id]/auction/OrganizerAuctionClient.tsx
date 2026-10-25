@@ -79,7 +79,7 @@ function ConfirmModal({
         aria-modal="true"
         aria-labelledby="confirm-title"
         aria-describedby="confirm-desc"
-        className="w-full max-w-sm rounded-2xl border border-border bg-surface p-5 shadow-2xl sm:p-6"
+        className="w-full max-w-sm rounded-2xl border border-border bg-surface p-5 shadow-card sm:p-6"
       >
         <h2 id="confirm-title" className="text-lg font-bold text-text-primary">{title}</h2>
         <p id="confirm-desc" className="mt-2 text-sm text-text-secondary">{description}</p>
@@ -96,7 +96,7 @@ function ConfirmModal({
             type="button"
             disabled={busy}
             onClick={onConfirm}
-            className={`min-h-10 rounded-xl px-4 text-sm font-semibold text-white disabled:opacity-50 ${confirmClass ?? 'bg-primary hover:bg-primary-hover'}`}
+            className={`min-h-10 rounded-xl px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50 ${confirmClass ?? 'bg-primary hover:bg-primary-hover'}`}
           >
             {busy ? 'Processing…' : confirmLabel}
           </button>
@@ -110,8 +110,8 @@ function ConfirmModal({
 
 function StatusChip({ status }: { status: AuctionStatus }) {
   const cfg: Record<AuctionStatus, { cls: string; dot: string }> = {
-    DRAFT: { cls: 'bg-slate-500/15 text-slate-500', dot: 'bg-slate-500' },
-    READY: { cls: 'bg-blue-500/15 text-blue-600 dark:text-blue-400', dot: 'bg-blue-500' },
+    DRAFT: { cls: 'bg-surface-muted text-text-muted', dot: 'bg-surface-muted' },
+    READY: { cls: 'bg-info/10 text-info dark:text-info', dot: 'bg-info' },
     LIVE: { cls: 'bg-live/15 text-live', dot: 'bg-live animate-pulse' },
     PAUSED: { cls: 'bg-warning/15 text-warning', dot: 'bg-warning' },
     COMPLETED: { cls: 'bg-success/15 text-success', dot: 'bg-success' },
@@ -208,7 +208,7 @@ function CurrentPlayerPanel({
   if (!cp) {
     const waiting = snapshot.progress.waiting;
     return (
-      <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-glass-border bg-surface-raised/40 backdrop-blur-xl py-20 text-center shadow-xl">
+      <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-glass-border bg-surface-raised py-20 text-center shadow-card">
         {waiting > 0 ? (
           <>
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4 animate-pulse">
@@ -219,7 +219,7 @@ function CurrentPlayerPanel({
           </>
         ) : (
           <>
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400 mb-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-success/10 text-success mb-4">
               <Trophy className="h-8 w-8" />
             </div>
             <p className="text-xl font-bold text-text-primary tracking-tight">Auction Queue Complete!</p>
@@ -286,8 +286,8 @@ function AuctioneerBiddingPanel({
   }
 
   return (
-    <div className="rounded-3xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl p-6 shadow-xl relative overflow-hidden group h-full flex flex-col justify-between">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+    <div className="rounded-3xl border border-glass-border bg-surface-raised p-6 shadow-card relative overflow-hidden group h-full flex flex-col justify-between">
+      <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
       <div className="relative z-10">
         <h3 className="mb-4 font-semibold text-text-primary flex items-center gap-2">
           <DollarSign className="h-4 w-4 text-primary" />
@@ -315,15 +315,15 @@ function AuctioneerBiddingPanel({
                   onClick={() => setSelectedTeam(t.team_id)}
                   className={`p-2.5 rounded-xl border text-left transition-all ${
                     isSelected
-                      ? 'border-primary bg-primary/10 text-primary shadow-inner ring-2 ring-primary/40'
+                      ? 'border-primary bg-primary/10 text-primary shadow-card ring-2 ring-primary/40'
                       : disabled
-                      ? 'border-border/50 bg-surface-muted/50 text-text-muted opacity-50'
-                      : 'border-border bg-surface-muted hover:border-primary/50 text-text-secondary hover:-translate-y-0.5'
+                      ? 'border-border/50 bg-surface-muted text-text-muted opacity-50'
+                      : 'border-border bg-surface-muted hover:border-primary/50 text-text-secondary '
                   }`}
                   title={squadFull ? 'Squad full' : !canAfford ? 'Exceeds team maximum allowed bid' : ''}
                 >
                   <span className="block truncate text-sm font-bold text-text-primary">{displayName}</span>
-                  <span className="block text-[11px] font-semibold text-emerald-400">Max Bid: {formatMoney(maxAllowedBid)}</span>
+                  <span className="block text-xs font-semibold text-success">Max Bid: {formatMoney(maxAllowedBid)}</span>
                 </button>
               )
             })}
@@ -378,7 +378,7 @@ function AuctioneerBiddingPanel({
             type="button"
             disabled={!selectedTeam || busy || effectiveBidAmount < minRequiredBid}
             onClick={handleBidSubmit}
-            className="w-full inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-primary to-primary-hover px-4 py-3 text-base font-bold text-primary-foreground shadow-md transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+            className="w-full inline-flex items-center justify-center rounded-xl bg-primary px-4 py-3 text-base font-bold text-primary-foreground shadow-md transition-all duration-300 hover:shadow-primary/30 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
           >
             Submit Bid (₹{effectiveBidAmount.toLocaleString('en-IN')})
           </button>
@@ -436,7 +436,7 @@ function TeamWalletMonitor({
                 <span className="text-xs text-text-muted whitespace-nowrap">{f.active_squad}/{f.maximum_squad} players</span>
               </div>
               {/* Progress bar */}
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted dark:bg-surface-muted">
                 <div
                   className="h-full rounded-full bg-primary transition-all"
                   style={{ width: `${Math.min(pct, 100)}%` }}
@@ -444,10 +444,10 @@ function TeamWalletMonitor({
               </div>
               <div className="mt-2 flex items-center justify-between text-xs">
                 <span className="text-text-muted">Rem: <span className="font-semibold text-text-primary">{formatMoney(t.remaining)}</span></span>
-                <span className="text-text-muted">Max Bid: <span className="font-bold text-emerald-400">{formatMoney(f.max_allowed_bid ?? (t.remaining - (f.reserve ?? 0)))}</span></span>
+                <span className="text-text-muted">Max Bid: <span className="font-bold text-success">{formatMoney(f.max_allowed_bid ?? (t.remaining - (f.reserve ?? 0)))}</span></span>
               </div>
               {f.active_squad >= f.minimum_squad && f.active_squad < f.maximum_squad && (
-                <p className="mt-1 text-[11px] text-success font-semibold">Min squad met ✓</p>
+                <p className="mt-1 text-xs text-success font-semibold">Min squad met ✓</p>
               )}
             </div>
           );
@@ -471,12 +471,12 @@ function AuctionProgress({ snapshot }: { snapshot: OrganizerAuctionSnapshot }) {
         <h3 className="font-semibold text-text-primary">Progress</h3>
         <span className="text-sm font-semibold text-text-secondary">{done}/{total}</span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-surface-muted dark:bg-surface-muted">
         <div className="h-full rounded-full bg-success transition-all" style={{ width: `${pct}%` }} />
       </div>
       <div className="mt-3 flex gap-4 flex-wrap text-xs">
         <span className="flex items-center gap-1.5 text-success"><span className="h-2 w-2 rounded-full bg-success" />{sold} Sold</span>
-        <span className="flex items-center gap-1.5 text-text-muted"><span className="h-2 w-2 rounded-full bg-slate-400" />{unsold} Unsold</span>
+        <span className="flex items-center gap-1.5 text-text-muted"><span className="h-2 w-2 rounded-full bg-surface-muted" />{unsold} Unsold</span>
         <span className="flex items-center gap-1.5 text-text-secondary"><span className="h-2 w-2 rounded-full bg-primary" />{waiting} Waiting</span>
       </div>
     </div>
@@ -508,7 +508,7 @@ function RequeuePlayerModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="reauction-title"
-        className="w-full max-w-sm rounded-2xl border border-border bg-surface p-5 shadow-2xl sm:p-6"
+        className="w-full max-w-sm rounded-2xl border border-border bg-surface p-5 shadow-card sm:p-6"
       >
         <h2 id="reauction-title" className="text-lg font-bold text-text-primary">Re-auction Player</h2>
         <div className="mt-4 space-y-4">
@@ -544,7 +544,7 @@ function RequeuePlayerModal({
             Cancel
           </button>
           <button type="button" disabled={busy || !valid} onClick={() => onConfirm(parsed)}
-            className="min-h-10 rounded-xl bg-warning px-4 text-sm font-semibold text-white hover:bg-warning/90 disabled:opacity-50">
+            className="min-h-10 rounded-xl bg-warning px-4 text-sm font-semibold text-text-inverse hover:bg-warning/90 disabled:opacity-50">
             {busy ? 'Processing…' : 'Confirm & Re-queue'}
           </button>
         </div>
@@ -593,18 +593,18 @@ function WaitingQueuePanel({
                 const name = p.player_display_name ?? playerNameMap[p.player_id] ?? `Player #${p.auction_order}`;
                 return (
                   <div key={p.auction_player_id} className="flex items-center gap-3 rounded-lg bg-surface-muted px-3 py-2 text-sm">
-                    <span className="shrink-0 h-5 w-5 flex items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                    <span className="shrink-0 h-5 w-5 flex items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
                       {idx + 1}
                     </span>
                     <span className="flex-1 truncate font-medium text-text-primary">{name}</span>
                     {p.category_code && (
-                      <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold bg-primary/10 text-primary">
+                      <span className="shrink-0 rounded px-1.5 py-0.5 text-xs font-bold bg-primary/10 text-primary">
                         Cat {p.category_code}
                       </span>
                     )}
                     <span className="shrink-0 text-xs text-text-muted">{formatMoney(p.base_price)}</span>
                     {p.attempt_number > 1 && (
-                      <span className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-bold text-warning">
+                      <span className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-xs font-bold text-warning">
                         #{p.attempt_number}
                       </span>
                     )}
@@ -914,12 +914,12 @@ export function OrganizerAuctionClient({
       {/* Sticky Bottom Action Dock during active bidding */}
       {(currentStatus === 'LIVE' || currentStatus === 'PAUSED') && snapshot?.current_player && (
         <div className="fixed bottom-4 left-4 right-4 z-40 sm:left-auto sm:right-8 sm:max-w-xl animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-glass-border bg-surface-raised/95 backdrop-blur-2xl p-3.5 shadow-[0_16px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-glass-border bg-surface-raised p-3.5 shadow-card ring-1 ring-border">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[11px] font-bold uppercase tracking-wider text-text-muted">
+              <p className="truncate text-xs font-bold uppercase tracking-wider text-text-muted">
                 Stage: #{snapshot.current_player.auction_order ?? '?'} - {snapshot.current_player.player.display_name}
               </p>
-              <p className="text-sm font-black text-emerald-400 truncate">
+              <p className="text-sm font-black text-success truncate">
                 {snapshot.highest_bid ? `${snapshot.highest_bid.team.name} — ${formatMoney(snapshot.highest_bid.amount)}` : 'No Bids Yet'}
               </p>
             </div>
@@ -929,7 +929,7 @@ export function OrganizerAuctionClient({
                   type="button"
                   onClick={() => setConfirm({ type: 'SOLD' })}
                   disabled={busy}
-                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-5 py-2.5 text-xs font-black text-white shadow-lg shadow-emerald-500/30 hover:scale-105 active:scale-95 transition-all"
+                  className="flex items-center gap-1.5 rounded-xl bg-success px-5 py-2.5 text-xs font-black text-text-inverse shadow-card active:scale-95 transition-all"
                 >
                   <DollarSign className="h-4 w-4" />
                   SOLD
@@ -940,7 +940,7 @@ export function OrganizerAuctionClient({
                   type="button"
                   onClick={() => setConfirm({ type: 'UNSOLD' })}
                   disabled={busy}
-                  className="flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-2.5 text-xs font-bold text-rose-400 hover:bg-rose-500/20 active:scale-95 transition-all"
+                  className="flex items-center gap-1.5 rounded-xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-xs font-bold text-danger hover:bg-danger/15 active:scale-95 transition-all"
                 >
                   <XCircle className="h-4 w-4" />
                   UNSOLD
@@ -966,7 +966,7 @@ export function OrganizerAuctionClient({
               type="button"
               onClick={() => setShowAddPlayerModal(true)}
               disabled={busy}
-              className="flex items-center gap-2 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50 transition-colors"
+              className="flex items-center gap-2 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary-hover disabled:opacity-50 transition-colors"
             >
               <UserPlus className="h-4 w-4" />
               <span className="hidden sm:inline">Add Player</span>
@@ -1017,7 +1017,7 @@ export function OrganizerAuctionClient({
           )}
 
           {/* Organizer controls */}
-          <section className="rounded-3xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl p-6 shadow-xl">
+          <section className="rounded-3xl border border-glass-border bg-surface-raised p-6 shadow-card">
             <h3 className="mb-4 text-xs font-black uppercase tracking-widest text-text-muted">Auction Controls</h3>
             <div className="flex flex-wrap items-center gap-3">
               {/* Prepare */}
@@ -1027,7 +1027,7 @@ export function OrganizerAuctionClient({
                   id="btn-prepare-auction"
                   onClick={handlePrepare}
                   disabled={busy || !(readiness?.ready)}
-                  className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-primary-hover px-6 py-3 text-sm font-bold text-white shadow-lg hover:shadow-primary/30 disabled:opacity-50 transition-all active:scale-95"
+                  className="flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-text-inverse shadow-card hover:shadow-primary/30 disabled:opacity-50 transition-all active:scale-95"
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   Prepare Auction
@@ -1041,7 +1041,7 @@ export function OrganizerAuctionClient({
                   id="btn-start-auction"
                   onClick={() => handleLifecycle('START')}
                   disabled={busy}
-                  className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 disabled:opacity-50 transition-all active:scale-95"
+                  className="flex items-center gap-2 rounded-2xl bg-success px-6 py-3 text-sm font-bold text-text-inverse shadow-card disabled:opacity-50 transition-all active:scale-95"
                 >
                   <Play className="h-4 w-4" />
                   Start Auction
@@ -1068,7 +1068,7 @@ export function OrganizerAuctionClient({
                   id="btn-pause-auction"
                   onClick={() => handleLifecycle('PAUSE')}
                   disabled={busy}
-                  className="flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/15 backdrop-blur-md px-5 py-3 text-sm font-bold text-amber-400 hover:bg-amber-500/25 disabled:opacity-50 transition-all active:scale-95"
+                  className="flex items-center gap-2 rounded-2xl border border-warning/30 bg-warning/10 px-5 py-3 text-sm font-bold text-warning hover:bg-warning/15 disabled:opacity-50 transition-all active:scale-95"
                 >
                   <Pause className="h-4 w-4" />
                   Pause Session
@@ -1082,7 +1082,7 @@ export function OrganizerAuctionClient({
                   id="btn-resume-auction"
                   onClick={() => handleLifecycle('RESUME')}
                   disabled={busy}
-                  className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-primary-hover px-6 py-3 text-sm font-bold text-white shadow-lg disabled:opacity-50 transition-all active:scale-95"
+                  className="flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-text-inverse shadow-card disabled:opacity-50 transition-all active:scale-95"
                 >
                   <Play className="h-4 w-4" />
                   Resume Auction
@@ -1097,7 +1097,7 @@ export function OrganizerAuctionClient({
                     id="btn-open-next-player"
                     onClick={() => handleOpenNext()}
                     disabled={busy}
-                    className="flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/15 backdrop-blur-md px-5 py-3 text-sm font-bold text-primary hover:bg-primary/25 disabled:opacity-50 transition-all active:scale-95 shadow-md shadow-primary/10"
+                    className="flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/15 px-5 py-3 text-sm font-bold text-primary hover:bg-primary/25 disabled:opacity-50 transition-all active:scale-95 shadow-md shadow-primary/10"
                   >
                     <SkipForward className="h-4 w-4" />
                     Open Next Player
@@ -1111,7 +1111,7 @@ export function OrganizerAuctionClient({
                       setShowPickPlayerModal(true);
                     }}
                     disabled={busy}
-                    className="flex items-center gap-2 rounded-2xl border border-fuchsia-400/40 bg-fuchsia-400/15 backdrop-blur-md px-5 py-3 text-sm font-bold text-fuchsia-300 hover:bg-fuchsia-400/25 disabled:opacity-50 transition-all active:scale-95 shadow-md shadow-fuchsia-500/10"
+                    className="flex items-center gap-2 rounded-2xl border border-primary/30 bg-primary/10 px-5 py-3 text-sm font-bold text-primary hover:bg-primary/15 disabled:opacity-50 transition-all active:scale-95 shadow-md"
                   >
                     <Hash className="h-4 w-4" />
                     Pick Player by #
@@ -1126,7 +1126,7 @@ export function OrganizerAuctionClient({
                   id="btn-sold"
                   onClick={() => setConfirm({ type: 'SOLD' })}
                   disabled={busy}
-                  className="relative inline-flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 px-8 py-3.5 text-base font-black text-white shadow-[0_0_30px_rgba(16,185,129,0.4)] hover:shadow-[0_0_40px_rgba(16,185,129,0.6)] hover:scale-[1.03] active:scale-95 disabled:opacity-50 transition-all duration-300 ring-2 ring-emerald-400/50"
+                  className="relative inline-flex items-center justify-center gap-2.5 rounded-2xl bg-success px-8 py-3.5 text-base font-black text-text-inverse shadow-card hover:scale-[1.03] active:scale-95 disabled:opacity-50 transition-all duration-300 ring-2 ring-success/30"
                 >
                   <DollarSign className="h-5 w-5" />
                   <span>SOLD {snapshot?.highest_bid ? `(${formatMoney(snapshot.highest_bid.amount)})` : ''}</span>
@@ -1140,7 +1140,7 @@ export function OrganizerAuctionClient({
                   id="btn-unsold"
                   onClick={() => setConfirm({ type: 'UNSOLD' })}
                   disabled={busy}
-                  className="flex items-center gap-2 rounded-2xl border border-rose-500/40 bg-rose-500/10 backdrop-blur-md px-5 py-3 text-sm font-bold text-rose-400 hover:bg-rose-500/20 disabled:opacity-50 transition-all active:scale-95"
+                  className="flex items-center gap-2 rounded-2xl border border-danger/30 bg-danger/10 px-5 py-3 text-sm font-bold text-danger hover:bg-danger/15 disabled:opacity-50 transition-all active:scale-95"
                 >
                   <XCircle className="h-4 w-4" />
                   UNSOLD
@@ -1351,22 +1351,22 @@ export function OrganizerAuctionClient({
 
       {/* Pick Specific Player by Auction # Modal */}
       {showPickPlayerModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="relative w-full max-w-lg rounded-3xl border border-white/15 bg-[#17132a] p-6 shadow-2xl text-white space-y-4 max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+          <div className="relative w-full max-w-lg rounded-3xl border border-border-strong bg-surface p-6 shadow-card text-text-primary space-y-4 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-fuchsia-400/20 text-fuchsia-300 font-bold border border-fuchsia-400/30">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary font-bold border border-primary/30">
                   <Hash className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-white">Select Auction Player</h3>
-                  <p className="text-xs text-white/50">Enter Auction # or search player name to bring LIVE</p>
+                  <h3 className="text-lg font-black text-text-primary">Select Auction Player</h3>
+                  <p className="text-xs text-text-secondary">Enter Auction # or search player name to bring LIVE</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowPickPlayerModal(false)}
-                className="rounded-xl p-2 text-white/50 hover:bg-white/10 hover:text-white transition"
+                className="rounded-xl p-2 text-text-secondary hover:bg-surface-muted hover:text-text-primary transition"
               >
                 ✕
               </button>
@@ -1374,14 +1374,14 @@ export function OrganizerAuctionClient({
 
             {/* Search Input */}
             <div className="relative">
-              <Search className="absolute left-4 top-3.5 h-4 w-4 text-white/40" />
+              <Search className="absolute left-4 top-3.5 h-4 w-4 text-text-muted" />
               <input
                 type="text"
                 autoFocus
                 value={pickSearchQuery}
                 onChange={(e) => setPickSearchQuery(e.target.value)}
                 placeholder="Type Auction # (e.g. 14 or #14) or player name..."
-                className="w-full rounded-2xl border border-white/15 bg-white/5 py-3 pl-11 pr-4 text-sm font-bold text-white placeholder-white/35 focus:border-fuchsia-400 focus:outline-none focus:ring-1 focus:ring-fuchsia-400"
+                className="w-full rounded-2xl border border-border-strong bg-surface py-3 pl-11 pr-4 text-sm font-bold text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
 
@@ -1401,7 +1401,7 @@ export function OrganizerAuctionClient({
 
                 if (filtered.length === 0) {
                   return (
-                    <div className="rounded-2xl border border-dashed border-white/10 bg-white/3 p-8 text-center text-sm text-white/50">
+                    <div className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-text-secondary">
                       {pickSearchQuery ? `No waiting player found for "${pickSearchQuery}".` : 'No players currently waiting in auction queue.'}
                     </div>
                   );
@@ -1412,18 +1412,18 @@ export function OrganizerAuctionClient({
                   return (
                     <div
                       key={p.auction_player_id}
-                      className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-3.5 hover:border-fuchsia-400/50 hover:bg-fuchsia-400/10 transition group"
+                      className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-surface p-3.5 hover:border-primary/30 hover:bg-primary/10 transition group"
                     >
                       <div className="flex items-center gap-3.5 min-w-0">
-                        <span className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-fuchsia-400/20 text-fuchsia-200 font-mono font-black text-sm border border-fuchsia-400/40">
+                        <span className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary font-mono font-black text-sm border border-primary/30">
                           #{p.auction_order}
                         </span>
                         <div className="min-w-0">
-                          <p className="truncate font-bold text-white text-sm group-hover:text-fuchsia-200">
+                          <p className="truncate font-bold text-text-primary text-sm group-hover:text-primary">
                             {name}
                           </p>
-                          <p className="truncate text-xs text-white/50">
-                            {p.category_label ? `Category ${p.category_code} (${p.category_label})` : 'Base Category'} · <span className="font-mono text-emerald-300 font-semibold">₹{p.base_price.toLocaleString('en-IN')}</span>
+                          <p className="truncate text-xs text-text-secondary">
+                            {p.category_label ? `Category ${p.category_code} (${p.category_label})` : 'Base Category'} · <span className="font-mono text-success font-semibold">₹{p.base_price.toLocaleString('en-IN')}</span>
                           </p>
                         </div>
                       </div>
@@ -1431,7 +1431,7 @@ export function OrganizerAuctionClient({
                         type="button"
                         onClick={() => handleOpenNext(p.auction_player_id)}
                         disabled={busy}
-                        className="shrink-0 rounded-xl bg-fuchsia-400 px-4 py-2 text-xs font-black text-[#17132a] hover:bg-fuchsia-300 transition disabled:opacity-50"
+                        className="shrink-0 rounded-xl bg-primary px-4 py-2 text-xs font-black text-primary-foreground hover:bg-primary-hover transition disabled:opacity-50"
                       >
                         Bring #{p.auction_order} Live
                       </button>
@@ -1441,11 +1441,11 @@ export function OrganizerAuctionClient({
               })()}
             </div>
 
-            <div className="flex items-center justify-end pt-2 border-t border-white/10">
+            <div className="flex items-center justify-end pt-2 border-t border-border">
               <button
                 type="button"
                 onClick={() => setShowPickPlayerModal(false)}
-                className="rounded-xl border border-white/15 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition"
+                className="rounded-xl border border-border-strong px-4 py-2 text-xs font-bold text-text-secondary hover:bg-surface-muted hover:text-text-primary transition"
               >
                 Close
               </button>
