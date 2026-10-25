@@ -26,8 +26,10 @@ Decision: a single Spring Boot API in front of PostgreSQL serves **both** the Ne
 Rewriting 95 files to a new client is avoidable. supabase-js (also works in React Native) only needs three things from its server, and the API provides them:
 - **`/rest/v1/*`**: forwarded to a self-hosted PostgREST with the caller's token, so the PostgREST query language the pages use (embedding, filters, Range) works unchanged and row-level security decides access. Implemented (`RestProxyController`).
 - **`/rest/v1/rpc/{fn}`**: handled by the API itself against the 76-function allow-list (same transaction/role context). Implemented (`RpcController`). Signed-out callers run as `anon`.
-- **`/auth/v1/*`** (GoTrue-compatible subset: `token` password + refresh, `user`, `logout`, `signup`, `recover`): not yet built. `/auth/login` is the first step.
-Realtime (Phoenix websocket) and storage have no cheap compatible subset: the 7 realtime channels move to SSE and the 21 storage calls to `POST /uploads`.
+- **`/auth/v1/*`** (GoTrue-compatible subset: `token` password + refresh with rotation, `user`, `logout`, `signup`; `recover` is a stub until SMTP exists). Implemented (`AuthController`).
+- **`/storage/v1/object/*`**: public read, upload, delete on a directory (images only, 2 MB, per-user and per-tournament folders). Implemented (`StorageController`).
+- **`/realtime/v1/websocket`**: Phoenix protocol, postgres_changes only, fed by `LISTEN/NOTIFY` triggers (migration 69). Implemented (`RealtimeHandler`, `ChangeListener`). Rows of the two `*_public_events` tables are delivered whole; other tables announce key columns only.
+All of supabase-js (auth, rest, rpc, storage, realtime) is therefore served by the API; `node api/smoke.mjs` checks it with the real client.
 Web and mobile then differ from today only by the project URL, which is how "one backend for both" is met.
 
 ## Order of work
