@@ -118,7 +118,12 @@ class StorageController {
      */
     private static byte[] fileBytes(HttpServletRequest request) throws IOException {
         var type = request.getContentType() == null ? null : java.util.regex.Pattern.compile("boundary=\"?([^;\"]+)").matcher(request.getContentType());
-        if (type == null || !type.find()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Expected a multipart upload");
+        if (type == null || !type.find()) {
+            // storage-js sends an ArrayBuffer or Blob as the raw request body (no multipart wrapper).
+            byte[] raw = request.getInputStream().readNBytes((int) MAX_BYTES + 1);
+            if (raw.length == 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No file in the request");
+            return raw;
+        }
         byte[] body = request.getInputStream().readNBytes((int) MAX_BYTES + 4096);
         if (body.length > MAX_BYTES + 4000) throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "The object exceeded the maximum allowed size");
         String text = new String(body, java.nio.charset.StandardCharsets.ISO_8859_1); // 1:1 bytes, so offsets match

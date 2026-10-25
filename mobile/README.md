@@ -10,7 +10,8 @@ npx expo start --web     # browser build, handy for checking against the API
 ```
 
 - Android emulator: use `http://10.0.2.2:8080` for the API; a physical phone needs the computer's LAN address (and that origin does not need CORS, only browsers do).
-- Screens: Tournaments (table, fixtures, results, live match), My matches (scorer), Account/sign-in, and the scorer screen (toss, points, undo, timeouts).
+- Screens: Tournaments (table, fixtures, results, live match), My matches (scorer), Account/sign-in, the scorer screen (toss, points, undo, timeouts) and registration.
 - `src/lib/court.ts` is a copy of `../src/lib/court.ts` (sides and serve rules); move both into a shared package when the app grows.
-- Not built yet: player registration, team-owner and organizer screens, push notifications, score correction/reset and walkover/draw on mobile.
+- Registration: players and team owners can apply from a tournament that is open (photo/logo upload, colours, reuse of an existing team); the Account tab lists their applications.
+- Not built yet: organizer screens (approvals, fixtures), owner team management, push notifications, score correction/reset and walkover/draw on mobile.
 - Verified here only through the web build (`node` + Playwright against the API); no phone or emulator was available.

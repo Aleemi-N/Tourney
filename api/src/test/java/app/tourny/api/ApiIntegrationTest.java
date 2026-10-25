@@ -259,4 +259,18 @@ class ApiIntegrationTest {
             }
         }
     }
+
+    @Test
+    void storageAcceptsARawBodyLikeStorageJsSendsForBuffers() throws Exception {
+        String player = login("player@tourny.local");
+        String playerId = field(post("/auth/v1/token?grant_type=password", "{\"email\":\"player@tourny.local\",\"password\":\"" + password + "\"}", null).body(), "id");
+        var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/v1/object/avatars/" + playerId + "/raw-" + System.nanoTime() + ".png"))
+                .header("Content-Type", "image/png").header("Authorization", "Bearer " + player).header("x-upsert", "true")
+                .POST(HttpRequest.BodyPublishers.ofByteArray(PNG)).build();
+        assertEquals(200, HTTP.send(request, HttpResponse.BodyHandlers.ofString()).statusCode());
+        var notImage = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/v1/object/avatars/" + playerId + "/raw-bad.png"))
+                .header("Content-Type", "image/png").header("Authorization", "Bearer " + player)
+                .POST(HttpRequest.BodyPublishers.ofString("<html>nope</html>")).build();
+        assertEquals(400, HTTP.send(notImage, HttpResponse.BodyHandlers.ofString()).statusCode());
+    }
 }

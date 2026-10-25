@@ -1,16 +1,34 @@
 import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Body, Button, Card, Heading, Loading, Screen } from '@/components/ui';
+import { View } from 'react-native';
+import { Body, Button, Card, Heading, Loading, Pill, Screen } from '@/components/ui';
 import { api, apiUrl } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
 export default function AccountScreen() {
   const { session, ready, signOut } = useAuth();
   const [name, setName] = useState<string | null>(null);
+  const [applications, setApplications] = useState<{ key: string; title: string; status: string }[]>([]);
 
   useEffect(() => {
     if (!session) return setName(null);
     api.from('profiles').select('full_name').eq('id', session.user.id).maybeSingle().then(({ data }) => setName((data?.full_name as string | undefined) ?? null));
+  }, [session]);
+
+  // Registrations and team applications the user has submitted, with their review status.
+  useEffect(() => {
+    if (!session) return setApplications([]);
+    (async () => {
+      const [players, teams] = await Promise.all([
+        api.from('player_tournament_registrations').select('id,status,tournaments(name)').eq('player_id', session.user.id),
+        api.from('team_owner_applications').select('id,status,proposed_team_name,tournaments(name)').eq('user_id', session.user.id),
+      ]);
+      const label = (t: unknown) => (t as { name?: string } | null)?.name ?? 'Tournament';
+      setApplications([
+        ...((players.data ?? []) as { id: string; status: string; tournaments: unknown }[]).map((r) => ({ key: r.id, title: `Player · ${label(r.tournaments)}`, status: r.status })),
+        ...((teams.data ?? []) as { id: string; status: string; proposed_team_name: string; tournaments: unknown }[]).map((r) => ({ key: r.id, title: `${r.proposed_team_name} · ${label(r.tournaments)}`, status: r.status })),
+      ]);
+    })();
   }, [session]);
 
   if (!ready) return <Screen><Loading /></Screen>;
@@ -29,6 +47,17 @@ export default function AccountScreen() {
           <Link href="/login" asChild><Button title="Sign in" onPress={() => {}} /></Link>
         </Card>
       )}
+      {applications.length > 0 ? (
+        <Card>
+          <Heading>My registrations</Heading>
+          {applications.map((a) => (
+            <View key={a.key} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+              <Body>{a.title}</Body>
+              <Pill label={a.status.toLowerCase().replace('_', ' ')} tone={a.status === 'APPROVED' ? 'success' : 'neutral'} />
+            </View>
+          ))}
+        </Card>
+      ) : null}
       <Body muted>Connected to {apiUrl}</Body>
     </Screen>
   );

@@ -1,7 +1,7 @@
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { Body, Card, ErrorText, Heading, Loading, Pill, Screen } from '@/components/ui';
+import { Body, Button, Card, ErrorText, Heading, Loading, Pill, Screen } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useTheme } from '@/theme';
 
@@ -14,6 +14,7 @@ export default function TournamentScreen() {
   const t = useTheme();
   const [tab, setTab] = useState<Tab>('table');
   const [name, setName] = useState('');
+  const [status, setStatus] = useState('');
   const [standings, setStandings] = useState<Standing[] | null>(null);
   const [fixtures, setFixtures] = useState<Fixture[] | null>(null);
   const [teams, setTeams] = useState<Record<string, string>>({});
@@ -21,9 +22,10 @@ export default function TournamentScreen() {
 
   useEffect(() => {
     (async () => {
-      const { data: tournament, error: e } = await api.from('public_tournament_view').select('id,name').eq('slug', slug).maybeSingle();
+      const { data: tournament, error: e } = await api.from('public_tournament_view').select('id,name,status').eq('slug', slug).maybeSingle();
       if (e || !tournament) return setError(e?.message ?? 'Tournament not found');
       setName(tournament.name as string);
+      setStatus(tournament.status as string);
       const [rows, fx, tm] = await Promise.all([
         api.rpc('get_public_standings', { p_tournament_id: tournament.id as string }),
         api.from('public_fixture_view').select('id,match_number,status,home_team_id,away_team_id,scheduled_at,home_sets_won,away_sets_won,program_order').eq('tournament_id', tournament.id as string).order('program_order'),
@@ -49,6 +51,13 @@ export default function TournamentScreen() {
           </Pressable>
         ))}
       </View>
+      {status === 'REGISTRATION' ? (
+        <Card>
+          <Heading>Registration is open</Heading>
+          <Link href={{ pathname: '/register/player/[slug]', params: { slug } }} asChild><Button title="Register as a player" onPress={() => {}} /></Link>
+          <Link href={{ pathname: '/register/team/[slug]', params: { slug } }} asChild><Button tone="secondary" title="Apply with a team" onPress={() => {}} /></Link>
+        </Card>
+      ) : null}
       {error ? <ErrorText>{error}</ErrorText> : null}
       {standings === null && !error ? <Loading /> : null}
 
