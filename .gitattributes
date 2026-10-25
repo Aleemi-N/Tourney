@@ -1,0 +1,2 @@
+*.sh text eol=lf
+deploy/*.sql text eol=lf
