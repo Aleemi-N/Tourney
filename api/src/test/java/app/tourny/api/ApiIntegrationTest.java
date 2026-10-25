@@ -218,4 +218,42 @@ class ApiIntegrationTest {
         assertEquals(200, removed.statusCode(), removed.body());
         assertEquals(404, HTTP.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/v1/object/public/avatars/" + name)).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
     }
+
+    private HttpResponse<String> patch(String path, String body, String token) throws Exception {
+        var builder = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
+                .header("Content-Type", "application/json").header("Prefer", "return=representation")
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(body));
+        if (token != null) builder.header("Authorization", "Bearer " + token);
+        return HTTP.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    @Test
+    void clientsCannotWriteTablesDirectly() throws Exception {
+        String player = login("player@tourny.local");
+        // Self-approval and self-unsuspension were possible through the REST endpoint before.
+        assertEquals(403, patch("/rest/v1/team_owner_applications?status=eq.PENDING", "{\"status\":\"APPROVED\"}", player).statusCode());
+        assertEquals(403, patch("/rest/v1/profiles?id=not.is.null", "{\"status\":\"ACTIVE\"}", player).statusCode());
+        assertEquals(403, patch("/rest/v1/organization_members?user_id=not.is.null", "{\"role\":\"OWNER\"}", player).statusCode());
+        // The columns the apps still update directly keep working for an organizer (zero rows here, but not refused).
+        String organizer = login("organizer@tourny.local");
+        assertEquals(200, patch("/rest/v1/tournaments?id=eq.00000000-0000-0000-0000-000000000000", "{\"status\":\"PREPARATION\"}", organizer).statusCode());
+        // ...but not other columns of the same table.
+        assertEquals(403, patch("/rest/v1/tournaments?id=eq.90200000-0000-0000-0000-000000000001", "{\"name\":\"Renamed\"}", organizer).statusCode());
+    }
+
+    @Test
+    void suspendedAccountsCannotSignInOrRefresh() throws Exception {
+        try (var c = DriverManager.getConnection("jdbc:postgresql://127.0.0.1:54322/postgres", "postgres", "postgres")) {
+            var first = post("/auth/v1/token?grant_type=password", "{\"email\":\"scorer@tourny.local\",\"password\":\"" + password + "\"}", null);
+            assertEquals(200, first.statusCode(), first.body());
+            String refresh = field(first.body(), "refresh_token");
+            c.createStatement().executeUpdate("UPDATE public.profiles SET status='SUSPENDED' WHERE id=(SELECT id FROM auth.users WHERE email='scorer@tourny.local')");
+            try {
+                assertEquals(400, post("/auth/v1/token?grant_type=password", "{\"email\":\"scorer@tourny.local\",\"password\":\"" + password + "\"}", null).statusCode());
+                assertEquals(400, post("/auth/v1/token?grant_type=refresh_token", "{\"refresh_token\":\"" + refresh + "\"}", null).statusCode());
+            } finally {
+                c.createStatement().executeUpdate("UPDATE public.profiles SET status='ACTIVE' WHERE id=(SELECT id FROM auth.users WHERE email='scorer@tourny.local')");
+            }
+        }
+    }
 }

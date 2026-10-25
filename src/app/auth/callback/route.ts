@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getSafeRedirectUrl } from '@/lib/utils/url';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  // if "next" is in param, use it as the redirect URL
-  const next = searchParams.get('next') ?? '/player';
+  // "next" may only be a path on this site; anything else (https://evil.example, //evil.example) falls back.
+  const next = getSafeRedirectUrl(searchParams.get('next'), '/player');
 
   if (code) {
     const supabase = await createClient();

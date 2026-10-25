@@ -157,6 +157,10 @@ public class AuthService {
         var banned = (java.sql.Timestamp) user.get("banned_until");
         if (banned != null && banned.toInstant().isAfter(Instant.now())) throw new AuthException(400, "user_banned", "User is banned");
         String userId = (String) user.get("id");
+        // A suspended organizer (profiles.status) cannot start or renew a session.
+        boolean suspended = jdbc.sql("SELECT EXISTS (SELECT 1 FROM public.profiles WHERE id = :u::uuid AND status = 'SUSPENDED')")
+                .param("u", userId).query(Boolean.class).single();
+        if (suspended) throw new AuthException(400, "user_banned", "User is banned");
         jdbc.sql("UPDATE auth.users SET last_sign_in_at = now() WHERE id = :u::uuid").param("u", userId).update();
 
         Instant now = Instant.now();
