@@ -11,6 +11,7 @@ npx expo start --web     # browser build, handy for checking against the API
 
 - Android emulator: use `http://10.0.2.2:8080` for the API; a physical phone needs the computer's LAN address (and that origin does not need CORS, only browsers do).
 - Design: the same tokens as the web app (indigo palette, Geist font, 16px cards, status pills with a dot, lucide icons), light and dark, with an Appearance choice on the Account tab.
+- Home is the web landing page (hero, live and upcoming tournaments, how it works, roles, call to action).
 - Screens: Tournaments (table, fixtures, results, live match), My matches (scorer), Account/sign-in, the scorer screen (toss, points, undo, timeouts) and registration.
 - `src/lib/court.ts` is a copy of `../src/lib/court.ts` (sides and serve rules); move both into a shared package when the app grows.
 - Registration: players and team owners can apply from a tournament that is open (photo/logo upload, colours, reuse of an existing team); the Account tab lists their applications.
