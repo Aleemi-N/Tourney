@@ -8,7 +8,7 @@ const lines = fs.readFileSync(process.argv[2], 'utf8').split(/\r?\n/);
 const out = ['SET session_replication_role = replica;', 'SET client_encoding = \'UTF8\';'];
 const skipped = [];
 for (let i = 0; i < lines.length; i++) {
-  const m = lines[i].match(/^COPY "([a-z_]+)"\."([a-z_]+)" \((.*)\) FROM stdin;$/);
+  const m = lines[i].match(/^COPY "?([a-z_]+)"?."?([a-z_]+)"? \((.*)\) FROM stdin;$/);
   if (!m) continue;
   const end = lines.indexOf('\\.', i);
   if (end < 0) throw new Error('unterminated COPY at line ' + (i + 1));

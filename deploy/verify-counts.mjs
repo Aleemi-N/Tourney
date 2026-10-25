@@ -6,7 +6,7 @@ const { Client } = createRequire(process.cwd() + '/package.json')('pg');
 const lines = fs.readFileSync(process.argv[2], 'utf8').split(/\r?\n/);
 const expected = {};
 for (let i = 0; i < lines.length; i++) {
-  const m = lines[i].match(/^COPY "(public|auth)"\."([a-z_]+)" \(.*\) FROM stdin;$/);
+  const m = lines[i].match(/^COPY "?(public|auth)"?."?([a-z_]+)"? \(.*\) FROM stdin;$/);
   if (!m) continue;
   const end = lines.indexOf('\\.', i);
   if (m[1] === 'public' || ['users', 'identities'].includes(m[2])) expected[`${m[1]}.${m[2]}`] = end - i - 1;
