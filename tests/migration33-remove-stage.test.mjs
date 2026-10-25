@@ -32,7 +32,9 @@ test('only generated stage-owned data is removed', () => {
 test('settings shows the authoritative removal plan and refreshes after success', () => {
   assert.match(ui, /rpc\('preview_tournament_stage_removal'/);
   assert.match(ui, /rpc\('remove_tournament_stage'/);
-  assert.match(ui, /role="dialog"/);
+  // The shared Modal renders a native <dialog> (focus trap, Escape, inert background).
+  assert.match(ui, /<Modal\b/);
+  assert.match(ui, /dismissible=\{!removing\}/);
   assert.match(ui, /Object\.entries\(removal\.remove\)/);
   assert.match(ui, /confirmation !== removal\.confirmation_phrase/);
   assert.match(ui, /router\.refresh\(\)/);
