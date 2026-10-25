@@ -21,9 +21,10 @@ function Navigation() {
         headerTitleStyle: { fontFamily: 'Geist_600SemiBold', fontSize: 17 }, contentStyle: { backgroundColor: t.background },
       }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ title: 'Sign in', presentation: 'modal' }} />
-        <Stack.Screen name="t/[slug]" options={{ title: 'Tournament' }} />
-        <Stack.Screen name="match/[id]" options={{ title: 'Match' }} />
+        <Stack.Screen name="login" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="register" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="t/[slug]" options={{ headerShown: false }} />
+        <Stack.Screen name="match/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="scorer/[id]" options={{ title: 'Scoring' }} />
         <Stack.Screen name="organizer/index" options={{ title: 'Organizer' }} />
         <Stack.Screen name="organizer/[id]" options={{ title: 'Review' }} />

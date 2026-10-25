@@ -1,9 +1,11 @@
-import { router } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useState } from 'react';
-import { TextInput } from 'react-native';
+import { Linking, Pressable } from 'react-native';
+import { AuthField, AuthShell } from '@/components/auth-card';
 import { Text } from '@/components/text';
-import { Button, ErrorText, Heading, Screen } from '@/components/ui';
+import { Button, ErrorText } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
+import { siteUrl } from '@/lib/api';
 import { useTheme } from '@/theme';
 
 export default function LoginScreen() {
@@ -22,16 +24,17 @@ export default function LoginScreen() {
     if (message) setError(message); else router.back();
   }
 
-  const input = { minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface, color: t.text, paddingHorizontal: 14, fontSize: 16 } as const;
+  // Password reset links open in a browser (the link belongs to the browser that asked for it), so it starts on the website.
+  const forgot = () => void Linking.openURL(`${siteUrl}/forgot-password`);
+
   return (
-    <Screen>
-      <Heading>Sign in to Tourny</Heading>
+    <AuthShell title="Sign In" subtitle="Welcome back to Tourny."
+      footer={<Text style={{ color: t.textSecondary, fontSize: 14 }}>New to Tourny? <Link href="/register" style={{ color: t.primary, fontWeight: '700' }}>Create Account</Link></Text>}>
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <Text style={{ color: t.textSecondary }}>Email</Text>
-      <TextInput accessibilityLabel="Email" style={input} value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" />
-      <Text style={{ color: t.textSecondary }}>Password</Text>
-      <TextInput accessibilityLabel="Password" style={input} value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" textContentType="password" onSubmitEditing={() => void submit()} />
-      <Button title="Sign in" onPress={() => void submit()} loading={busy} disabled={!email || !password} />
-    </Screen>
+      <AuthField label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" />
+      <AuthField label="Password" secure value={password} onChangeText={setPassword} autoComplete="password" textContentType="password" onSubmitEditing={() => void submit()}
+        right={<Pressable accessibilityRole="link" onPress={forgot} hitSlop={8}><Text style={{ color: t.primary, fontSize: 12, fontWeight: '700' }}>Forgot password?</Text></Pressable>} />
+      <Button title="Sign In" onPress={() => void submit()} loading={busy} disabled={!email || !password} />
+    </AuthShell>
   );
 }

@@ -17,3 +17,6 @@ export const apiUrl = url;
 export function imageUrl(bucket: 'logos' | 'avatars' | 'player-photos', path: string | null | undefined): string | null {
   return path ? api.storage.from(bucket).getPublicUrl(path).data.publicUrl : null;
 }
+
+/** The website, for pages that must open in a browser (password reset). */
+export const siteUrl = process.env.EXPO_PUBLIC_SITE_URL ?? 'http://localhost:3000';
