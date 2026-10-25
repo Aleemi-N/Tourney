@@ -36,7 +36,7 @@ export function OwnerSquadRoster({ squad, teamName }: { squad: SquadRosterItem[]
 
   if (squad.length === 0) {
     return (
-      <div className="mt-6 rounded-3xl border border-dashed border-white/15 bg-white/3 p-12 text-center text-sm text-white/55">
+      <div className="mt-6 rounded-3xl border border-dashed border-border-strong bg-surface p-12 text-center text-sm text-text-secondary">
         No players are assigned to this squad yet.
       </div>
     );
@@ -78,41 +78,41 @@ export function OwnerSquadRoster({ squad, teamName }: { squad: SquadRosterItem[]
             <article
               key={item.id}
               onClick={() => setSelectedPlayer(detailData)}
-              className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#17132a] p-5 shadow-lg transition hover:border-amber-400/50 hover:bg-[#1f1a38] cursor-pointer group"
+              className="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-card transition hover:border-warning/30 hover:bg-surface-muted cursor-pointer group"
             >
               <div className="flex items-start gap-4">
                 {photoUrl ? (
                   <img
                     src={photoUrl}
                     alt={displayName}
-                    className="h-14 w-14 shrink-0 rounded-2xl object-cover object-top border border-white/10 group-hover:border-amber-400/50 transition-colors"
+                    className="h-14 w-14 shrink-0 rounded-2xl object-cover object-top border border-border group-hover:border-warning/30 transition-colors"
                   />
                 ) : (
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-fuchsia-400/10 text-fuchsia-300 border border-fuchsia-400/20 group-hover:border-amber-400/50 transition-colors">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/30 group-hover:border-warning/30 transition-colors">
                     <UserIcon className="h-7 w-7" />
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate text-base font-bold text-white group-hover:text-amber-300 transition-colors">
+                  <h3 className="truncate text-base font-bold text-text-primary group-hover:text-warning transition-colors">
                     {displayName}
                   </h3>
-                  <p className="mt-0.5 truncate text-xs font-semibold text-fuchsia-300/90">
+                  <p className="mt-0.5 truncate text-xs font-semibold text-primary">
                     {primaryPos}
                     {secondaryPos ? ` · ${secondaryPos}` : ''}
                   </p>
                   {item.player?.place ? (
-                    <p className="mt-1 truncate text-[11px] text-white/40">
+                    <p className="mt-1 truncate text-xs text-text-muted">
                       {item.player.place}
                     </p>
                   ) : null}
                 </div>
               </div>
 
-              <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
-                <span className={`inline-block rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${item.badgeColor}`}>
+              <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
+                <span className={`inline-block rounded-lg border px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${item.badgeColor}`}>
                   {item.sourceLabel}
                 </span>
-                <span className="font-mono text-xs font-bold text-white">
+                <span className="font-mono text-xs font-bold text-text-primary">
                   {item.price !== null && item.price !== undefined
                     ? `₹${Number(item.price).toLocaleString('en-IN')}`
                     : '—'}

@@ -141,8 +141,8 @@ export function ImageUpload({
             <UploadCloud className="h-8 w-8 text-text-muted" />
           )}
           {isUploading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-              <Loader2 className="h-6 w-6 animate-spin text-white" />
+            <div className="absolute inset-0 flex items-center justify-center bg-surface-muted">
+              <Loader2 className="h-6 w-6 animate-spin text-text-primary" />
             </div>
           )}
         </div>
@@ -177,7 +177,7 @@ export function ImageUpload({
               </button>
             )}
           </div>
-          <p className="text-[11px] text-text-muted">
+          <p className="text-xs text-text-muted">
             JPEG, PNG, WebP up to 2MB.
           </p>
           {error && (

@@ -61,22 +61,22 @@ export default async function OwnerTeamPage({ params }: { params: Promise<{ team
 
     const squad: SquadRosterItem[] = ((squadData ?? []) as unknown as SquadRow[]).map((row) => {
         let label = row.acquisition_type.replaceAll('_', ' ');
-        let badgeColor = 'bg-slate-400/10 text-slate-300 border-slate-400/30';
+        let badgeColor = 'bg-surface-muted text-text-secondary border-border';
         if (row.acquisition_type === 'AUCTION') {
             const sale = salesData?.find((s) => s.auction_players?.player_id === row.player_id);
             if (sale && sale.auction_players?.attempt_number > 1) {
                 label = 'RE-AUCTION';
-                badgeColor = 'bg-purple-400/10 text-purple-300 border-purple-400/30';
+                badgeColor = 'bg-primary/10 text-primary border-primary/30';
             } else {
                 label = 'MAIN AUCTION';
-                badgeColor = 'bg-fuchsia-400/10 text-fuchsia-300 border-fuchsia-400/30';
+                badgeColor = 'bg-primary/10 text-primary border-primary/30';
             }
         } else if (row.acquisition_type === 'ICON_LOT') {
             label = 'Icon Lot';
-            badgeColor = 'bg-amber-400/10 text-amber-300 border-amber-400/30';
+            badgeColor = 'bg-warning/10 text-warning border-warning/30';
         } else if (row.acquisition_type === 'SETTER_LOT') {
             label = 'Setter Lot';
-            badgeColor = 'bg-sky-400/10 text-sky-300 border-sky-400/30';
+            badgeColor = 'bg-info/10 text-info border-info/30';
         }
         return {
             id: row.id,
@@ -98,21 +98,21 @@ export default async function OwnerTeamPage({ params }: { params: Promise<{ team
                 <div className="mx-auto max-w-6xl">
                     <div className="flex flex-wrap items-end justify-between gap-4">
                         <div>
-                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">Overview</p>
-                            <h2 className="mt-2 text-2xl font-black text-white">Team Dashboard</h2>
+                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-text-muted">Overview</p>
+                            <h2 className="mt-2 text-2xl font-black text-text-primary">Team Dashboard</h2>
                         </div>
                         {isAuctionActive && (
-                            <Link href={`/owner/teams/${team.id}/auction`} className="rounded-2xl bg-fuchsia-300 px-5 py-3 text-sm font-black text-[#211334] transition hover:bg-fuchsia-200">
+                            <Link href={`/owner/teams/${team.id}/auction`} className="rounded-2xl bg-primary px-5 py-3 text-sm font-black text-primary-foreground transition hover:bg-primary-hover">
                                 ENTER LIVE AUCTION
                             </Link>
                         )}
                         {!isAuctionActive && nextMatch && (
-                            <Link href={`/owner/teams/${team.id}/fixtures`} className="rounded-2xl bg-fuchsia-300 px-5 py-3 text-sm font-black text-[#211334] transition hover:bg-fuchsia-200">
+                            <Link href={`/owner/teams/${team.id}/fixtures`} className="rounded-2xl bg-primary px-5 py-3 text-sm font-black text-primary-foreground transition hover:bg-primary-hover">
                                 VIEW FIXTURE
                             </Link>
                         )}
                         {!isAuctionActive && !nextMatch && (
-                            <Link href={`/owner/teams/${team.id}/squad`} className="rounded-2xl bg-white/10 px-5 py-3 text-sm font-black text-white transition hover:bg-white/15">
+                            <Link href={`/owner/teams/${team.id}/squad`} className="rounded-2xl bg-surface-muted px-5 py-3 text-sm font-black text-text-primary transition hover:bg-surface-muted">
                                 VIEW FINAL SQUAD
                             </Link>
                         )}
@@ -130,10 +130,10 @@ export default async function OwnerTeamPage({ params }: { params: Promise<{ team
                             <section>
                                 <div className="flex items-end justify-between gap-4">
                                     <div>
-                                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">My squad</p>
-                                        <h2 className="mt-2 text-2xl font-black text-white">Squad Preview</h2>
+                                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-text-muted">My squad</p>
+                                        <h2 className="mt-2 text-2xl font-black text-text-primary">Squad Preview</h2>
                                     </div>
-                                    <Link href={`/owner/teams/${team.id}/squad`} className="text-sm font-bold text-fuchsia-300 hover:text-fuchsia-200">VIEW FULL SQUAD →</Link>
+                                    <Link href={`/owner/teams/${team.id}/squad`} className="text-sm font-bold text-primary hover:text-primary">VIEW FULL SQUAD →</Link>
                                 </div>
                                 <OwnerSquadRoster squad={squad.slice(0, 4)} teamName={team.name} />
                             </section>
@@ -142,22 +142,22 @@ export default async function OwnerTeamPage({ params }: { params: Promise<{ team
                             <section>
                                 <div className="flex items-end justify-between gap-4">
                                     <div>
-                                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">Schedule</p>
-                                        <h2 className="mt-2 text-2xl font-black text-white">Next Match</h2>
+                                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-text-muted">Schedule</p>
+                                        <h2 className="mt-2 text-2xl font-black text-text-primary">Next Match</h2>
                                     </div>
                                 </div>
                                 {nextMatch ? (
-                                    <article className="mt-5 rounded-3xl border border-white/10 bg-white/3 p-6 text-center">
-                                        <p className="text-sm font-bold uppercase tracking-wider text-white/40">Stage</p>
+                                    <article className="mt-5 rounded-3xl border border-border bg-surface p-6 text-center">
+                                        <p className="text-sm font-bold uppercase tracking-wider text-text-muted">Stage</p>
                                         <div className="my-6 flex items-center justify-center gap-4 text-xl font-black">
-                                            <span className={nextMatch.home_team_id === team.id ? "text-white" : "text-white/40"}>{nextMatch.home_team?.name ?? 'TBD'}</span>
-                                            <span className="text-sm font-bold text-fuchsia-300">VS</span>
-                                            <span className={nextMatch.away_team_id === team.id ? "text-white" : "text-white/40"}>{nextMatch.away_team?.name ?? 'TBD'}</span>
+                                            <span className={nextMatch.home_team_id === team.id ? "text-text-primary" : "text-text-muted"}>{nextMatch.home_team?.name ?? 'TBD'}</span>
+                                            <span className="text-sm font-bold text-primary">VS</span>
+                                            <span className={nextMatch.away_team_id === team.id ? "text-text-primary" : "text-text-muted"}>{nextMatch.away_team?.name ?? 'TBD'}</span>
                                         </div>
-                                        <p className="text-sm text-white/55">{nextMatch.scheduled_at ? new Date(nextMatch.scheduled_at).toLocaleString('en-IN') : 'Time TBD'}{nextMatch.court ? ` · Court ${nextMatch.court}` : ''}</p>
+                                        <p className="text-sm text-text-secondary">{nextMatch.scheduled_at ? new Date(nextMatch.scheduled_at).toLocaleString('en-IN') : 'Time TBD'}{nextMatch.court ? ` · Court ${nextMatch.court}` : ''}</p>
                                     </article>
                                 ) : (
-                                    <div className="mt-5 rounded-3xl border border-dashed border-white/15 bg-white/3 p-8 text-center text-sm text-white/55">
+                                    <div className="mt-5 rounded-3xl border border-dashed border-border-strong bg-surface p-8 text-center text-sm text-text-secondary">
                                         No upcoming matches scheduled.
                                     </div>
                                 )}

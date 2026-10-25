@@ -34,9 +34,9 @@ export default async function OwnerResultsPage({ params }: { params: Promise<{ t
             <OwnerTeamHeader team={team} />
             <div className="px-5 py-8 sm:px-8 lg:px-12">
                 <div className="mx-auto max-w-6xl">
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-300/80">Match History</p>
-                    <h1 className="mt-2 text-3xl font-black text-white sm:text-4xl">Results</h1>
-                    <p className="mt-1 text-sm text-white/55">Authoritative match scores and results for {team.name}.</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Match History</p>
+                    <h1 className="mt-2 text-3xl font-black text-text-primary sm:text-4xl">Results</h1>
+                    <p className="mt-1 text-sm text-text-secondary">Authoritative match scores and results for {team.name}.</p>
 
                     <div className="mt-6 space-y-3">
                         {results?.map((res) => {
@@ -44,36 +44,36 @@ export default async function OwnerResultsPage({ params }: { params: Promise<{ t
                             const isWinner = res.winner_team_id === team.id;
 
                             return (
-                                <article key={res.id} className="rounded-2xl border border-white/10 bg-[#17132a] p-5">
+                                <article key={res.id} className="rounded-2xl border border-border bg-surface p-5">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                         <div>
                                             <div className="flex items-center gap-2">
-                                                <span className="text-xs font-bold uppercase tracking-wider text-white/40">
+                                                <span className="text-xs font-bold uppercase tracking-wider text-text-muted">
                                                     Match {res.match_number ?? '—'}
                                                 </span>
                                                 {res.winner_team_id ? (
-                                                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${
+                                                    <span className={`rounded-full border px-2 py-0.5 text-xs font-bold uppercase ${
                                                         isWinner
-                                                            ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
-                                                            : 'border-rose-400/30 bg-rose-400/10 text-rose-300'
+                                                            ? 'border-success/30 bg-success/10 text-success'
+                                                            : 'border-danger/30 bg-danger/10 text-danger'
                                                     }`}>
                                                         {isWinner ? 'WON' : 'LOST'}
                                                     </span>
                                                 ) : null}
                                             </div>
-                                            <h3 className="mt-2 text-lg font-black text-white flex items-center gap-3">
-                                                <span className={isHome ? 'text-white' : 'text-white/60'}>
+                                            <h3 className="mt-2 text-lg font-black text-text-primary flex items-center gap-3">
+                                                <span className={isHome ? 'text-text-primary' : 'text-text-secondary'}>
                                                     {getTeamName(res.home_team_id)}
                                                 </span>
-                                                <span className="text-fuchsia-300 font-mono">
+                                                <span className="text-primary font-mono">
                                                     {res.total_home_score ?? 0} - {res.total_away_score ?? 0}
                                                 </span>
-                                                <span className={!isHome ? 'text-white' : 'text-white/60'}>
+                                                <span className={!isHome ? 'text-text-primary' : 'text-text-secondary'}>
                                                     {getTeamName(res.away_team_id)}
                                                 </span>
                                             </h3>
                                         </div>
-                                        <p className="text-sm text-white/45">
+                                        <p className="text-sm text-text-muted">
                                             {res.scheduled_at ? new Date(res.scheduled_at).toLocaleDateString('en-IN') : 'Completed'}
                                         </p>
                                     </div>
@@ -81,7 +81,7 @@ export default async function OwnerResultsPage({ params }: { params: Promise<{ t
                             );
                         })}
                         {(!results || results.length === 0) && (
-                            <div className="rounded-3xl border border-dashed border-white/15 bg-white/3 p-8 text-sm text-white/55">
+                            <div className="rounded-3xl border border-dashed border-border-strong bg-surface p-8 text-sm text-text-secondary">
                                 No completed match results recorded for this team yet.
                             </div>
                         )}

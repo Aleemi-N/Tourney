@@ -61,29 +61,29 @@ export default async function OwnerSquadPage({ params }: { params: Promise<{ tea
     const squad: SquadRosterItem[] = rawSquad.map((row) => {
         const rawType = row.acquisition_type;
         let sourceLabel = 'Manual Assignment';
-        let badgeColor = 'bg-slate-400/10 text-slate-300 border-slate-400/30';
+        let badgeColor = 'bg-surface-muted text-text-secondary border-border';
 
         if (rawType === 'ICON_LOT') {
             sourceLabel = 'Icon Lot';
-            badgeColor = 'bg-amber-400/10 text-amber-300 border-amber-400/30';
+            badgeColor = 'bg-warning/10 text-warning border-warning/30';
             lotCount++;
         } else if (rawType === 'SETTER_LOT') {
             sourceLabel = 'Setter Lot';
-            badgeColor = 'bg-sky-400/10 text-sky-300 border-sky-400/30';
+            badgeColor = 'bg-info/10 text-info border-info/30';
             lotCount++;
         } else if (rawType === 'AUCTION') {
             const sale = salesData?.find((s) => s.auction_players?.player_id === row.player_id);
             if (sale && sale.auction_players?.attempt_number > 1) {
                 sourceLabel = 'Re-auction';
-                badgeColor = 'bg-purple-400/10 text-purple-300 border-purple-400/30';
+                badgeColor = 'bg-primary/10 text-primary border-primary/30';
             } else {
                 sourceLabel = 'Main Auction';
-                badgeColor = 'bg-fuchsia-400/10 text-fuchsia-300 border-fuchsia-400/30';
+                badgeColor = 'bg-primary/10 text-primary border-primary/30';
             }
             auctionCount++;
         } else if (rawType === 'MANUAL' || rawType === 'MANUAL_ASSIGNMENT') {
             sourceLabel = 'Manual Assignment';
-            badgeColor = 'bg-emerald-400/10 text-emerald-300 border-emerald-400/30';
+            badgeColor = 'bg-success/10 text-success border-success/30';
             manualCount++;
         } else {
             sourceLabel = rawType.replaceAll('_', ' ');
@@ -110,9 +110,9 @@ export default async function OwnerSquadPage({ params }: { params: Promise<{ tea
                 <div className="mx-auto max-w-6xl">
                     <div className="flex flex-wrap items-end justify-between gap-4">
                         <div>
-                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-300/80">Squad Management</p>
-                            <h1 className="mt-2 text-3xl font-black text-white sm:text-4xl">My Squad</h1>
-                            <p className="mt-1 text-sm text-white/55">Authoritative roster of all acquired players for {team.name}.</p>
+                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Squad Management</p>
+                            <h1 className="mt-2 text-3xl font-black text-text-primary sm:text-4xl">My Squad</h1>
+                            <p className="mt-1 text-sm text-text-secondary">Authoritative roster of all acquired players for {team.name}.</p>
                         </div>
                     </div>
 
@@ -127,10 +127,10 @@ export default async function OwnerSquadPage({ params }: { params: Promise<{ tea
 
                     {/* Squad Player List */}
                     <section className="mt-8">
-                        <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        <div className="flex items-center justify-between border-b border-border pb-4">
+                            <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
                                 Roster Players
-                                <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-bold text-white/70">
+                                <span className="rounded-full bg-surface-muted px-2.5 py-0.5 text-xs font-bold text-text-secondary">
                                     {squadCount}
                                 </span>
                             </h2>

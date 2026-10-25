@@ -37,7 +37,7 @@ const ACTION_CONFIG: Record<string, {
   TOURNAMENT_SUBMITTED_FOR_APPROVAL: {
     label: 'Submitted for Approval',
     icon: ClockIcon,
-    color: 'text-amber-400',
+    color: 'text-warning',
   },
   TOURNAMENT_GRANDFATHERED_APPROVED: {
     label: 'Grandfathered (Pre-existing)',
@@ -76,8 +76,8 @@ export default async function AuditPage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
-            <ClipboardDocumentListIcon className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-card">
+            <ClipboardDocumentListIcon className="w-5 h-5 text-text-primary" />
           </div>
           <h1 className="text-2xl font-bold text-text-primary tracking-tight">Audit Log</h1>
         </div>
@@ -107,7 +107,7 @@ export default async function AuditPage() {
               const Icon = config.icon;
 
               return (
-                <div key={l.id as string} className="flex items-start gap-4 px-5 py-4 hover:bg-surface-muted/50 transition-colors">
+                <div key={l.id as string} className="flex items-start gap-4 px-5 py-4 hover:bg-surface-muted transition-colors">
                   {/* Icon */}
                   <div className={`mt-0.5 shrink-0 ${config.color}`}>
                     <Icon className="w-4 h-4" />

@@ -42,14 +42,14 @@ function MetricCard({
   highlight?: 'warning' | 'success' | 'info';
 }) {
   const highlightClassMap: Record<string, string> = {
-    warning: 'border-amber-500/30 bg-amber-500/5',
+    warning: 'border-warning/30 bg-warning/10',
     success: 'border-success/30 bg-success/5',
     info: 'border-info/30 bg-info/5',
   };
   const highlightClass = highlight ? (highlightClassMap[highlight] ?? 'border-border bg-surface') : 'border-border bg-surface';
 
   const iconClassMap: Record<string, string> = {
-    warning: 'text-amber-400',
+    warning: 'text-warning',
     success: 'text-success',
     info: 'text-info',
   };
@@ -78,7 +78,7 @@ function MetricCard({
 function ApprovalStatusBadge({ status }: { status: ApprovalStatus }) {
   const config = {
     APPROVED: { label: 'Approved', cls: 'bg-success/10 text-success border border-success/20' },
-    PENDING_APPROVAL: { label: 'Pending', cls: 'bg-amber-500/10 text-amber-400 border border-amber-500/20' },
+    PENDING_APPROVAL: { label: 'Pending', cls: 'bg-warning/10 text-warning border border-warning/30' },
     REJECTED: { label: 'Rejected', cls: 'bg-danger/10 text-danger border border-danger/20' },
   }[status] ?? { label: status, cls: 'bg-surface-muted text-text-muted' };
 
@@ -92,7 +92,7 @@ function ApprovalStatusBadge({ status }: { status: ApprovalStatus }) {
 function ActivityIcon({ event }: { event: string }) {
   if (event === 'APPROVED') return <CheckBadgeIcon className="w-4 h-4 text-success" />;
   if (event === 'REJECTED') return <ExclamationTriangleIcon className="w-4 h-4 text-danger" />;
-  return <ClockIcon className="w-4 h-4 text-amber-400" />;
+  return <ClockIcon className="w-4 h-4 text-warning" />;
 }
 
 function formatDate(dateStr: string | null) {
@@ -120,8 +120,8 @@ export default async function SuperAdminDashboard() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
-            <ChartBarIcon className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-card">
+            <ChartBarIcon className="w-5 h-5 text-text-primary" />
           </div>
           <h1 className="text-2xl font-bold text-text-primary tracking-tight">Platform Dashboard</h1>
         </div>
@@ -131,17 +131,17 @@ export default async function SuperAdminDashboard() {
       {/* Pending Approvals — Primary KPI */}
       {metrics.pending_approvals > 0 && (
         <Link href="/super-admin/approvals">
-          <div className="mb-6 rounded-xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 to-amber-600/5 p-5 flex items-center gap-4 hover:border-amber-500/60 transition-all cursor-pointer group">
-            <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
-              <ClipboardDocumentCheckIcon className="w-6 h-6 text-amber-400" />
+          <div className="mb-6 rounded-xl border border-warning/30 bg-warning/10 p-5 flex items-center gap-4 hover:border-warning/30 transition-all cursor-pointer group">
+            <div className="w-12 h-12 rounded-xl bg-warning/15 flex items-center justify-center shrink-0">
+              <ClipboardDocumentCheckIcon className="w-6 h-6 text-warning" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-amber-400 font-semibold">Action Required</p>
+              <p className="text-sm text-warning font-semibold">Action Required</p>
               <p className="text-lg font-bold text-text-primary">
                 {metrics.pending_approvals} tournament{metrics.pending_approvals !== 1 ? 's' : ''} pending approval
               </p>
             </div>
-            <span className="text-amber-400 text-sm font-medium group-hover:underline">Review →</span>
+            <span className="text-warning text-sm font-medium group-hover:underline">Review →</span>
           </div>
         </Link>
       )}
@@ -200,7 +200,7 @@ export default async function SuperAdminDashboard() {
         <div className="rounded-xl border border-border bg-surface p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-text-primary">Recent Submissions</h2>
-            <Link href="/super-admin/approvals" className="text-xs text-violet-400 hover:underline">View all</Link>
+            <Link href="/super-admin/approvals" className="text-xs text-primary hover:underline">View all</Link>
           </div>
           {(!metrics.recent_submissions || metrics.recent_submissions.length === 0) ? (
             <p className="text-text-muted text-sm text-center py-6">No recent submissions.</p>
@@ -228,7 +228,7 @@ export default async function SuperAdminDashboard() {
         <div className="rounded-xl border border-border bg-surface p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-text-primary">Recent Reviews</h2>
-            <Link href="/super-admin/audit" className="text-xs text-violet-400 hover:underline">Full audit</Link>
+            <Link href="/super-admin/audit" className="text-xs text-primary hover:underline">Full audit</Link>
           </div>
           {(!metrics.recent_reviews || metrics.recent_reviews.length === 0) ? (
             <p className="text-text-muted text-sm text-center py-6">No recent review activity.</p>

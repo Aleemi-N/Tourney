@@ -54,13 +54,13 @@ export default async function ApprovalsPage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
-            <ClipboardDocumentCheckIcon className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 rounded-xl bg-warning flex items-center justify-center shadow-card">
+            <ClipboardDocumentCheckIcon className="w-5 h-5 text-text-primary" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-text-primary tracking-tight">Approval Queue</h1>
             {queue.length > 0 && (
-              <p className="text-sm text-amber-400 font-medium">{queue.length} pending review</p>
+              <p className="text-sm text-warning font-medium">{queue.length} pending review</p>
             )}
           </div>
         </div>
@@ -114,7 +114,7 @@ export default async function ApprovalsPage() {
                     </div>
 
                     {item.approval_submitted_at && (
-                      <p className="mt-2 text-xs text-amber-400 font-medium">
+                      <p className="mt-2 text-xs text-warning font-medium">
                         Submitted: {formatDate(item.approval_submitted_at as string)}
                       </p>
                     )}

@@ -26,3 +26,8 @@ export function teamColorStyle(hex?: string | null): { backgroundColor: string; 
   const onInk = (luminance + 0.05) / 0.0573; // #0b1020
   return { backgroundColor: hex, color: onWhite >= onInk ? '#ffffff' : '#0b1020' };
 }
+
+/** Readable label for an UPPER_SNAKE enum value, e.g. REGISTERED_TEAM -> "Registered team". */
+export function enumLabel(value: string) {
+  return value.charAt(0) + value.slice(1).toLowerCase().replace(/_/g, ' ');
+}

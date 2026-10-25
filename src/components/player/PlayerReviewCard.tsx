@@ -40,7 +40,7 @@ export function PlayerReviewCard({
         {/* If pending/changes_requested, allow classification selection (if auction league) */}
         {status && ['PENDING', 'CHANGES_REQUESTED'].includes(status) && onClassify && (
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={selectId} className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <label htmlFor={selectId} className="text-xs font-bold text-text-muted uppercase tracking-wider">
               Classification
             </label>
             <select 
@@ -65,7 +65,7 @@ export function PlayerReviewCard({
               type="button"
               onClick={onReject}
               disabled={isSubmitting}
-              className="h-10 flex-1 rounded-md border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 px-4 text-sm font-medium text-red-600 dark:text-red-400 shadow-sm hover:bg-red-100 dark:hover:bg-red-900/40 disabled:opacity-50 transition-colors"
+              className="h-10 flex-1 rounded-md border border-danger/30 dark:border-danger/30 bg-danger/10 dark:bg-danger/15 px-4 text-sm font-medium text-danger dark:text-danger shadow-sm hover:bg-danger/10 dark:hover:bg-danger/15 disabled:opacity-50 transition-colors"
             >
               Reject
             </button>
@@ -75,7 +75,7 @@ export function PlayerReviewCard({
               type="button"
               onClick={onApprove}
               disabled={isSubmitting || (onClassify !== undefined && !classification)}
-              className="h-10 flex-1 rounded-md bg-emerald-600 px-4 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+              className="h-10 flex-1 rounded-md bg-success px-4 text-sm font-medium text-text-inverse shadow-sm hover:bg-success disabled:opacity-50 transition-colors"
             >
               Approve
             </button>

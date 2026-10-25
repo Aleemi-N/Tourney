@@ -86,7 +86,7 @@ export function ApprovalActions({ tournamentId, tournamentName }: ApprovalAction
           id={`approve-btn-${tournamentId}`}
           onClick={handleApprove}
           disabled={isPending}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-success text-white text-sm font-semibold hover:bg-success/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-success text-text-inverse text-sm font-semibold hover:bg-success/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <CheckCircleIcon className="w-4 h-4" />
           {actionType === 'approve' ? 'Approving…' : 'Approve'}
@@ -105,8 +105,8 @@ export function ApprovalActions({ tournamentId, tournamentName }: ApprovalAction
 
       {/* Reject Dialog */}
       {showRejectDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-surface-raised p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-surface-raised p-6 shadow-card">
             <h2 className="text-lg font-bold text-text-primary mb-1">Reject Tournament</h2>
             <p className="text-sm text-text-secondary mb-4">
               Rejecting <span className="font-semibold text-text-primary">&quot;{tournamentName}&quot;</span>.
@@ -122,7 +122,7 @@ export function ApprovalActions({ tournamentId, tournamentName }: ApprovalAction
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder="Provide a clear reason so the organizer can address it…"
               rows={4}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary resize-none"
               autoFocus
             />
 
@@ -141,7 +141,7 @@ export function ApprovalActions({ tournamentId, tournamentName }: ApprovalAction
                 id={`reject-confirm-btn-${tournamentId}`}
                 onClick={handleRejectConfirm}
                 disabled={!rejectReason.trim()}
-                className="px-4 py-2 rounded-lg bg-danger text-white text-sm font-semibold hover:bg-danger/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-lg bg-danger text-text-inverse text-sm font-semibold hover:bg-danger/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Confirm Rejection
               </button>

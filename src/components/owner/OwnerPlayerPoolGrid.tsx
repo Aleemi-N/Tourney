@@ -40,7 +40,7 @@ export function OwnerPlayerPoolGrid({ players }: { players: PlayerPoolItem[] }) 
 
   if (players.length === 0) {
     return (
-      <div className="mt-6 rounded-3xl border border-dashed border-white/15 bg-white/3 p-12 text-center text-sm text-white/55">
+      <div className="mt-6 rounded-3xl border border-dashed border-border-strong bg-surface p-12 text-center text-sm text-text-secondary">
         No players found matching the selected filter.
       </div>
     );
@@ -60,10 +60,10 @@ export function OwnerPlayerPoolGrid({ players }: { players: PlayerPoolItem[] }) 
 
           const categoryBadgeStyle =
             item.categoryCode === 'A'
-              ? 'border-fuchsia-500/40 bg-fuchsia-500/20 text-fuchsia-200'
+              ? 'border-primary/30 bg-primary/15 text-primary'
               : item.categoryCode === 'B'
-              ? 'border-blue-500/40 bg-blue-500/20 text-blue-200'
-              : 'border-emerald-500/40 bg-emerald-500/20 text-emerald-200';
+              ? 'border-info/30 bg-info/15 text-info'
+              : 'border-success/30 bg-success/15 text-success';
 
           const detailData: PlayerDetailData = {
             id: item.playerId,
@@ -89,30 +89,30 @@ export function OwnerPlayerPoolGrid({ players }: { players: PlayerPoolItem[] }) 
             <article
               key={item.id}
               onClick={() => setSelectedPlayer(detailData)}
-              className="flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-[#17132a] p-5 shadow-lg transition hover:border-amber-400/50 hover:bg-[#1f1a38] cursor-pointer relative group"
+              className="flex flex-col justify-between overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-card transition hover:border-warning/30 hover:bg-surface-muted cursor-pointer relative group"
             >
               <div className="flex items-start gap-4">
                 {item.photoUrl ? (
                   <img
                     src={item.photoUrl}
                     alt={displayName}
-                    className="h-16 w-16 shrink-0 rounded-2xl object-cover object-top border border-white/15 shadow-md group-hover:border-amber-400/50 transition-colors"
+                    className="h-16 w-16 shrink-0 rounded-2xl object-cover object-top border border-border-strong shadow-md group-hover:border-warning/30 transition-colors"
                   />
                 ) : (
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-fuchsia-400/10 text-fuchsia-300 border border-fuchsia-400/20 shadow-inner group-hover:border-amber-400/50 transition-colors">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/30 shadow-card group-hover:border-warning/30 transition-colors">
                     <UserIcon className="h-8 w-8" />
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate text-base font-bold text-white group-hover:text-amber-300 transition-colors">
+                  <h3 className="truncate text-base font-bold text-text-primary group-hover:text-warning transition-colors">
                     {displayName}
                   </h3>
-                  <p className="mt-0.5 truncate text-xs font-semibold text-fuchsia-300/90">
+                  <p className="mt-0.5 truncate text-xs font-semibold text-primary">
                     {primaryPos}
                     {secondaryPos ? ` · ${secondaryPos}` : ''}
                   </p>
                   {item.player?.place ? (
-                    <p className="mt-1 truncate text-[11px] text-white/40">
+                    <p className="mt-1 truncate text-xs text-text-muted">
                       {item.player.place}
                     </p>
                   ) : null}
@@ -120,9 +120,9 @@ export function OwnerPlayerPoolGrid({ players }: { players: PlayerPoolItem[] }) 
               </div>
 
               {/* Status and Category Price Footer */}
-              <div className="mt-5 flex flex-wrap items-center justify-between border-t border-white/10 pt-4 gap-2">
+              <div className="mt-5 flex flex-wrap items-center justify-between border-t border-border pt-4 gap-2">
                 {item.categoryCode ? (
-                  <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-black uppercase tracking-wider ${categoryBadgeStyle}`}>
+                  <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-black uppercase tracking-wider ${categoryBadgeStyle}`}>
                     <TagIcon className="h-3 w-3" />
                     Cat {item.categoryCode} · ₹{item.basePrice.toLocaleString('en-IN')}
                   </span>
@@ -130,28 +130,28 @@ export function OwnerPlayerPoolGrid({ players }: { players: PlayerPoolItem[] }) 
 
                 {item.status === 'SOLD' ? (
                   <div className="flex flex-col items-end">
-                    <span className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-400 shadow-sm">
+                    <span className="inline-flex items-center gap-1 rounded-lg border border-success/30 bg-success/10 px-2.5 py-1 text-xs font-black uppercase text-success shadow-sm">
                       <CheckCircleIcon className="h-3 w-3" />
                       SOLD ₹{Number(item.soldAmount ?? 0).toLocaleString('en-IN')}
                     </span>
                     {item.soldTeamName ? (
-                      <span className="mt-1 truncate text-[10px] font-bold text-emerald-300/70 max-w-[140px]">
+                      <span className="mt-1 truncate text-xs font-bold text-success max-w-[140px]">
                         {item.soldTeamName}
                       </span>
                     ) : null}
                   </div>
                 ) : item.status === 'UNSOLD' ? (
-                  <span className="inline-flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/15 px-2.5 py-1 text-[10px] font-black uppercase text-rose-400">
+                  <span className="inline-flex items-center gap-1 rounded-lg border border-danger/30 bg-danger/10 px-2.5 py-1 text-xs font-black uppercase text-danger">
                     <XCircleIcon className="h-3 w-3" />
                     UNSOLD
                   </span>
                 ) : item.status === 'OPEN' ? (
-                  <span className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/15 px-2.5 py-1 text-[10px] font-black uppercase text-amber-300 animate-pulse">
+                  <span className="inline-flex items-center gap-1 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-1 text-xs font-black uppercase text-warning animate-pulse">
                     <SparklesIcon className="h-3 w-3" />
                     LIVE
                   </span>
                 ) : (
-                  <span className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase text-white/50">
+                  <span className="rounded-lg border border-border bg-surface px-2.5 py-1 text-xs font-bold uppercase text-text-secondary">
                     AVAILABLE
                   </span>
                 )}

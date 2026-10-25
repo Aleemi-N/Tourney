@@ -47,7 +47,7 @@ export function PlayerCard({
     };
     return (
       <span 
-        className="absolute top-2 right-2 z-10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white rounded-full shadow-sm backdrop-blur-md"
+        className="absolute top-2 right-2 z-10 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-text-primary rounded-full shadow-sm"
         style={{ backgroundColor: tournamentColor || '#0ea5e9' }}
       >
         {labels[classification] || classification}
@@ -58,17 +58,17 @@ export function PlayerCard({
   const getStatusBadge = () => {
     if (!status) return null;
     const config: Record<string, { label: string; cls: string }> = {
-      PENDING: { label: 'PENDING', cls: 'bg-amber-500/90 text-white' },
-      APPROVED: { label: 'APPROVED', cls: 'bg-emerald-500/90 text-white' },
-      REJECTED: { label: 'REJECTED', cls: 'bg-red-500/90 text-white' },
-      CHANGES_REQUESTED: { label: 'CHANGES REQ', cls: 'bg-orange-500/90 text-white' },
-      WITHDRAWN: { label: 'WITHDRAWN', cls: 'bg-slate-500/90 text-white' }
+      PENDING: { label: 'PENDING', cls: 'bg-warning/15 text-text-primary' },
+      APPROVED: { label: 'APPROVED', cls: 'bg-success/15 text-text-primary' },
+      REJECTED: { label: 'REJECTED', cls: 'bg-danger/15 text-text-primary' },
+      CHANGES_REQUESTED: { label: 'CHANGES REQ', cls: 'bg-warning/15 text-text-primary' },
+      WITHDRAWN: { label: 'WITHDRAWN', cls: 'bg-surface-muted text-text-primary' }
     };
     const mapped = config[status];
     if (!mapped) return null;
     
     return (
-      <span className={cn("absolute top-2 right-2 z-10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full shadow-sm backdrop-blur-md", mapped.cls)}>
+      <span className={cn("absolute top-2 right-2 z-10 px-2 py-0.5 text-xs font-bold uppercase tracking-wider rounded-full shadow-sm ", mapped.cls)}>
         {mapped.label}
       </span>
     );
@@ -79,7 +79,7 @@ export function PlayerCard({
   return (
     <div
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900/40 shadow-sm transition-all hover:shadow-md",
+        "group relative flex h-full flex-col overflow-hidden rounded-xl border border-border dark:border-border bg-surface-muted dark:bg-surface shadow-sm transition-all ",
         className
       )}
       style={{
@@ -98,10 +98,10 @@ export function PlayerCard({
             fill
             unoptimized
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover object-[center_22%] transition-transform duration-500 group-hover:scale-105"
+            className="object-cover object-[center_22%] transition-transform duration-500"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-slate-400 dark:text-slate-500 transition-transform duration-500 group-hover:scale-105">
+          <div className="flex h-full w-full items-center justify-center text-text-secondary dark:text-text-muted transition-transform duration-500">
             <span className="text-4xl font-bold tracking-widest opacity-40">{initials}</span>
           </div>
         )}
@@ -112,21 +112,21 @@ export function PlayerCard({
       {/* Typography Area */}
       <div className="flex flex-1 flex-col justify-between p-4">
         <div>
-          <h3 className="line-clamp-2 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-0.5">
+          <h3 className="line-clamp-2 text-lg font-bold tracking-tight text-text-primary dark:text-text-primary mb-0.5">
             {player.display_name}
           </h3>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+          <p className="text-sm font-medium text-text-muted dark:text-text-secondary">
             {formatVolleyballPosition(player.primary_position)}
           </p>
           {player.secondary_position && (
-            <p className="mt-0.5 truncate text-xs text-slate-400 dark:text-slate-500">
+            <p className="mt-0.5 truncate text-xs text-text-secondary dark:text-text-muted">
               Secondary: {formatVolleyballPosition(player.secondary_position)}
             </p>
           )}
         </div>
 
         {/* Optional Metadata Grid */}
-        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-slate-500/90 dark:text-slate-400/90">
+        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-text-muted dark:text-text-secondary">
           {player.height_cm && (
             <div className="flex items-center gap-1.5 shrink-0">
               <Ruler size={14} className="opacity-70 shrink-0" />
@@ -144,7 +144,7 @@ export function PlayerCard({
       
       {/* Extension Slot (e.g. for Review Buttons) */}
       {children && (
-        <div className="mt-auto border-t border-slate-100 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/80 p-4">
+        <div className="mt-auto border-t border-border dark:border-border bg-surface-muted dark:bg-surface p-4">
           {children}
         </div>
       )}

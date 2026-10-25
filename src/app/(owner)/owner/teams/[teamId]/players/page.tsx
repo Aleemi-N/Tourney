@@ -179,52 +179,52 @@ export default async function OwnerPlayerPoolPage({
                 <div className="mx-auto max-w-6xl">
                     <div className="flex flex-wrap items-end justify-between gap-4">
                         <div>
-                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-300/80">Tournament Players</p>
-                            <h1 className="mt-2 text-3xl font-black text-white sm:text-4xl">Player Pool</h1>
-                            <p className="mt-1 text-sm text-white/55">All registered players grouped by Category & Base Price for {team.tournament_name}.</p>
+                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Tournament Players</p>
+                            <h1 className="mt-2 text-3xl font-black text-text-primary sm:text-4xl">Player Pool</h1>
+                            <p className="mt-1 text-sm text-text-secondary">All registered players grouped by Category & Base Price for {team.tournament_name}.</p>
                         </div>
 
                         {/* Category & Status Filter Tabs */}
-                        <div className="flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-white/5 p-1.5 backdrop-blur-md">
+                        <div className="flex flex-wrap gap-2 rounded-2xl border border-border bg-surface p-1.5">
                             <a
                                 href={`/owner/teams/${team.id}/players?filter=all`}
-                                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${filter === 'all' ? 'bg-primary text-white shadow-md' : 'text-white/60 hover:text-white'}`}
+                                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${filter === 'all' ? 'bg-primary text-primary-foreground shadow-md' : 'text-text-secondary hover:text-primary-foreground'}`}
                             >
                                 All ({allPlayers.length})
                             </a>
                             <a
                                 href={`/owner/teams/${team.id}/players?filter=a`}
-                                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${filter === 'a' ? 'bg-fuchsia-600 text-white shadow-md' : 'text-fuchsia-300/80 hover:text-white'}`}
+                                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${filter === 'a' ? 'bg-primary text-primary-foreground shadow-md' : 'text-primary hover:text-primary-foreground'}`}
                             >
                                 Cat A · ₹{catAPrice} ({catACount})
                             </a>
                             <a
                                 href={`/owner/teams/${team.id}/players?filter=b`}
-                                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${filter === 'b' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-300/80 hover:text-white'}`}
+                                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${filter === 'b' ? 'bg-info text-text-inverse shadow-md' : 'text-info hover:text-text-inverse'}`}
                             >
                                 Cat B · ₹{catBPrice} ({catBCount})
                             </a>
                             <a
                                 href={`/owner/teams/${team.id}/players?filter=c`}
-                                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${filter === 'c' ? 'bg-emerald-600 text-white shadow-md' : 'text-emerald-300/80 hover:text-white'}`}
+                                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${filter === 'c' ? 'bg-success text-text-inverse shadow-md' : 'text-success hover:text-text-inverse'}`}
                             >
                                 Cat C · ₹{catCPrice} ({catCCount})
                             </a>
                             <a
                                 href={`/owner/teams/${team.id}/players?filter=available`}
-                                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${filter === 'available' ? 'bg-primary text-white shadow-md' : 'text-white/60 hover:text-white'}`}
+                                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${filter === 'available' ? 'bg-primary text-primary-foreground shadow-md' : 'text-text-secondary hover:text-primary-foreground'}`}
                             >
                                 Available ({availableCount})
                             </a>
                             <a
                                 href={`/owner/teams/${team.id}/players?filter=sold`}
-                                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${filter === 'sold' ? 'bg-emerald-500 text-white shadow-md' : 'text-white/60 hover:text-white'}`}
+                                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${filter === 'sold' ? 'bg-success text-text-inverse shadow-md' : 'text-text-secondary hover:text-text-inverse'}`}
                             >
                                 Sold ({soldCount})
                             </a>
                             <a
                                 href={`/owner/teams/${team.id}/players?filter=unsold`}
-                                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${filter === 'unsold' ? 'bg-rose-500 text-white shadow-md' : 'text-white/60 hover:text-white'}`}
+                                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${filter === 'unsold' ? 'bg-danger text-text-inverse shadow-md' : 'text-text-secondary hover:text-text-inverse'}`}
                             >
                                 Unsold ({unsoldCount})
                             </a>

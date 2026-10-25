@@ -24,7 +24,7 @@ interface PageProps {
 function ApprovalBadge({ status }: { status: ApprovalStatus }) {
   const cfg: Record<ApprovalStatus, string> = {
     APPROVED: 'bg-success/10 text-success border border-success/20',
-    PENDING_APPROVAL: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+    PENDING_APPROVAL: 'bg-warning/10 text-warning border border-warning/30',
     REJECTED: 'bg-danger/10 text-danger border border-danger/20',
   };
 
@@ -45,7 +45,7 @@ function StatusBadge({ status }: { status: string }) {
   const cfgMap: Record<string, string> = {
     DRAFT: 'bg-surface-muted text-text-muted',
     REGISTRATION: 'bg-info/10 text-info border border-info/20',
-    PREPARATION: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+    PREPARATION: 'bg-warning/10 text-warning border border-warning/30',
     LIVE: 'bg-danger/10 text-danger border border-danger/20',
     COMPLETED: 'bg-success/10 text-success border border-success/20',
     ARCHIVED: 'bg-surface-muted text-text-muted',
@@ -86,8 +86,8 @@ export default async function TournamentsPage({ searchParams }: PageProps) {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
-            <TrophyIcon className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-card">
+            <TrophyIcon className="w-5 h-5 text-text-primary" />
           </div>
           <h1 className="text-2xl font-bold text-text-primary tracking-tight">Tournament Management</h1>
         </div>
@@ -128,7 +128,7 @@ export default async function TournamentsPage({ searchParams }: PageProps) {
               return (
                 <div
                   key={String(item.id)}
-                  className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-2 md:gap-4 px-5 py-4 hover:bg-surface-muted/50 transition-colors"
+                  className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-2 md:gap-4 px-5 py-4 hover:bg-surface-muted transition-colors"
                 >
                   {/* Name + organizer */}
                   <div className="min-w-0">
@@ -162,7 +162,7 @@ export default async function TournamentsPage({ searchParams }: PageProps) {
                         href={`/t/${String(item.slug)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-violet-400 hover:text-violet-300 transition-colors"
+                        className="text-primary hover:text-primary transition-colors"
                         title="View public page"
                       >
                         <GlobeAltIcon className="w-4 h-4" />
@@ -171,7 +171,7 @@ export default async function TournamentsPage({ searchParams }: PageProps) {
                     {item.approval_status === 'PENDING_APPROVAL' && (
                       <Link
                         href="/super-admin/approvals"
-                        className="text-xs text-amber-400 hover:underline font-medium"
+                        className="text-xs text-warning hover:underline font-medium"
                       >
                         Review
                       </Link>

@@ -32,9 +32,9 @@ export function RegisterForm() {
       {/* Subtle background glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
       
-      <form onSubmit={handleSubmit} className="relative flex flex-col gap-5 w-full bg-surface-raised/80 backdrop-blur-2xl p-8 rounded-3xl shadow-[0_8px_40px_rgb(0,0,0,0.2)] border border-glass-border">
+      <form onSubmit={handleSubmit} className="relative flex flex-col gap-5 w-full bg-surface-raised p-8 rounded-3xl shadow-card border border-glass-border">
         <div className="mb-2">
-          <h1 className="text-3xl font-extrabold text-text-primary mb-2 drop-shadow-sm">Create Account</h1>
+          <h1 className="text-3xl font-extrabold text-text-primary mb-2">Create Account</h1>
           <p className="text-text-secondary text-sm font-medium">Set up your Tourny profile.</p>
         </div>
 
@@ -53,7 +53,7 @@ export function RegisterForm() {
           name="fullName" 
           type="text" 
           required 
-          className="p-3.5 rounded-xl border border-glass-border bg-surface/50 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-inner"
+          className="p-3.5 rounded-xl border border-glass-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-card"
         />
       </div>
 
@@ -64,7 +64,7 @@ export function RegisterForm() {
           name="email" 
           type="email" 
           required 
-          className="p-3.5 rounded-xl border border-glass-border bg-surface/50 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-inner"
+          className="p-3.5 rounded-xl border border-glass-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-card"
         />
       </div>
 
@@ -76,14 +76,14 @@ export function RegisterForm() {
           type="password" 
           required
           minLength={6}
-          className="p-3.5 rounded-xl border border-glass-border bg-surface/50 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-inner"
+          className="p-3.5 rounded-xl border border-glass-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-card"
         />
       </div>
 
       <button 
         type="submit" 
         disabled={pending}
-        className="mt-4 p-3.5 bg-gradient-to-r from-primary to-primary-hover shadow-[0_4px_15px_rgb(79,70,229,0.3)] hover:shadow-[0_8px_25px_rgb(79,70,229,0.4)] hover:-translate-y-0.5 active:scale-95 text-primary-foreground font-bold rounded-xl disabled:opacity-50 transition-all duration-300 flex justify-center items-center h-14"
+        className="mt-4 p-3.5 bg-primary shadow-card active:scale-95 text-primary-foreground font-bold rounded-xl disabled:opacity-50 transition-all duration-300 flex justify-center items-center h-14"
       >
         {pending ? 'Creating Account...' : 'Create Account'}
       </button>

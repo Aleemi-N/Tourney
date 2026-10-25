@@ -83,7 +83,7 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5 rounded-2xl border border-border bg-surface-raised p-4 shadow-lg shadow-black/10 sm:gap-6 sm:p-6">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 rounded-2xl border border-border bg-surface-raised p-4 shadow-card shadow-black/10 sm:gap-6 sm:p-6">
       
       {error && (
         <div role="alert" className="rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger">

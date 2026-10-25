@@ -29,14 +29,14 @@ export default function TestCardsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen">
+    <div className="p-4 sm:p-6 md:p-8 bg-surface-muted dark:bg-surface min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold mb-8 text-slate-900 dark:text-slate-100">Player Card Polish</h1>
+        <h1 className="text-2xl font-bold mb-8 text-text-primary dark:text-text-primary">Player Card Polish</h1>
         
         <div className="space-y-12">
           {/* Base Cards */}
           <section>
-            <h2 className="text-xl font-semibold mb-4 text-slate-500">Variants</h2>
+            <h2 className="text-xl font-semibold mb-4 text-text-muted">Variants</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
               
               <PlayerCard player={mockPhoto} />
@@ -72,7 +72,7 @@ export default function TestCardsPage() {
 
           {/* Review Cards */}
           <section>
-            <h2 className="text-xl font-semibold mb-4 text-slate-500">Review Cards</h2>
+            <h2 className="text-xl font-semibold mb-4 text-text-muted">Review Cards</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
               
               <PlayerReviewCard 

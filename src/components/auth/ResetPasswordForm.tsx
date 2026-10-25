@@ -48,7 +48,7 @@ export function ResetPasswordForm() {
     <div className="w-full max-w-md flex flex-col gap-6">
       <div className="flex justify-between items-center px-2">
         <Link href="/" className="flex items-center gap-2 group">
-          <VolleyballIcon className="w-6 h-6 text-primary group-hover:scale-110 transition-transform" />
+          <VolleyballIcon className="w-6 h-6 text-primary transition-transform" />
           <span className="font-bold text-xl tracking-tight text-text-primary">
             {APP_CONFIG.shortName}
           </span>
@@ -59,7 +59,7 @@ export function ResetPasswordForm() {
       </div>
 
       {sessionStatus === 'invalid' ? (
-        <div className="bg-surface-raised p-6 sm:p-8 rounded-2xl shadow-2xl shadow-black/20 border border-border text-center flex flex-col gap-4">
+        <div className="bg-surface-raised p-6 sm:p-8 rounded-2xl shadow-card shadow-black/20 border border-border text-center flex flex-col gap-4">
           <h1 className="text-2xl font-bold text-text-primary">Invalid or Expired Link</h1>
           <p className="text-text-secondary text-sm leading-relaxed">
             {error}
@@ -72,7 +72,7 @@ export function ResetPasswordForm() {
           </Link>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5 bg-surface-raised p-6 sm:p-8 rounded-2xl shadow-2xl shadow-black/20 border border-border">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5 bg-surface-raised p-6 sm:p-8 rounded-2xl shadow-card shadow-black/20 border border-border">
           <div>
             <h1 className="text-2xl font-bold text-text-primary mb-1">Set New Password</h1>
             <p className="text-sm text-text-secondary">Please enter your new password below.</p>

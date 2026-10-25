@@ -49,7 +49,7 @@ export function TournamentFilters() {
             const timer = setTimeout(() => setParam('q', val), 300);
             return () => clearTimeout(timer);
           }}
-          className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-surface text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-violet-500"
+          className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-surface text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
 
@@ -62,7 +62,7 @@ export function TournamentFilters() {
             onClick={() => setParam('status', f.value)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all
               ${currentStatus === f.value
-                ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20'
+                ? 'bg-primary text-primary-foreground shadow-card '
                 : 'bg-surface-muted text-text-secondary hover:bg-border hover:text-text-primary border border-border'}`}
           >
             {f.label}

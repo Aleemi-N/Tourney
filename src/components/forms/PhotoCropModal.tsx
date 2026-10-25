@@ -94,16 +94,16 @@ export function PhotoCropModal({ file, onCancel, onApply }: { file: File; onCanc
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center overflow-y-auto bg-black/80 p-2 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="photo-adjust-title">
-      <div className="flex max-h-[calc(100svh-1rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-2xl sm:max-h-[calc(100svh-2rem)]">
+      <div className="flex max-h-[calc(100svh-1rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-card sm:max-h-[calc(100svh-2rem)]">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div><h2 id="photo-adjust-title" className="font-bold text-text-primary">Adjust Photo</h2><p className="text-xs text-text-muted">Drag to reposition, then zoom as needed.</p></div>
-          <button type="button" onClick={onCancel} disabled={processing} className="rounded-lg p-2 text-text-secondary hover:bg-white/5 disabled:opacity-50" aria-label="Cancel photo adjustment"><X className="h-5 w-5" /></button>
+          <button type="button" onClick={onCancel} disabled={processing} className="rounded-lg p-2 text-text-secondary hover:bg-surface-muted disabled:opacity-50" aria-label="Cancel photo adjustment"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="min-h-0 overflow-y-auto p-3 sm:p-5">
           <div
             ref={viewportRef}
-            className="relative mx-auto aspect-4/3 w-full max-w-[440px] cursor-move touch-none select-none overflow-hidden rounded-xl bg-black ring-1 ring-white/10"
+            className="relative mx-auto aspect-4/3 w-full max-w-[440px] cursor-move touch-none select-none overflow-hidden rounded-xl bg-black ring-1 ring-border"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={() => { dragRef.current = null; }}
@@ -112,9 +112,9 @@ export function PhotoCropModal({ file, onCancel, onApply }: { file: File; onCanc
             {/* Canvas needs the decoded source element at its intrinsic resolution. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {sourceUrl && <img ref={imageRef} src={sourceUrl} alt="Photo crop preview" draggable={false} onLoad={(event) => setNaturalSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} className="pointer-events-none absolute left-1/2 top-1/2 max-w-none select-none" style={{ width: displaySize.width, height: displaySize.height, transform: `translate(calc(-50% + ${effectiveOffset.x}px), calc(-50% + ${effectiveOffset.y}px))` }} />}
-            <div className="pointer-events-none absolute inset-0 border border-white/60 shadow-[inset_0_0_0_999px_rgba(0,0,0,0.06)]" />
-            <div className="pointer-events-none absolute inset-y-0 left-1/3 border-l border-dashed border-white/25" /><div className="pointer-events-none absolute inset-y-0 right-1/3 border-l border-dashed border-white/25" />
-            <div className="pointer-events-none absolute inset-x-0 top-1/3 border-t border-dashed border-white/25" /><div className="pointer-events-none absolute inset-x-0 bottom-1/3 border-t border-dashed border-white/25" />
+            <div className="pointer-events-none absolute inset-0 border border-border-strong shadow-card" />
+            <div className="pointer-events-none absolute inset-y-0 left-1/3 border-l border-dashed border-border-strong" /><div className="pointer-events-none absolute inset-y-0 right-1/3 border-l border-dashed border-border-strong" />
+            <div className="pointer-events-none absolute inset-x-0 top-1/3 border-t border-dashed border-border-strong" /><div className="pointer-events-none absolute inset-x-0 bottom-1/3 border-t border-dashed border-border-strong" />
           </div>
           <p className="mt-2 text-center text-xs text-text-muted">This 4:3 frame matches the Tourny player card.</p>
 
@@ -127,7 +127,7 @@ export function PhotoCropModal({ file, onCancel, onApply }: { file: File; onCanc
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-border bg-surface px-3 py-3 sm:px-5">
-          <button type="button" onClick={reset} disabled={processing} className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-text-secondary hover:bg-white/5 disabled:opacity-50"><RotateCcw className="h-4 w-4" />Reset</button>
+          <button type="button" onClick={reset} disabled={processing} className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-text-secondary hover:bg-surface-muted disabled:opacity-50"><RotateCcw className="h-4 w-4" />Reset</button>
           <div className="ml-auto flex gap-2">
             <button type="button" onClick={onCancel} disabled={processing} className="min-h-11 rounded-lg border border-border px-4 text-sm font-semibold text-text-secondary disabled:opacity-50">Cancel</button>
             <button type="button" onClick={applyCrop} disabled={processing || !naturalSize.width} className="flex min-h-11 min-w-28 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-hover disabled:opacity-50">{processing && <Loader2 className="h-4 w-4 animate-spin" />}{processing ? 'Applying…' : 'Apply Crop'}</button>

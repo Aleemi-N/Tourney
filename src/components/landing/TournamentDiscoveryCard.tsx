@@ -83,7 +83,7 @@ export function TournamentDiscoveryCard({ tournament }: DiscoveryTournamentProps
       href={`/t/${tournament.slug}`}
       className="group w-full max-w-[340px] min-w-[280px] bg-surface hover:bg-surface rounded-2xl border border-border hover:border-border transition-all shadow-card overflow-hidden relative flex flex-col snap-start shrink-0"
     >
-      <div className="absolute top-0 right-0 left-0 h-24 bg-gradient-to-br from-primary/10 to-transparent opacity-50 pointer-events-none group-hover:from-primary/20 transition-all" />
+      <div className="absolute top-0 right-0 left-0 h-24 bg-gradient-to-br from-primary/10 to-transparent opacity-50 pointer-events-none transition-all" />
       <div className="p-5 flex flex-col flex-1 relative z-10 gap-4">
         <div className="flex justify-between items-start">
           <div className="relative w-12 h-12 overflow-hidden rounded-xl bg-surface flex items-center justify-center border border-border">
