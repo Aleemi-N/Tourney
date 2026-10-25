@@ -1901,8 +1901,48 @@ export type Database = {
           },
         ]
       }
+      team_profiles: {
+        Row: {
+          created_at: string
+          id: string
+          logo_path: string | null
+          name: string
+          owner_user_id: string | null
+          place: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          short_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_path?: string | null
+          name: string
+          owner_user_id?: string | null
+          place?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          short_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_path?: string | null
+          name?: string
+          owner_user_id?: string | null
+          place?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          short_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       team_owner_applications: {
         Row: {
+          team_profile_id: string | null
           created_at: string
           email: string | null
           id: string
@@ -1922,6 +1962,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          team_profile_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -1939,6 +1980,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          team_profile_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -2168,6 +2210,7 @@ export type Database = {
       }
       teams: {
         Row: {
+          team_profile_id: string | null
           created_at: string
           id: string
           logo_path: string | null
@@ -2181,6 +2224,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          team_profile_id?: string | null
           created_at?: string
           id?: string
           logo_path?: string | null
@@ -2194,6 +2238,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          team_profile_id?: string | null
           created_at?: string
           id?: string
           logo_path?: string | null
@@ -3528,6 +3573,7 @@ export type Database = {
           p_primary_color?: string
           p_proposed_team_name: string
           p_secondary_color?: string
+          p_team_profile_id?: string
           p_team_short_name?: string
           p_tournament_id: string
         }

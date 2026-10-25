@@ -63,6 +63,16 @@ export default async function TeamOwnerRegistrationPage({ params }: { params: Pr
     .eq('user_id', user.id)
     .single();
 
+  // Teams this user already runs elsewhere can be reused, unless already in this tournament.
+  const { data: ownedProfiles } = await supabase
+    .from('team_profiles')
+    .select('id, name, short_name, logo_path, place, primary_color, secondary_color')
+    .eq('owner_user_id', user.id)
+    .order('name');
+  const { data: enteredTeams } = await supabase.from('teams').select('team_profile_id').eq('tournament_id', tournament.id);
+  const entered = new Set((enteredTeams ?? []).map((team) => team.team_profile_id));
+  const profiles = (ownedProfiles ?? []).filter((profile) => !entered.has(profile.id));
+
   return (
     <RegistrationShell slug={slug} tournamentName={tournament.name} title="Team Owner Registration">
       {application ? (
@@ -95,6 +105,7 @@ export default async function TeamOwnerRegistrationPage({ params }: { params: Pr
         <TeamOwnerRegistrationForm
           userId={user.id}
           tournamentId={tournament.id}
+          profiles={profiles}
         />
       )}
     </RegistrationShell>

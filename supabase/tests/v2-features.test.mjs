@@ -206,3 +206,26 @@ test('court setup: toss is stored, serve follows points and undo, reset forgets 
   set1 = await state();
   assert.deepEqual([set1.left_team_id, set1.serving_team_id], [null, null]);
 }));
+
+test('team profiles: reused across tournaments, owner-only, created on first approval', () => inTransaction(async (db) => {
+  const owner = '90000000-0000-0000-0000-000000000141';
+  const stranger = '90000000-0000-0000-0000-000000000142';
+  // First approval creates a profile for the new team.
+  const { id: first } = await db.as(owner, "SELECT public.submit_team_owner_application($1, 'Reuse VC', 'RVC', 'logos/a.png', NULL, NULL, NULL, '#112233', '#ffffff') AS id", [T1]);
+  await db.as(ORGANIZER, 'SELECT public.approve_team_owner_application($1)', [first]);
+  const team = await db.one("SELECT team_profile_id FROM public.teams WHERE tournament_id=$1 AND name='Reuse VC'", [T1]);
+  const profile = await db.one('SELECT owner_user_id, primary_color FROM public.team_profiles WHERE id=$1', [team.team_profile_id]);
+  assert.deepEqual([profile.owner_user_id, profile.primary_color], [owner, '#112233']);
+
+  // Applying again with the profile in a second tournament links the same profile; others cannot use it.
+  const T4 = '90200000-0000-0000-0000-000000000004';
+  await db.one("UPDATE public.tournaments SET status='REGISTRATION' WHERE id=$1", [T4]);
+  await db.one("UPDATE public.tournament_settings SET team_registration_enabled=true, max_teams=NULL WHERE tournament_id=$1", [T4]);
+  await assert.rejects(db.as(stranger, "SELECT public.submit_team_owner_application($1, 'Reuse VC', NULL, 'logos/a.png', NULL, NULL, NULL, NULL, NULL, $2)", [T4, team.team_profile_id]), /Team profile not found/);
+  const { id: second } = await db.as(owner, "SELECT public.submit_team_owner_application($1, 'Reuse VC', 'RVC', 'logos/a.png', NULL, NULL, NULL, '#445566', NULL, $2) AS id", [T4, team.team_profile_id]);
+  await db.as(ORGANIZER, 'SELECT public.approve_team_owner_application($1)', [second]);
+  const linked = await db.one("SELECT count(*)::int n, count(DISTINCT team_profile_id)::int p FROM public.teams WHERE name='Reuse VC'");
+  assert.deepEqual([linked.n, linked.p], [2, 1]);
+  assert.equal((await db.one('SELECT primary_color FROM public.team_profiles WHERE id=$1', [team.team_profile_id])).primary_color, '#445566');
+  await assert.rejects(db.as(owner, "SELECT public.submit_team_owner_application($1, 'Reuse VC', NULL, 'logos/a.png', NULL, NULL, NULL, NULL, NULL, $2)", [T1, team.team_profile_id]), /already in the tournament|Application already exists/);
+}));

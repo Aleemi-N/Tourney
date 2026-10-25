@@ -517,3 +517,25 @@ SET approval_submitted_at = created_at - interval '2 days',
 WHERE approval_status = 'APPROVED' AND id::text LIKE '90200000-%';
 
 COMMIT;
+
+-- Teams created above link to reusable profiles, like the v2 backfill does for existing data.
+CREATE TEMP TABLE _team_map AS
+SELECT t.id AS team_id, po.user_id, lower(btrim(t.name)) AS key, t.created_at
+FROM public.teams t
+JOIN (
+  SELECT DISTINCT ON (team_id) team_id, user_id FROM public.team_owners ORDER BY team_id, is_primary DESC, created_at
+) po ON po.team_id = t.id;
+
+CREATE TEMP TABLE _profile_map AS
+SELECT user_id, key, gen_random_uuid() AS profile_id,
+       (array_agg(team_id ORDER BY created_at DESC))[1] AS latest_team_id
+FROM _team_map GROUP BY user_id, key;
+
+INSERT INTO public.team_profiles (id, owner_user_id, name, short_name, logo_path, place, primary_color, secondary_color)
+SELECT p.profile_id, p.user_id, t.name, t.short_name, t.logo_path, t.place, t.primary_color, t.secondary_color
+FROM _profile_map p JOIN public.teams t ON t.id = p.latest_team_id;
+
+UPDATE public.teams t SET team_profile_id = p.profile_id
+FROM _team_map m JOIN _profile_map p ON p.user_id = m.user_id AND p.key = m.key
+WHERE t.id = m.team_id;
+DROP TABLE _team_map, _profile_map;

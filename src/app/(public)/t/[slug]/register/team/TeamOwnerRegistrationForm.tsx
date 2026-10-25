@@ -7,7 +7,19 @@ import { createClient } from '@/lib/supabase/client';
 import { ImageUpload } from '@/components/forms/ImageUpload';
 import { Loader2 } from 'lucide-react';
 
-export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: string, tournamentId: string }) {
+export type TeamProfileOption = {
+  id: string;
+  name: string;
+  short_name: string | null;
+  logo_path: string | null;
+  place: string | null;
+  primary_color: string | null;
+  secondary_color: string | null;
+};
+
+export function TeamOwnerRegistrationForm({ userId, tournamentId, profiles = [] }: { userId: string, tournamentId: string, profiles?: TeamProfileOption[] }) {
+  const [profileId, setProfileId] = useState('');
+  const profile = profiles.find((item) => item.id === profileId) ?? null;
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -47,17 +59,18 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
         p_phone: phone || undefined,
         p_email: email || undefined,
         p_primary_color: primaryColor,
-        p_secondary_color: secondaryColor
+        p_secondary_color: secondaryColor,
+        p_team_profile_id: profile?.id
       });
 
       if (rpcError) throw rpcError;
-      
-      // Force Next.js to refresh the RSC payload for this route so the 
+
+      // Force Next.js to refresh the RSC payload for this route so the
       // page.tsx layout switches from the Form to the Success UI.
       router.refresh();
     } catch (err: any) {
       console.error('Registration error:', err);
-      
+
       if (err?.code === '23503') {
         setError('Unable to submit application. Your profile is not fully initialized. Please try signing out and signing back in.');
       } else if (err?.code && typeof err.code === 'string' && err.code.startsWith('PT')) {
@@ -65,7 +78,7 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
       } else {
         setError(err?.message || 'Failed to submit application. Please try again.');
       }
-      
+
       setPending(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -84,21 +97,43 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
         </div>
       )}
 
-      <ImageUpload 
-        userId={userId} 
-        bucket="logos" 
-        currentPhotoUrl={logoUrl}
+      {profiles.length > 0 ? (
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="teamProfile" className={labelClass}>Use one of your teams</label>
+          <select
+            id="teamProfile"
+            value={profileId}
+            onChange={(e) => {
+              const next = profiles.find((item) => item.id === e.target.value) ?? null;
+              setProfileId(e.target.value);
+              setLogoUrl(next?.logo_path ?? null);
+            }}
+            className={fieldClass}
+          >
+            <option value="">New team</option>
+            {profiles.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          <p className="ml-1 text-xs text-text-muted">Reuses the name, logo and colours. You can still change them for this tournament.</p>
+        </div>
+      ) : null}
+
+      <ImageUpload
+        key={profileId}
+        userId={userId}
+        bucket="logos"
+        currentPhotoUrl={profile?.logo_path ? supabase.storage.from('logos').getPublicUrl(profile.logo_path).data.publicUrl : null}
         onUploadSuccess={(url, path) => setLogoUrl(path)}
         label="Team Logo *"
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+      <div key={profileId} className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div className="flex flex-col gap-1.5 md:col-span-2">
           <label htmlFor="proposedTeamName" className={labelClass}>Proposed Team Name *</label>
-          <input 
+          <input
             id="proposedTeamName"
             name="proposedTeamName"
             type="text"
+            defaultValue={profile?.name ?? ''}
             required
             className={fieldClass}
           />
@@ -106,10 +141,11 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="teamShortName" className={labelClass}>Short Name (3-4 letters)</label>
-          <input 
+          <input
             id="teamShortName"
             name="teamShortName"
             type="text"
+            defaultValue={profile?.short_name ?? ''}
             maxLength={4}
             className={fieldClass}
           />
@@ -117,10 +153,11 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="place" className={labelClass}>City / Location</label>
-          <input 
+          <input
             id="place"
             name="place"
             type="text"
+            defaultValue={profile?.place ?? ''}
             className={fieldClass}
           />
         </div>
@@ -129,11 +166,11 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
           <legend className={labelClass}>Team Colours *</legend>
           <div className="mt-1.5 flex flex-wrap gap-x-6 gap-y-3">
             <label className="flex items-center gap-3 text-sm text-text-primary">
-              <input type="color" name="primaryColor" defaultValue="#4f46e5" required className="h-11 w-14 cursor-pointer rounded-lg border border-border bg-surface-muted p-1" />
+              <input type="color" name="primaryColor" defaultValue={profile?.primary_color ?? '#4f46e5'} required className="h-11 w-14 cursor-pointer rounded-lg border border-border bg-surface-muted p-1" />
               Main colour
             </label>
             <label className="flex items-center gap-3 text-sm text-text-primary">
-              <input type="color" name="secondaryColor" defaultValue="#ffffff" required className="h-11 w-14 cursor-pointer rounded-lg border border-border bg-surface-muted p-1" />
+              <input type="color" name="secondaryColor" defaultValue={profile?.secondary_color ?? '#ffffff'} required className="h-11 w-14 cursor-pointer rounded-lg border border-border bg-surface-muted p-1" />
               Second colour
             </label>
           </div>
@@ -142,7 +179,7 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="email" className={labelClass}>Contact Email</label>
-          <input 
+          <input
             id="email"
             name="email"
             type="email"
@@ -152,7 +189,7 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="phone" className={labelClass}>Contact Phone</label>
-          <input 
+          <input
             id="phone"
             name="phone"
             type="tel"
@@ -161,8 +198,8 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
         </div>
       </div>
 
-      <button 
-        type="submit" 
+      <button
+        type="submit"
         disabled={pending}
         className="mt-4 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary p-3.5 font-semibold text-primary-foreground transition-all duration-300 hover:shadow-primary/30 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
       >
