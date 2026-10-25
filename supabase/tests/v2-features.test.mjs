@@ -107,3 +107,30 @@ test('a stage rule change re-syncs only matches that have not started', () => in
   assert.equal((await db.one('SELECT sets_to_win FROM public.matches WHERE id=$1', [live.id])).sets_to_win, 3);
   assert.equal(await setsOf(db, done.id), doneBefore);
 }));
+
+test('score correction: live set, completed match, undo guard, and reset', () => inTransaction(async (db) => {
+  const live = await db.one("SELECT id, home_team_id FROM public.matches WHERE stage_id=$1 AND status='LIVE'", [STAGE3]);
+  const scorer = (await db.one('SELECT user_id FROM public.match_scorers WHERE match_id=$1 LIMIT 1', [live.id]))?.user_id ?? ORGANIZER;
+  await assert.rejects(db.as(scorer, "SELECT public.correct_set_score($1, 2, 10, 10, 'x')", [live.id]), /latest started set/);
+  await assert.rejects(db.as(scorer, "SELECT public.correct_set_score($1, 3, 10, 10, '')", [live.id]), /reason is required/);
+  await assert.rejects(db.as(scorer, "SELECT public.correct_set_score($1, 3, 40, 10, 'typo')", [live.id]), /cannot occur/);
+
+  await db.as(scorer, "SELECT public.correct_set_score($1, 3, 17, 16, 'scored for the wrong team')", [live.id]);
+  const set3 = await db.one('SELECT home_score, away_score, status FROM public.match_sets WHERE match_id=$1 AND set_number=3', [live.id]);
+  assert.deepEqual(set3, { home_score: 17, away_score: 16, status: 'LIVE' });
+  await assert.rejects(db.as(scorer, 'SELECT public.undo_last_score_event($1)', [live.id]), /corrected manually/);
+
+  // Correcting to a finishing score completes the set; set 3 won => 2-1 in a best of 5, still going.
+  await db.as(scorer, "SELECT public.correct_set_score($1, 3, 25, 10, 'fix')", [live.id]);
+  assert.equal((await db.one("SELECT status FROM public.match_sets WHERE match_id=$1 AND set_number=4", [live.id])).status, 'LIVE');
+  assert.equal((await db.one('SELECT status FROM public.matches WHERE id=$1', [live.id])).status, 'LIVE');
+
+  // Completed match: scorer is refused, organizer can reopen by correcting, standings follow.
+  const done = await db.one("SELECT id FROM public.matches WHERE stage_id=$1 AND status='COMPLETED' LIMIT 1", [STAGE3]);
+  await assert.rejects(db.as(scorer, "SELECT public.reset_match($1, 'x')", [done.id]), /Only an organizer/);
+  await db.as(ORGANIZER, "SELECT public.reset_match($1, 'played on the wrong court')", [done.id]);
+  const reset = await db.one('SELECT status, winner_team_id FROM public.matches WHERE id=$1', [done.id]);
+  assert.deepEqual([reset.status, reset.winner_team_id], ['SCHEDULED', null]);
+  assert.equal((await db.one("SELECT count(*)::int c FROM public.match_sets WHERE match_id=$1 AND (home_score>0 OR away_score>0 OR status<>'PENDING')", [done.id])).c, 0);
+  assert.ok(await db.one("SELECT 1 FROM public.audit_logs WHERE action='MATCH_RESET' AND entity_id=$1", [done.id]));
+}));

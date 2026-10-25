@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { cardClasses } from '@/components/ui/Card';
 import { StatusPill } from '@/components/ui/StatusPill';
+import { ScoreFixPanel } from '@/components/scorer/ScoreFixPanel';
 import { cn, teamColorStyle } from '@/lib/utils';
 
 type ActiveTimeout = {
@@ -447,6 +448,15 @@ export function ScorerMatchClient({
           })}
         </ul>
       </section>
+
+      <ScoreFixPanel
+        matchId={state.match.id}
+        sets={state.sets}
+        homeName={home.name}
+        awayName={away.name}
+        disabled={pending || Boolean(activeTimeout) || !['LIVE', 'COMPLETED'].includes(state.match.status)}
+        onChanged={refresh}
+      />
 
       <div className="flex justify-end">
         <Button variant="ghost" size="sm" onClick={() => void refresh()}>
