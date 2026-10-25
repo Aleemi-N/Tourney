@@ -19,6 +19,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { WifiOff, RefreshCcw, Trophy } from 'lucide-react';
+import { cardClasses } from '@/components/ui/Card';
+import { StatusPill } from '@/components/ui/StatusPill';
+import { cn, teamColorStyle } from '@/lib/utils';
 
 
 // ── Types (mirrors get_public_match_state output) ─────────────────────────────
@@ -59,6 +62,9 @@ interface Props {
   initialState: MatchState;
   /** TV/projector mode — large-screen minimal presentation */
   tvMode?: boolean;
+  /** Team colours from public_team_view, used for the team badges. */
+  homeColor?: string | null;
+  awayColor?: string | null;
 }
 
 
@@ -72,7 +78,7 @@ function activeSet(sets: SetState[]): SetState | null {
 
 type ConnectionStatus = 'connected' | 'connecting' | 'offline';
 
-export function PublicMatchLive({ matchId, initialState, tvMode = false }: Props) {
+export function PublicMatchLive({ matchId, initialState, tvMode = false, homeColor, awayColor }: Props) {
   const [state, setState] = useState<MatchState>(initialState);
   const [conn, setConn] = useState<ConnectionStatus>('connected');
   const supabase = createClient();
@@ -126,256 +132,160 @@ export function PublicMatchLive({ matchId, initialState, tvMode = false }: Props
   const current = activeSet(sets);
   const winner = match.winner_team_id === home.id ? home : match.winner_team_id === away.id ? away : null;
 
-  // ── TV / Projector Mode ────────────────────────────────────────────────────
+  const completedSets = sets.filter((s) => s.status === 'COMPLETED');
+  const venueLabel = match.venue ? `${match.venue}${match.court ? ` · Court ${match.court}` : ''}` : 'Match';
+
+  // ── TV / projector mode: always dark, minimal, huge numerals ────────────────
   if (tvMode) {
     return (
-      <div
-        className="fixed inset-0 flex flex-col items-center justify-center"
-        style={{ background: '#07060e', color: '#f0f0f4' }}
-        role="region"
-        aria-label="Live scoreboard"
-      >
-        {/* Connection dot */}
-        <div className="absolute right-6 top-6 flex items-center gap-2 text-xs font-bold">
-          <span
-            className="h-2.5 w-2.5 rounded-full"
-            style={{
-              background: conn === 'connected' ? '#4ade80'
-                : conn === 'offline' ? '#f87171' : '#fbbf24',
-              boxShadow: conn === 'connected' ? '0 0 6px #4ade80' : undefined,
-            }}
-          />
-          <span style={{ color: 'rgba(255,255,255,0.3)' }}>
-            {conn === 'connected' ? 'LIVE' : conn === 'offline' ? 'OFFLINE' : 'CONNECTING'}
-          </span>
-        </div>
-
-        {/* Match label */}
-        <p className="mb-8 text-sm font-bold uppercase tracking-[0.3em]" style={{ color: 'rgba(165,180,252,0.6)' }}>
-          {match.venue ? `${match.venue}${match.court ? ` · ${match.court}` : ''}` : 'Match'} #{match.match_number ?? '—'}
+      <div data-theme="dark" className="fixed inset-0 flex flex-col items-center justify-center bg-background text-text-primary" role="region" aria-label="Live scoreboard">
+        <p className="absolute right-6 top-6 flex items-center gap-2 text-sm font-semibold text-text-secondary">
+          <span className={cn('h-2.5 w-2.5 rounded-full', conn === 'connected' ? 'bg-success' : conn === 'offline' ? 'bg-danger' : 'bg-warning')} aria-hidden="true" />
+          {conn === 'connected' ? 'Live' : conn === 'offline' ? 'Offline' : 'Connecting'}
         </p>
 
-        {/* Main scoreboard */}
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-8 w-full max-w-5xl px-8">
-          {/* Home */}
-          <div className="text-center">
-            <p className="mb-4 text-2xl font-black uppercase tracking-widest" style={{ color: 'rgba(165,180,252,0.8)' }}>
-              {home.short_name ?? home.name}
-            </p>
-            <p
-              className="text-[clamp(6rem,20vw,14rem)] font-black leading-none tabular-nums"
-              style={{ color: homeSets > awaySets ? '#f0f0f4' : 'rgba(255,255,255,0.25)' }}
-            >
-              {homeSets}
-            </p>
-          </div>
+        <p className="mb-8 text-sm font-semibold uppercase tracking-[0.25em] text-text-muted">
+          {venueLabel} · #{match.match_number ?? '—'}
+        </p>
 
-          {/* Divider */}
+        <div className="grid w-full max-w-5xl grid-cols-[1fr_auto_1fr] items-center gap-8 px-8">
+          <TvTeam team={home} sets={homeSets} leading={homeSets > awaySets} color={homeColor} />
           <div className="flex flex-col items-center gap-4">
-            <span className="text-4xl font-black" style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>
-            {current && !isCompleted && (
+            {current && !isCompleted ? (
               <div className="text-center">
-                <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: 'rgba(165,180,252,0.5)' }}>
-                  Set {current.set_number}
-                </p>
-                <p className="text-4xl font-black tabular-nums">
-                  {current.home_score}:{current.away_score}
+                <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-text-muted">Set {current.set_number}</p>
+                <p className="text-5xl font-bold tabular-nums">
+                  {current.home_score}
+                  <span className="mx-2 text-text-muted">:</span>
+                  {current.away_score}
                 </p>
               </div>
-            )}
-            {winner && isCompleted && (
-              <div className="text-center">
-                <Trophy className="h-8 w-8 mx-auto mb-2" style={{ color: '#fbbf24' }} />
-                <p className="text-sm font-bold" style={{ color: '#fbbf24' }}>{winner.name} Wins</p>
-              </div>
-            )}
+            ) : null}
+            {winner && isCompleted ? (
+              <p className="flex flex-col items-center gap-2 text-center text-lg font-semibold text-warning">
+                <Trophy className="h-8 w-8" aria-hidden="true" />
+                {winner.name} wins
+              </p>
+            ) : null}
           </div>
-
-          {/* Away */}
-          <div className="text-center">
-            <p className="mb-4 text-2xl font-black uppercase tracking-widest" style={{ color: 'rgba(196,181,253,0.8)' }}>
-              {away.short_name ?? away.name}
-            </p>
-            <p
-              className="text-[clamp(6rem,20vw,14rem)] font-black leading-none tabular-nums"
-              style={{ color: awaySets > homeSets ? '#f0f0f4' : 'rgba(255,255,255,0.25)' }}
-            >
-              {awaySets}
-            </p>
-          </div>
+          <TvTeam team={away} sets={awaySets} leading={awaySets > homeSets} color={awayColor} />
         </div>
 
-        {/* Set history */}
-        {sets.filter((s) => s.status === 'COMPLETED').length > 0 && (
-          <div className="mt-12 flex flex-wrap justify-center gap-4">
-            {sets.filter((s) => s.status === 'COMPLETED').map((s) => {
-              const homeWon = s.winner_team_id === home.id;
-              return (
-                <div
-                  key={s.set_number}
-                  className="rounded-xl px-5 py-3 text-center"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-                >
-                  <p className="mb-1 text-xs font-bold uppercase" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                    Set {s.set_number}
-                  </p>
-                  <p className="text-2xl font-black tabular-nums">
-                    <span style={{ color: homeWon ? '#f0f0f4' : 'rgba(255,255,255,0.3)' }}>{s.home_score}</span>
-                    <span className="mx-2" style={{ color: 'rgba(255,255,255,0.15)' }}>–</span>
-                    <span style={{ color: !homeWon ? '#f0f0f4' : 'rgba(255,255,255,0.3)' }}>{s.away_score}</span>
-                  </p>
-                </div>
-              );
-            })}
+        {completedSets.length > 0 ? (
+          <div className="mt-12 flex flex-wrap justify-center gap-3">
+            {completedSets.map((s) => (
+              <SetChip key={s.set_number} set={s} homeId={home.id} large />
+            ))}
           </div>
-        )}
+        ) : null}
       </div>
     );
   }
 
   return (
-    <div className="mt-6">
-      {/* Connection status */}
-      {conn !== 'connected' && (
-        <div
-          className="mb-4 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold"
-          style={{
-            background: conn === 'offline' ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',
-            border: `1px solid ${conn === 'offline' ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)'}`,
-            color: conn === 'offline' ? '#f87171' : '#fbbf24',
-          }}
+    <div className="space-y-4">
+      {conn !== 'connected' ? (
+        <p
+          role="status"
+          className={cn(
+            'flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold',
+            conn === 'offline' ? 'border-danger/30 bg-danger/10 text-danger' : 'border-warning/30 bg-warning/10 text-warning',
+          )}
         >
-          {conn === 'offline' ? <WifiOff className="h-4 w-4" /> : <RefreshCcw className="h-4 w-4 animate-spin" />}
+          {conn === 'offline' ? <WifiOff className="h-4 w-4" aria-hidden="true" /> : <RefreshCcw className="h-4 w-4 animate-spin" aria-hidden="true" />}
           {conn === 'offline' ? 'Connection lost — scores may be delayed' : 'Reconnecting…'}
-        </div>
-      )}
+        </p>
+      ) : null}
 
-      {/* Match header */}
-      <div
-        className="rounded-2xl p-6"
-        style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}
-      >
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>
-            {match.venue ? `${match.venue}${match.court ? ' · ' + match.court : ''}` : 'Match'} · #{match.match_number ?? '—'}
+      <section className={`${cardClasses} p-5 sm:p-6`} aria-label="Scoreboard">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <p className="min-w-0 truncate text-sm font-medium text-text-muted">
+            {venueLabel} · #{match.match_number ?? '—'}
           </p>
-          <span
-            className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold"
-            style={
-              isCompleted
-                ? { background: 'rgba(34,197,94,0.12)', color: '#4ade80' }
-                : match.status === 'LIVE'
-                  ? { background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }
-                  : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.55)' }
-            }
-          >
-            {isCompleted ? '✓ Completed' : match.status === 'LIVE' ? '● Live' : match.status}
-          </span>
+          <StatusPill status={match.status} />
         </div>
 
-        {/* Scoreboard */}
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-          {/* Home */}
-          <div className="text-center">
-            <div
-              className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl text-sm font-black"
-              style={{ background: 'rgba(99,102,241,0.18)', color: '#a5b4fc' }}
-            >
-              {(home.short_name ?? home.name).slice(0, 3).toUpperCase()}
-            </div>
-            <p className="text-sm font-bold leading-tight">{home.name}</p>
-          </div>
-
-          {/* Sets score */}
-          <div className="flex flex-col items-center gap-1">
-            <div className="flex items-center gap-3">
-              <span
-                className="text-5xl font-black tabular-nums"
-                style={{ color: homeSets > awaySets ? '#f0f0f4' : 'rgba(255,255,255,0.4)' }}
-              >
-                {homeSets}
-              </span>
-              <span className="text-xl font-bold" style={{ color: 'rgba(255,255,255,0.2)' }}>–</span>
-              <span
-                className="text-5xl font-black tabular-nums"
-                style={{ color: awaySets > homeSets ? '#f0f0f4' : 'rgba(255,255,255,0.4)' }}
-              >
-                {awaySets}
-              </span>
-            </div>
-            <p className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.35)' }}>Sets</p>
-          </div>
-
-          {/* Away */}
-          <div className="text-center">
-            <div
-              className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl text-sm font-black"
-              style={{ background: 'rgba(168,85,247,0.18)', color: '#c4b5fd' }}
-            >
-              {(away.short_name ?? away.name).slice(0, 3).toUpperCase()}
-            </div>
-            <p className="text-sm font-bold leading-tight">{away.name}</p>
-          </div>
-        </div>
-
-        {/* Current set score */}
-        {current && !isCompleted && (
-          <div
-            className="mt-5 rounded-xl px-5 py-4 text-center"
-            style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)' }}
-          >
-            <p className="mb-1.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(165,180,252,0.7)' }}>
-              Set {current.set_number} · Target {current.target_points}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <TeamBadge team={home} color={homeColor} />
+          <div className="flex flex-col items-center">
+            <p className="flex items-center gap-3 text-5xl font-bold tabular-nums">
+              <span className={homeSets >= awaySets ? 'text-text-primary' : 'text-text-muted'}>{homeSets}</span>
+              <span className="text-xl text-text-muted">–</span>
+              <span className={awaySets >= homeSets ? 'text-text-primary' : 'text-text-muted'}>{awaySets}</span>
             </p>
-            <div className="flex items-center justify-center gap-5">
-              <span className="text-4xl font-black tabular-nums">{current.home_score}</span>
-              <span className="text-xl font-bold" style={{ color: 'rgba(255,255,255,0.2)' }}>:</span>
-              <span className="text-4xl font-black tabular-nums">{current.away_score}</span>
-            </div>
+            <p className="text-xs font-medium text-text-muted">Sets</p>
           </div>
-        )}
-
-        {/* Winner banner */}
-        {isCompleted && winner && (
-          <div
-            className="mt-5 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold"
-            style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', color: '#fbbf24' }}
-          >
-            <Trophy className="h-4 w-4" />
-            {winner.name} wins
-          </div>
-        )}
-      </div>
-
-      {/* Set-by-set breakdown */}
-      {sets.filter((s) => s.status === 'COMPLETED').length > 0 && (
-        <div className="mt-4">
-          <p className="mb-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>Set scores</p>
-          <div className="flex flex-wrap gap-2">
-            {sets.filter((s) => s.status === 'COMPLETED').map((s) => {
-              const homeWon = s.winner_team_id === home.id;
-              return (
-                <div
-                  key={s.set_number}
-                  className="rounded-xl px-4 py-3 text-center"
-                  style={{
-                    background: 'rgba(255,255,255,0.025)',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                    minWidth: '80px',
-                  }}
-                >
-                  <p className="mb-1 text-xs font-bold uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Set {s.set_number}</p>
-                  <p className="font-black tabular-nums">
-                    <span style={{ color: homeWon ? '#f0f0f4' : 'rgba(255,255,255,0.4)' }}>{s.home_score}</span>
-                    <span className="mx-1" style={{ color: 'rgba(255,255,255,0.2)' }}>–</span>
-                    <span style={{ color: !homeWon ? '#f0f0f4' : 'rgba(255,255,255,0.4)' }}>{s.away_score}</span>
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+          <TeamBadge team={away} color={awayColor} />
         </div>
-      )}
+
+        {current && !isCompleted ? (
+          <div className="mt-5 rounded-xl bg-surface-muted px-5 py-4 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+              Set {current.set_number} · to {current.target_points}
+            </p>
+            <p className="mt-1 text-4xl font-bold tabular-nums">
+              {current.home_score}
+              <span className="mx-3 text-xl text-text-muted">:</span>
+              {current.away_score}
+            </p>
+          </div>
+        ) : null}
+
+        {isCompleted && winner ? (
+          <p className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-warning/10 py-3 text-sm font-semibold text-warning">
+            <Trophy className="h-4 w-4" aria-hidden="true" />
+            {winner.name} wins
+          </p>
+        ) : null}
+      </section>
+
+      {completedSets.length > 0 ? (
+        <section aria-labelledby="set-scores">
+          <h2 id="set-scores" className="mb-2 text-sm font-semibold text-text-secondary">Set scores</h2>
+          <div className="flex flex-wrap gap-2">
+            {completedSets.map((s) => (
+              <SetChip key={s.set_number} set={s} homeId={home.id} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+function TeamBadge({ team, color }: { team: MatchTeam; color?: string | null }) {
+  return (
+    <div className="flex min-w-0 flex-col items-center gap-2 text-center">
+      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-sm font-bold text-primary" style={teamColorStyle(color)}>
+        {(team.short_name ?? team.name).slice(0, 3).toUpperCase()}
+      </span>
+      <span className="text-sm font-semibold leading-tight text-text-primary">{team.name}</span>
+    </div>
+  );
+}
+
+function TvTeam({ team, sets, leading, color }: { team: MatchTeam; sets: number; leading: boolean; color?: string | null }) {
+  const style = teamColorStyle(color);
+  return (
+    <div className="text-center">
+      <p className="mb-4 inline-flex rounded-xl bg-primary/15 px-4 py-1.5 text-2xl font-bold uppercase tracking-widest text-primary" style={style}>
+        {team.short_name ?? team.name}
+      </p>
+      <p className={cn('text-[clamp(6rem,20vw,14rem)] font-bold leading-none tabular-nums', leading ? 'text-text-primary' : 'text-text-muted')}>{sets}</p>
+    </div>
+  );
+}
+
+function SetChip({ set, homeId, large = false }: { set: SetState; homeId: string; large?: boolean }) {
+  const homeWon = set.winner_team_id === homeId;
+  return (
+    <div className={cn(cardClasses, 'min-w-20 text-center', large ? 'px-5 py-3' : 'px-4 py-2.5')}>
+      <p className="text-xs font-semibold uppercase text-text-muted">Set {set.set_number}</p>
+      <p className={cn('font-bold tabular-nums', large ? 'text-2xl' : 'text-base')}>
+        <span className={homeWon ? 'text-text-primary' : 'text-text-muted'}>{set.home_score}</span>
+        <span className="mx-1.5 text-text-muted">–</span>
+        <span className={!homeWon ? 'text-text-primary' : 'text-text-muted'}>{set.away_score}</span>
+      </p>
     </div>
   );
 }

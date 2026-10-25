@@ -45,12 +45,12 @@ export default async function PublicTeamsPage({ params }: Props) {
   return (
     <PublicTournamentFrame slug={slug} name={tournament.name} logoUrl={tournament.logoUrl} status={tournament.status}>
       <div className="mb-8">
-        <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(165,180,252,0.7)' }}>
+        <p className="text-primary text-xs font-bold uppercase tracking-[0.2em]">
           Tournament teams
         </p>
         <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Teams</h1>
         {teams && teams.length > 0 && (
-          <p className="mt-1.5 text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <p className="text-text-muted mt-1.5 text-sm">
             {teams.length} team{teams.length === 1 ? '' : 's'} registered
           </p>
         )}
@@ -72,17 +72,12 @@ export default async function PublicTeamsPage({ params }: Props) {
             return (
               <article
                 key={team.id}
-                className="group rounded-2xl p-5 transition-colors"
-                style={{
-                  background: 'rgba(255,255,255,0.025)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                }}
+                className="group rounded-2xl p-5 transition-colors border border-border bg-surface shadow-card"
               >
                 {/* Team badge */}
                 {logoUrl ? (
                   <div
-                    className="relative mb-4 h-14 w-14 overflow-hidden rounded-2xl"
-                    style={{ border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)' }}
+                    className="border border-border bg-surface relative mb-4 h-14 w-14 overflow-hidden rounded-2xl"
                   >
                     <Image
                       src={logoUrl}
@@ -108,12 +103,12 @@ export default async function PublicTeamsPage({ params }: Props) {
 
                 <h2 className="text-lg font-black leading-tight">{team.name}</h2>
                 {team.short_name && team.short_name !== team.name && (
-                  <p className="mt-0.5 text-xs font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                  <p className="text-text-muted mt-0.5 text-xs font-bold uppercase tracking-widest">
                     {team.short_name}
                   </p>
                 )}
                 {team.place && (
-                  <div className="mt-3 flex items-center gap-1.5 text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  <div className="text-text-muted mt-3 flex items-center gap-1.5 text-xs">
                     <MapPin className="h-3.5 w-3.5 shrink-0" />
                     <span>{team.place}</span>
                   </div>

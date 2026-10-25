@@ -37,7 +37,7 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
   }
 
   return (
-    <nav className="sticky top-0 z-50 w-full backdrop-blur-2xl bg-[#09090e]/70 border-b border-glass-border shadow-[0_4px_30px_rgb(0,0,0,0.1)]">
+    <nav className="sticky top-0 z-50 w-full bg-background border-b border-glass-border shadow-card">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center gap-2">
@@ -69,13 +69,13 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                 </Link>
                 <Link 
                   href="/register" 
-                  className="px-5 py-2.5 bg-surface-raised/50 backdrop-blur-xl border border-glass-border hover:border-primary/50 text-text-primary text-sm font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+                  className="px-5 py-2.5 bg-surface-raised border border-glass-border hover:border-primary/50 text-text-primary text-sm font-semibold rounded-xl transition-all duration-300"
                 >
                   Create Account
                 </Link>
                 <Link 
                   href="/organizer/tournaments/new" 
-                  className="px-5 py-2.5 bg-gradient-to-r from-primary to-primary-hover shadow-lg shadow-primary/25 hover:shadow-primary/40 text-primary-foreground text-sm font-bold rounded-xl transition-all duration-300 hover:-translate-y-0.5"
+                  className="px-5 py-2.5 bg-primary shadow-card shadow-primary/25 hover:shadow-primary/40 text-primary-foreground text-sm font-bold rounded-xl transition-all duration-300"
                 >
                   Create Tournament
                 </Link>
@@ -92,7 +92,7 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                     onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                     aria-expanded={isProfileMenuOpen}
                     aria-haspopup="true"
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-text-primary hover:bg-white/5 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary relative z-50"
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-text-primary hover:bg-surface-muted rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary relative z-50"
                   >
                     <div className="relative w-8 h-8 overflow-hidden rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold uppercase">
                       {userProfile?.photo_url ? <Image src={userProfile.photo_url} alt="" fill sizes="32px" className="object-cover object-[center_22%]" /> : (userProfile?.full_name ? userProfile.full_name.substring(0, 2) : 'U')}
@@ -100,16 +100,16 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                     <span className="max-w-28 truncate">{userProfile?.full_name || 'Account'}</span>
                   </button>
                   {isProfileMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-surface-raised/90 backdrop-blur-2xl border border-glass-border rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] py-2 z-50 overflow-hidden">
-                      <Link href="/profile" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-text-primary hover:bg-white/5">
+                    <div className="absolute right-0 mt-2 w-48 bg-surface-raised border border-glass-border rounded-xl shadow-card py-2 z-50 overflow-hidden">
+                      <Link href="/profile" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-text-primary hover:bg-surface-muted">
                         My Profile
                       </Link>
-                      <Link href="/profile#my-tournaments" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-text-primary hover:bg-white/5">
+                      <Link href="/profile#my-tournaments" onClick={() => setIsProfileMenuOpen(false)} className="block px-4 py-2 text-sm text-text-primary hover:bg-surface-muted">
                         My Tournaments
                       </Link>
-                      <PwaInstallAction onComplete={() => setIsProfileMenuOpen(false)} className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-text-primary hover:bg-white/5" />
+                      <PwaInstallAction onComplete={() => setIsProfileMenuOpen(false)} className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-text-primary hover:bg-surface-muted" />
                       <form onSubmit={handleLogout}>
-                        <button type="submit" disabled={isLoggingOut} className="w-full text-left px-4 py-2 text-sm text-text-secondary hover:text-danger hover:bg-white/5 transition-colors disabled:opacity-50">
+                        <button type="submit" disabled={isLoggingOut} className="w-full text-left px-4 py-2 text-sm text-text-secondary hover:text-danger hover:bg-surface-muted transition-colors disabled:opacity-50">
                           {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
                         </button>
                       </form>
@@ -121,7 +121,7 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                 )}
                 <Link 
                   href="/organizer/tournaments/new" 
-                  className="px-5 py-2.5 bg-gradient-to-r from-primary to-primary-hover shadow-lg shadow-primary/25 hover:shadow-primary/40 text-primary-foreground text-sm font-bold rounded-xl transition-all duration-300 hover:-translate-y-0.5"
+                  className="px-5 py-2.5 bg-primary shadow-card shadow-primary/25 hover:shadow-primary/40 text-primary-foreground text-sm font-bold rounded-xl transition-all duration-300"
                 >
                   Create Tournament
                 </Link>
@@ -145,14 +145,14 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
 
       {/* Mobile Drawer */}
       {isOpen && (
-        <div className="md:hidden absolute top-16 inset-x-0 bg-surface-raised/95 backdrop-blur-3xl border-b border-glass-border shadow-2xl p-4 flex flex-col gap-4">
-          <a href="#tournaments" onClick={() => setIsOpen(false)} className="text-base font-medium text-text-secondary hover:text-text-primary py-2 border-b border-white/5">
+        <div className="md:hidden absolute top-16 inset-x-0 bg-surface-raised border-b border-glass-border shadow-card p-4 flex flex-col gap-4">
+          <a href="#tournaments" onClick={() => setIsOpen(false)} className="text-base font-medium text-text-secondary hover:text-text-primary py-2 border-b border-border">
             Tournaments
           </a>
-          <Link href="#features" onClick={() => setIsOpen(false)} className="text-base font-medium text-text-secondary hover:text-text-primary py-2 border-b border-white/5">
+          <Link href="#features" onClick={() => setIsOpen(false)} className="text-base font-medium text-text-secondary hover:text-text-primary py-2 border-b border-border">
             Features
           </Link>
-          <Link href="#how-it-works" onClick={() => setIsOpen(false)} className="text-base font-medium text-text-secondary hover:text-text-primary py-2 border-b border-white/5">
+          <Link href="#how-it-works" onClick={() => setIsOpen(false)} className="text-base font-medium text-text-secondary hover:text-text-primary py-2 border-b border-border">
             How It Works
           </Link>
           <div className="flex flex-col gap-3 mt-2">
@@ -161,14 +161,14 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                 <Link 
                   href="/login" 
                   onClick={() => setIsOpen(false)}
-                  className="w-full py-3 text-center text-sm font-medium text-text-primary border border-white/10 rounded-xl"
+                  className="w-full py-3 text-center text-sm font-medium text-text-primary border border-border rounded-xl"
                 >
                   Sign In
                 </Link>
                 <Link 
                   href="/register" 
                   onClick={() => setIsOpen(false)}
-                  className="w-full py-3 text-center text-sm font-medium text-text-primary border border-white/10 rounded-xl"
+                  className="w-full py-3 text-center text-sm font-medium text-text-primary border border-border rounded-xl"
                 >
                   Create Account
                 </Link>
@@ -179,7 +179,7 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                   <Link 
                     href="/organizer/dashboard" 
                     onClick={() => setIsOpen(false)}
-                    className="w-full py-3 text-center text-sm font-medium text-text-primary border border-white/10 rounded-xl"
+                    className="w-full py-3 text-center text-sm font-medium text-text-primary border border-border rounded-xl"
                   >
                     Organizer Dashboard
                   </Link>
@@ -187,23 +187,23 @@ export function LandingNav({ isAuthenticated = false, isOrganizer = false, userP
                 <Link 
                   href="/profile" 
                   onClick={() => setIsOpen(false)}
-                  className="w-full py-3 text-center text-sm font-medium text-text-primary border border-white/10 rounded-xl"
+                  className="w-full py-3 text-center text-sm font-medium text-text-primary border border-border rounded-xl"
                 >
                   My Profile
                 </Link>
                 <Link
                   href="/profile#my-tournaments"
                   onClick={() => setIsOpen(false)}
-                  className="w-full py-3 text-center text-sm font-medium text-text-primary border border-white/10 rounded-xl"
+                  className="w-full py-3 text-center text-sm font-medium text-text-primary border border-border rounded-xl"
                 >
                   My Tournaments
                 </Link>
-                <PwaInstallAction onComplete={() => setIsOpen(false)} className="flex w-full items-center justify-center gap-2 py-3 text-sm font-medium text-text-primary rounded-xl border border-white/10" />
+                <PwaInstallAction onComplete={() => setIsOpen(false)} className="flex w-full items-center justify-center gap-2 py-3 text-sm font-medium text-text-primary rounded-xl border border-border" />
                 <form onSubmit={(e) => { handleLogout(e); setIsOpen(false); }}>
                   <button 
                     type="submit"
                     disabled={isLoggingOut}
-                    className="w-full py-3 text-center text-sm font-medium text-danger border border-white/10 rounded-xl disabled:opacity-50"
+                    className="w-full py-3 text-center text-sm font-medium text-danger border border-border rounded-xl disabled:opacity-50"
                   >
                     {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
                   </button>

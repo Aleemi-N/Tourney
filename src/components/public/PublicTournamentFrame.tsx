@@ -1,28 +1,25 @@
 'use client';
 
 /**
- * PublicTournamentFrame — shared chrome for all public tournament sub-pages.
- *
- * Renders:
- *  - Sticky header with tournament name/logo
- *  - Tab navigation: Live · Fixtures · Results · Table · Teams · Players
- *  - Active tab detection via pathname
- *  - Mobile-first, 320px+
- *  - Dark purple/indigo design system
+ * PublicTournamentFrame — shared chrome for all public tournament sub-pages:
+ * sticky header with the tournament name/logo and tab navigation
+ * (Live · Fixtures · Results · Table · Teams · Players). Mobile-first, 320px+.
  */
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
-import { Radio } from 'lucide-react';
+import { StatusPill } from '@/components/ui/StatusPill';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { cn } from '@/lib/utils';
 
 const TABS = [
-  { label: 'Live',     path: 'live',     icon: '🔴' },
-  { label: 'Fixtures', path: 'fixtures', icon: null },
-  { label: 'Results',  path: 'results',  icon: null },
-  { label: 'Table',    path: 'table',    icon: null },
-  { label: 'Teams',    path: 'teams',    icon: null },
-  { label: 'Players',  path: 'players',  icon: null },
+  { label: 'Live', path: 'live' },
+  { label: 'Fixtures', path: 'fixtures' },
+  { label: 'Results', path: 'results' },
+  { label: 'Table', path: 'table' },
+  { label: 'Teams', path: 'teams' },
+  { label: 'Players', path: 'players' },
 ] as const;
 
 interface Props {
@@ -36,69 +33,30 @@ interface Props {
 export function PublicTournamentFrame({ slug, name, logoUrl, status, children }: Props) {
   const pathname = usePathname();
 
-  const isLive = status === 'LIVE';
-
   return (
-    <div className="min-h-screen" style={{ background: '#09090e', color: '#f0f0f4' }}>
-      {/* ── Sticky Header ──────────────────────────────────────────────────── */}
-      <header
-        className="sticky top-0 z-40 border-b"
-        style={{
-          background: 'rgba(14,13,21,0.92)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          borderColor: 'rgba(255,255,255,0.07)',
-        }}
-      >
+    <div className="min-h-screen bg-background text-text-primary">
+      <header className="sticky top-0 z-40 border-b border-border bg-surface">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          {/* Top row: brand + live badge */}
-          <div className="flex items-center justify-between gap-4 py-3">
-            <Link
-              href={`/t/${slug}`}
-              className="flex min-w-0 items-center gap-3 group"
-            >
+          <div className="flex items-center justify-between gap-3 py-2">
+            <Link href={`/t/${slug}`} className="flex min-h-11 min-w-0 items-center gap-3">
               {logoUrl ? (
-                <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg"
-                  style={{ border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)' }}>
-                  <Image
-                    src={logoUrl}
-                    alt={`${name} logo`}
-                    fill
-                    sizes="32px"
-                    className="object-contain p-1"
-                    unoptimized
-                  />
-                </div>
+                <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg border border-border bg-surface">
+                  <Image src={logoUrl} alt="" fill sizes="32px" className="object-contain p-1" unoptimized />
+                </span>
               ) : (
-                <div
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-black"
-                  style={{ background: 'rgba(99,102,241,0.18)', color: '#a5b4fc' }}
-                >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary" aria-hidden="true">
                   {name.slice(0, 2).toUpperCase()}
-                </div>
+                </span>
               )}
-              <span className="truncate text-sm font-bold text-white/90 group-hover:text-white transition-colors">
-                {name}
-              </span>
+              <span className="truncate text-sm font-semibold text-text-primary">{name}</span>
             </Link>
-
-            {isLive && (
-              <span
-                className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold"
-                style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
-              >
-                <Radio className="h-3 w-3 animate-pulse" />
-                LIVE
-              </span>
-            )}
+            <div className="flex shrink-0 items-center gap-1">
+              {status === 'LIVE' ? <StatusPill status="LIVE" /> : null}
+              <ThemeToggle />
+            </div>
           </div>
 
-          {/* Tab navigation */}
-          <nav
-            aria-label="Tournament navigation"
-            className="flex gap-0.5 overflow-x-auto pb-0"
-            style={{ scrollbarWidth: 'none' }}
-          >
+          <nav aria-label="Tournament navigation" className="-mb-px flex overflow-x-auto [scrollbar-width:none]">
             {TABS.map(({ label, path }) => {
               const href = `/t/${slug}/${path}`;
               const isActive = pathname === href;
@@ -106,19 +64,13 @@ export function PublicTournamentFrame({ slug, name, logoUrl, status, children }:
                 <Link
                   key={path}
                   href={href}
-                  className="relative shrink-0 px-3 py-2.5 text-sm font-semibold transition-colors"
-                  style={{
-                    color: isActive ? '#a5b4fc' : 'rgba(255,255,255,0.45)',
-                  }}
                   aria-current={isActive ? 'page' : undefined}
+                  className={cn(
+                    'inline-flex min-h-11 shrink-0 items-center border-b-2 px-3 text-sm font-semibold transition-colors',
+                    isActive ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-text-primary',
+                  )}
                 >
                   {label}
-                  {isActive && (
-                    <span
-                      className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-                      style={{ background: 'linear-gradient(90deg, #6366f1, #a78bfa)' }}
-                    />
-                  )}
                 </Link>
               );
             })}
@@ -126,10 +78,7 @@ export function PublicTournamentFrame({ slug, name, logoUrl, status, children }:
         </div>
       </header>
 
-      {/* ── Page content ───────────────────────────────────────────────────── */}
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
-        {children}
-      </main>
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-10">{children}</main>
     </div>
   );
 }

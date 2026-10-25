@@ -12,25 +12,25 @@ export function HowItWorksSection() {
   ];
 
   return (
-    <section id="how-it-works" className="w-full py-16 lg:py-24 bg-[#09090e] relative z-10 overflow-hidden scroll-mt-20">
+    <section id="how-it-works" className="w-full py-16 lg:py-24 bg-background relative z-10 overflow-hidden scroll-mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Everything in one place.</h2>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-text-primary tracking-tight">Everything in one place.</h2>
           <p className="text-text-secondary mt-4 text-lg">From creation to final whistle — managed end to end.</p>
         </div>
 
         <div className="relative">
           {/* Connecting Line Desktop */}
-          <div className="hidden lg:block absolute top-[44px] left-[10%] right-[10%] h-[2px] bg-white/5" />
+          <div className="hidden lg:block absolute top-[44px] left-[10%] right-[10%] h-[2px] bg-surface" />
           {/* Connecting Line Mobile */}
-          <div className="lg:hidden absolute top-[10%] bottom-[10%] left-[39px] w-[2px] bg-white/5" />
+          <div className="lg:hidden absolute top-[10%] bottom-[10%] left-[39px] w-[2px] bg-surface" />
 
           <div className="flex flex-col lg:flex-row gap-12 lg:gap-4 justify-between relative z-10">
             {steps.map((step, i) => (
               <div key={i} className="flex lg:flex-col items-center lg:items-center text-left lg:text-center gap-6 lg:gap-4 lg:w-1/5 relative group">
-                <div className="w-20 h-20 shrink-0 rounded-2xl bg-[#131318] border border-white/10 flex items-center justify-center relative shadow-lg group-hover:border-primary/50 transition-colors">
+                <div className="w-20 h-20 shrink-0 rounded-2xl bg-surface border border-border flex items-center justify-center relative shadow-card group-hover:border-primary/50 transition-colors">
                   <step.icon className="w-8 h-8 text-primary" />
-                  <span className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-[#1c1c21] border border-white/10 text-[10px] font-bold flex items-center justify-center text-text-muted group-hover:text-white group-hover:border-primary/50 transition-colors">
+                  <span className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-surface border border-border text-xs font-bold flex items-center justify-center text-text-muted group-hover:text-text-primary group-hover:border-primary/50 transition-colors">
                     {step.num}
                   </span>
                 </div>
@@ -44,7 +44,7 @@ export function HowItWorksSection() {
         </div>
 
         <div className="mt-12 text-center flex flex-col items-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/5 text-[10px] sm:text-xs text-text-muted mb-8 tracking-wider">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface border border-border text-xs sm:text-xs text-text-muted mb-8 tracking-wider">
             <span className="text-primary font-semibold uppercase">Auction Leagues:</span> Player Registration &rarr; Lot Draw &rarr; Auction &rarr; Squad
           </div>
           <Link 

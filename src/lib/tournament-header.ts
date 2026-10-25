@@ -43,3 +43,10 @@ export const getTournamentHeader = cache(async (slug: string): Promise<Tournamen
     logoUrl,
   };
 });
+
+/** Primary colours of public teams by id (missing teams map to nothing). */
+export async function getTeamColors(teamIds: string[]): Promise<Record<string, string | null>> {
+  const supabase = await createClient();
+  const { data } = await supabase.from('public_team_view').select('id, primary_color').in('id', teamIds);
+  return Object.fromEntries((data ?? []).map((team) => [team.id as string, team.primary_color as string | null]));
+}

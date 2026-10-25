@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Trophy } from 'lucide-react';
+import { ArrowLeft, Trophy } from 'lucide-react';
+import { buttonClasses } from '@/components/ui/Button';
 
 interface Props {
   message?: string;
@@ -7,19 +8,13 @@ interface Props {
 
 export function TournamentNotFound({ message }: Props) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center"
-      style={{ background: '#09090e', color: '#f0f0f4' }}>
-      <Trophy className="h-12 w-12 mb-4" style={{ color: '#6366f1' }} />
-      <h1 className="text-2xl font-bold mb-2">Tournament Not Found</h1>
-      <p className="text-sm mb-8" style={{ color: 'rgba(255,255,255,0.45)' }}>
-        {message ?? 'This tournament is private or does not exist.'}
-      </p>
-      <Link
-        href="/"
-        className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors"
-        style={{ background: 'rgba(99,102,241,0.18)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}
-      >
-        ← Back to Tourny
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center text-text-primary">
+      <Trophy className="mb-4 h-12 w-12 text-primary" aria-hidden="true" />
+      <h1 className="mb-2 text-2xl font-bold">Tournament not found</h1>
+      <p className="mb-8 text-sm text-text-secondary">{message ?? 'This tournament is private or does not exist.'}</p>
+      <Link href="/" className={buttonClasses({ variant: 'secondary' })}>
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        Back to Tourny
       </Link>
     </div>
   );
@@ -27,14 +22,7 @@ export function TournamentNotFound({ message }: Props) {
 
 export function EmptyState({ text }: { text: string }) {
   return (
-    <div
-      className="rounded-2xl p-10 text-center text-sm"
-      style={{
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px dashed rgba(255,255,255,0.12)',
-        color: 'rgba(255,255,255,0.4)',
-      }}
-    >
+    <div className="rounded-2xl border border-dashed border-border-strong bg-surface p-10 text-center text-sm text-text-secondary">
       {text}
     </div>
   );

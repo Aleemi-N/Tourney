@@ -74,7 +74,7 @@ export default async function PublicLivePage({ params }: Props) {
             status={tournament.status}
           >
             <div className="mb-4">
-              <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(165,180,252,0.7)' }}>
+              <p className="text-primary text-xs font-bold uppercase tracking-[0.2em]">
                 Auction
               </p>
               <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Live Auction</h1>
@@ -157,7 +157,7 @@ export default async function PublicLivePage({ params }: Props) {
       {hasLiveMatches && (
         <section className="mb-10">
           <div className="mb-5">
-            <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(165,180,252,0.7)' }}>
+            <p className="text-primary text-xs font-bold uppercase tracking-[0.2em]">
               Playing now
             </p>
             <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Live Matches</h1>
@@ -167,26 +167,22 @@ export default async function PublicLivePage({ params }: Props) {
               <Link
                 key={match.id}
                 href={`/t/${slug}/match/${match.id}`}
-                className="flex items-center justify-between gap-4 rounded-2xl p-5 transition-colors"
-                style={{
-                  background: 'rgba(239,68,68,0.07)',
-                  border: '1px solid rgba(239,68,68,0.2)',
-                }}
+                className="flex items-center justify-between gap-4 rounded-2xl p-5 transition-colors border border-live/25 bg-live/10 hover:bg-live/15"
               >
                 <div>
-                  <p className="text-xs font-bold uppercase" style={{ color: '#f87171' }}>
+                  <p className="text-danger text-xs font-bold uppercase">
                     ● Live · Match {match.match_number ?? '—'}
                   </p>
                   <p className="mt-1 font-bold text-sm">
-                    {teamName(match.home_team_id)} <span style={{ color: 'rgba(255,255,255,0.3)' }}>vs</span> {teamName(match.away_team_id)}
+                    {teamName(match.home_team_id)} <span className="text-text-muted">vs</span> {teamName(match.away_team_id)}
                   </p>
                   {(match.venue || match.court) && (
-                    <p className="mt-1 text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                    <p className="text-text-muted mt-1 text-xs">
                       {[match.venue, match.court].filter(Boolean).join(' · ')}
                     </p>
                   )}
                 </div>
-                <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                <span className="text-text-muted text-xs font-semibold">
                   Watch →
                 </span>
               </Link>
@@ -199,7 +195,7 @@ export default async function PublicLivePage({ params }: Props) {
       {hasLotState && (
         <section>
           <div className="mb-5">
-            <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(165,180,252,0.7)' }}>
+            <p className="text-primary text-xs font-bold uppercase tracking-[0.2em]">
               Lot draw
             </p>
             {!hasLiveMatches && <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Live Lot Draw</h1>}
@@ -215,16 +211,15 @@ export default async function PublicLivePage({ params }: Props) {
       {/* Nothing live */}
       {!hasLiveMatches && !hasLotState && (
         <div className="py-16 text-center">
-          <Radio className="mx-auto mb-4 h-10 w-10" style={{ color: 'rgba(99,102,241,0.5)' }} />
+          <Radio className="text-primary mx-auto mb-4 h-10 w-10" />
           <h1 className="text-2xl font-bold">Nothing Live Right Now</h1>
-          <p className="mt-2 text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <p className="text-text-muted mt-2 text-sm">
             Live matches, auction, and lot draw will appear here when they start.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
               href={`/t/${slug}/fixtures`}
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors"
-              style={{ background: 'rgba(99,102,241,0.18)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.25)' }}
+              className="bg-primary/10 text-primary border border-primary/25 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors"
             >
               <CalendarDays className="h-4 w-4" />
               View Fixtures

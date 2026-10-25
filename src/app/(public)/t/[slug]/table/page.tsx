@@ -54,7 +54,7 @@ export default async function PublicTablePage({ params }: Props) {
   return (
     <PublicTournamentFrame slug={slug} name={tournament.name} logoUrl={tournament.logoUrl} status={tournament.status}>
       <div className="mb-8">
-        <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(165,180,252,0.7)' }}>
+        <p className="text-primary text-xs font-bold uppercase tracking-[0.2em]">
           League table
         </p>
         <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Standings</h1>
@@ -64,12 +64,11 @@ export default async function PublicTablePage({ params }: Props) {
         <EmptyState text="Standings will appear after completed league matches." />
       ) : (
         <div
-          className="overflow-x-auto rounded-2xl"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="border border-border bg-surface overflow-x-auto rounded-2xl"
         >
           <table className="min-w-full text-left">
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <tr className="border-b border-border">
                 {[
                   { key: '#',     tip: 'Position' },
                   { key: 'Team',  tip: 'Team' },
@@ -86,8 +85,7 @@ export default async function PublicTablePage({ params }: Props) {
                     key={key}
                     title={tip}
                     scope="col"
-                    className="px-4 py-3 text-xs font-bold uppercase tracking-wider"
-                    style={{ color: 'rgba(255,255,255,0.35)' }}
+                    className="text-text-muted px-4 py-3 text-xs font-bold uppercase tracking-wider"
                   >
                     {key}
                   </th>
@@ -97,7 +95,7 @@ export default async function PublicTablePage({ params }: Props) {
             <tbody>
               {rows.map((row, index) => {
                 const isTopThree = index < 3;
-                const rankColors = ['#fbbf24', '#94a3b8', '#c2966d'];
+                const rankColors = ['text-warning', 'text-text-secondary', 'text-warning'];
                 return (
                   <tr
                     key={`${row.stage_id}-${row.team_id}`}
@@ -108,10 +106,7 @@ export default async function PublicTablePage({ params }: Props) {
                   >
                     {/* Rank */}
                     <td className="px-4 py-3.5 tabular-nums">
-                      <span
-                        className="text-sm font-black"
-                        style={{ color: isTopThree ? rankColors[index] : 'rgba(255,255,255,0.3)' }}
-                      >
+                      <span className={`text-sm font-black ${isTopThree ? rankColors[index] : 'text-text-muted'}`}>
                         {index + 1}
                       </span>
                     </td>
@@ -119,30 +114,28 @@ export default async function PublicTablePage({ params }: Props) {
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2.5">
                         <div
-                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-black"
-                          style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc' }}
+                          className="bg-primary/10 text-primary flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-black"
                         >
                           {row.team_name.slice(0, 2).toUpperCase()}
                         </div>
                         <span className="text-sm font-bold whitespace-nowrap">{row.team_name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 text-sm tabular-nums" style={{ color: 'rgba(255,255,255,0.55)' }}>{row.played}</td>
-                    <td className="px-4 py-3.5 text-sm tabular-nums" style={{ color: 'rgba(74,222,128,0.8)' }}>{row.won}</td>
-                    <td className="px-4 py-3.5 text-sm tabular-nums" style={{ color: 'rgba(248,113,113,0.8)' }}>{row.lost}</td>
+                    <td className="text-text-secondary px-4 py-3.5 text-sm tabular-nums">{row.played}</td>
+                    <td className="text-success px-4 py-3.5 text-sm tabular-nums">{row.won}</td>
+                    <td className="text-danger px-4 py-3.5 text-sm tabular-nums">{row.lost}</td>
                     {/* Points — highlighted */}
                     <td className="px-4 py-3.5">
                       <span
-                        className="rounded-lg px-2.5 py-1 text-sm font-black tabular-nums"
-                        style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc' }}
+                        className="bg-primary/10 text-primary rounded-lg px-2.5 py-1 text-sm font-black tabular-nums"
                       >
                         {row.league_points}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 text-sm tabular-nums" style={{ color: 'rgba(255,255,255,0.55)' }}>{row.sets_won}</td>
-                    <td className="px-4 py-3.5 text-sm tabular-nums" style={{ color: 'rgba(255,255,255,0.55)' }}>{row.sets_lost}</td>
-                    <td className="px-4 py-3.5 text-sm tabular-nums" style={{ color: 'rgba(255,255,255,0.55)' }}>{row.points_for}</td>
-                    <td className="px-4 py-3.5 text-sm tabular-nums" style={{ color: 'rgba(255,255,255,0.55)' }}>{row.points_against}</td>
+                    <td className="text-text-secondary px-4 py-3.5 text-sm tabular-nums">{row.sets_won}</td>
+                    <td className="text-text-secondary px-4 py-3.5 text-sm tabular-nums">{row.sets_lost}</td>
+                    <td className="text-text-secondary px-4 py-3.5 text-sm tabular-nums">{row.points_for}</td>
+                    <td className="text-text-secondary px-4 py-3.5 text-sm tabular-nums">{row.points_against}</td>
                   </tr>
                 );
               })}

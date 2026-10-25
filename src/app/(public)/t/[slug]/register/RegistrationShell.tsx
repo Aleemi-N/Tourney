@@ -41,7 +41,7 @@ export function RegistrationShell({
 }
 
 export const registrationCardClass =
-  'rounded-xl border border-border bg-surface-raised p-5 shadow-2xl shadow-black/20 sm:p-6';
+  'rounded-xl border border-border bg-surface-raised p-5 shadow-card shadow-black/20 sm:p-6';
 
 export const registrationStatusClass =
   'rounded-lg border border-border bg-surface-muted p-4';

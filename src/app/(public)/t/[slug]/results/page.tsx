@@ -59,7 +59,7 @@ export default async function PublicResultsPage({ params }: Props) {
   return (
     <PublicTournamentFrame slug={slug} name={tournament.name} logoUrl={tournament.logoUrl} status={tournament.status}>
       <div className="mb-8">
-        <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(165,180,252,0.7)' }}>
+        <p className="text-primary text-xs font-bold uppercase tracking-[0.2em]">
           Completed matches
         </p>
         <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Results</h1>
@@ -80,13 +80,9 @@ export default async function PublicResultsPage({ params }: Props) {
             return (
               <article
                 key={result.id}
-                className="rounded-2xl p-5"
-                style={{
-                  background: 'rgba(255,255,255,0.025)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                }}
+                className="rounded-2xl p-5 border border-border bg-surface shadow-card"
               >
-                <p className="mb-4 text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                <p className="text-text-muted mb-4 text-xs font-bold uppercase tracking-wider">
                   Match {result.match_number ?? '—'}
                 </p>
 
@@ -94,8 +90,7 @@ export default async function PublicResultsPage({ params }: Props) {
                   {/* Home row */}
                   <div className="flex items-center gap-3">
                     <div
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black"
-                      style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc' }}
+                      className="bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black"
                     >
                       {teamShort(result.home_team_id)}
                     </div>
@@ -103,7 +98,7 @@ export default async function PublicResultsPage({ params }: Props) {
                       {teamName(result.home_team_id)}
                     </span>
                     {homeWon && (
-                      <Trophy className="h-4 w-4 shrink-0" style={{ color: '#fbbf24' }} />
+                      <Trophy className="text-warning h-4 w-4 shrink-0" />
                     )}
                     <span
                       className="text-xl font-black tabular-nums"
@@ -114,13 +109,12 @@ export default async function PublicResultsPage({ params }: Props) {
                   </div>
 
                   {/* Divider */}
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }} />
+                  <div className="border-t border-border" />
 
                   {/* Away row */}
                   <div className="flex items-center gap-3">
                     <div
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black"
-                      style={{ background: 'rgba(168,85,247,0.15)', color: '#c4b5fd' }}
+                      className="bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black"
                     >
                       {teamShort(result.away_team_id)}
                     </div>
@@ -128,7 +122,7 @@ export default async function PublicResultsPage({ params }: Props) {
                       {teamName(result.away_team_id)}
                     </span>
                     {awayWon && (
-                      <Trophy className="h-4 w-4 shrink-0" style={{ color: '#fbbf24' }} />
+                      <Trophy className="text-warning h-4 w-4 shrink-0" />
                     )}
                     <span
                       className="text-xl font-black tabular-nums"
@@ -140,7 +134,7 @@ export default async function PublicResultsPage({ params }: Props) {
                 </div>
 
                 {/* Score footer */}
-                <div className="mt-4 flex items-center gap-3 text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                <div className="text-text-muted mt-4 flex items-center gap-3 text-xs">
                   <span>Total points: {homeScore} – {awayScore}</span>
                 </div>
               </article>

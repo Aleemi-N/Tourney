@@ -4,7 +4,7 @@ export function CourtLineBackground({ className }: { className?: string }) {
   return (
     <div className={`absolute inset-0 pointer-events-none overflow-hidden ${className || ''}`}>
       <svg
-        className="absolute w-[200%] h-[200%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.04] text-white"
+        className="absolute w-[200%] h-[200%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.04] text-text-primary"
         viewBox="0 0 100 100"
         preserveAspectRatio="xMidYMid slice"
         fill="none"

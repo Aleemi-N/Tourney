@@ -10,12 +10,16 @@ const RULES = [
   [/\[#[0-9a-fA-F]{3,8}\]/, 'raw hex colour: use a token class (bg-surface, text-text-primary, ...)'],
   [/\btext-\[(?:[0-9]|1[01])(?:\.\d+)?px\]/, 'text below 12px: use text-xs or larger'],
   [/(?<![\w-])(?:[a-z-]+:)*(?:text-white|bg-white\/|border-white\/|divide-white\/|ring-white\/)/, 'dark-only white: use a token (text-text-primary, bg-surface, border-border, ...)'],
+  [/\b(?:background|backgroundColor|color|border|borderColor|boxShadow)\s*:\s*['"`](?:#[0-9a-fA-F]{3,8}|rgba?\()/, 'literal colour in style={{}}: use token classes (team colours from data are fine)'],
 ];
+
+// Metadata (theme-color) and the OG image renderer cannot use CSS classes.
+const IGNORED = [path.join('src', 'app', 'layout.tsx'), path.join('src', 'app', 'api', 'og')];
 
 const files = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
   const full = path.join(dir, entry.name);
   if (entry.isDirectory()) return files(full);
-  return /\.(tsx|ts)$/.test(entry.name) ? [full] : [];
+  return /\.(tsx|ts)$/.test(entry.name) && !IGNORED.some((ignored) => full.startsWith(ignored)) ? [full] : [];
 });
 
 let problems = 0;

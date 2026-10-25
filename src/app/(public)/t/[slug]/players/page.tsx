@@ -30,20 +30,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+// team_players.acquisition_type values
 const ACQUISITION_LABEL: Record<string, string> = {
-  MAIN_AUCTION:     'Auction',
-  DIRECT:           'Direct',
-  MANUAL_OVERRIDE:  'Assigned',
-  WALK_IN:          'Walk-in',
+  REGISTERED: 'Registered',
+  ICON_LOT: 'Icon lot',
+  SETTER_LOT: 'Setter lot',
+  AUCTION: 'Auction',
+  MANUAL: 'Assigned',
+  MANUAL_ASSIGNMENT: 'Assigned',
 };
 
-const POSITION_COLOR: Record<string, { bg: string; color: string }> = {
-  SETTER:           { bg: 'rgba(251,191,36,0.12)',  color: '#fbbf24' },
-  LIBERO:           { bg: 'rgba(52,211,153,0.12)',   color: '#34d399' },
-  MIDDLE_BLOCKER:   { bg: 'rgba(99,102,241,0.14)',   color: '#a5b4fc' },
-  OUTSIDE_HITTER:   { bg: 'rgba(244,114,182,0.12)',  color: '#f472b6' },
-  OPPOSITE:         { bg: 'rgba(251,146,60,0.12)',   color: '#fb923c' },
-  UNIVERSAL:        { bg: 'rgba(148,163,184,0.12)',  color: '#94a3b8' },
+const POSITION_COLOR: Record<string, string> = {
+  SETTER: 'bg-warning/10 text-warning',
+  LIBERO: 'bg-success/10 text-success',
+  MIDDLE_BLOCKER: 'bg-primary/10 text-primary',
+  OUTSIDE_HITTER: 'bg-danger/10 text-danger',
+  OPPOSITE: 'bg-info/10 text-info',
+  UNIVERSAL: 'bg-surface-muted text-text-secondary',
 };
 
 export default async function PublicPlayersPage({ params }: Props) {
@@ -70,12 +73,12 @@ export default async function PublicPlayersPage({ params }: Props) {
   return (
     <PublicTournamentFrame slug={slug} name={tournament.name} logoUrl={tournament.logoUrl} status={tournament.status}>
       <div className="mb-8">
-        <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(165,180,252,0.7)' }}>
+        <p className="text-primary text-xs font-bold uppercase tracking-[0.2em]">
           Approved players
         </p>
         <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Players</h1>
         {players && players.length > 0 && (
-          <p className="mt-1.5 text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <p className="text-text-muted mt-1.5 text-sm">
             {players.length} player{players.length === 1 ? '' : 's'}
           </p>
         )}
@@ -103,17 +106,12 @@ export default async function PublicPlayersPage({ params }: Props) {
             return (
               <article
                 key={player.id}
-                className="flex items-start gap-4 rounded-2xl p-4"
-                style={{
-                  background: 'rgba(255,255,255,0.025)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                }}
+                className="flex items-start gap-4 rounded-2xl p-4 border border-border bg-surface shadow-card"
               >
                 {/* Photo / Avatar */}
                 {photoUrl ? (
                   <div
-                    className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl"
-                    style={{ border: '1px solid rgba(255,255,255,0.1)' }}
+                    className="border border-border relative h-12 w-12 shrink-0 overflow-hidden rounded-xl"
                   >
                     <Image
                       src={photoUrl}
@@ -125,13 +123,7 @@ export default async function PublicPlayersPage({ params }: Props) {
                     />
                   </div>
                 ) : (
-                  <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-black"
-                    style={{
-                      background: posCfg?.bg ?? 'rgba(99,102,241,0.15)',
-                      color: posCfg?.color ?? '#a5b4fc',
-                    }}
-                  >
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-black ${posCfg ?? 'bg-primary/10 text-primary'}`}>
                     {(player.display_name ?? '?').charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -141,10 +133,7 @@ export default async function PublicPlayersPage({ params }: Props) {
                   <p className="truncate font-bold text-sm">{player.display_name}</p>
 
                   {posLabel && (
-                    <span
-                      className="mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold"
-                      style={{ background: posCfg?.bg ?? 'rgba(99,102,241,0.15)', color: posCfg?.color ?? '#a5b4fc' }}
-                    >
+                    <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${posCfg ?? 'bg-primary/10 text-primary'}`}>
                       {posLabel}
                       {player.secondary_position && (
                         <> · {formatVolleyballPosition(player.secondary_position)}</>
@@ -152,7 +141,7 @@ export default async function PublicPlayersPage({ params }: Props) {
                     </span>
                   )}
 
-                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  <div className="text-text-muted mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                     {team && <span>{team}</span>}
                     {acqLabel && <span>{acqLabel}</span>}
                   </div>

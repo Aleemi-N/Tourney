@@ -1,9 +1,11 @@
 // Screenshots every app route, per role, at 375 / 768 / 1440 px in light and dark.
 //
-// Usage: node scripts/capture-screens.mjs <label> [--out <dir>] [--base <url>]
+// Usage: node scripts/capture-screens.mjs <label> [--out <dir>] [--base <url>] [--match <text>] [--widths 375,1440]
 //   <label>  folder name for this set, e.g. "before" or "after"
 //   --out    parent folder (default: ./screenshots, gitignored)
 //   --base   running app (default: http://localhost:3000)
+//   --match  only routes whose role or path contains this text
+//   --widths comma-separated widths (default: 375,768,1440)
 //
 // Needs the local seed (`pnpm supabase db reset`) and the app running against it.
 import { chromium } from '@playwright/test';
@@ -14,13 +16,14 @@ import path from 'node:path';
 const args = process.argv.slice(2);
 const label = args[0];
 if (!label || label.startsWith('--')) {
-  console.error('Usage: node scripts/capture-screens.mjs <label> [--out <dir>] [--base <url>]');
+  console.error('Usage: node scripts/capture-screens.mjs <label> [--out <dir>] [--base <url>] [--match <text>] [--widths 375,1440]');
   process.exit(1);
 }
 const opt = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
 const base = opt('--base', 'http://localhost:3000').replace(/\/+$/, '');
 const outDir = path.resolve(opt('--out', 'screenshots'), label);
-const WIDTHS = [375, 768, 1440];
+const WIDTHS = opt('--widths', '375,768,1440').split(',').map(Number);
+const only = opt('--match', '');
 const SCHEMES = ['light', 'dark'];
 
 // The seed's one local-only password, read from the seed itself so it lives in one place.
@@ -121,6 +124,7 @@ const failures = [];
 let shots = 0;
 
 for (const role of ['public', ...Object.keys(ACCOUNTS)]) {
+  if (only && !ROUTES.some(([, r, urls]) => r === role && urls.some((u) => `${r} ${u}`.includes(only)))) continue;
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
   if (role !== 'public') {
@@ -132,6 +136,7 @@ for (const role of ['public', ...Object.keys(ACCOUNTS)]) {
   for (const [, routeRole, urls] of ROUTES) {
     if (routeRole !== role) continue;
     for (const url of urls) {
+      if (only && !`${role} ${url}`.includes(only)) continue;
       try {
         const response = await page.goto(base + url, { waitUntil: 'load', timeout: 60000 });
         await page.waitForTimeout(1500);

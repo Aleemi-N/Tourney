@@ -16,7 +16,7 @@ export const metadata = {
 
 export default async function LandingPage() {
   return (
-    <div className="dark min-h-screen bg-[#09090e] text-text-primary selection:bg-primary/30 selection:text-white">
+    <div className="dark min-h-screen bg-background text-text-primary selection:bg-primary/30 selection:text-text-primary">
       <PublicLandingNav />
       <main>
         <HeroSection />

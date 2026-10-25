@@ -5,7 +5,7 @@ import { VolleyballIcon } from './VolleyballIcon';
 
 export function LandingFooter() {
   return (
-    <footer className="w-full relative bg-[#09090e] border-t border-glass-border py-12 text-sm text-text-muted overflow-hidden">
+    <footer className="w-full relative bg-background border-t border-glass-border py-12 text-sm text-text-muted overflow-hidden">
       {/* Subtle background glows */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary-hover/5 rounded-full blur-[100px] pointer-events-none" />
@@ -44,7 +44,7 @@ export function LandingFooter() {
 
         </div>
 
-        <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="pt-8 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
           <p>&copy; {new Date().getFullYear()} {APP_CONFIG.name}.</p>
           {/* 
             Appfyniti URL intentionally omitted — add href when the official URL is confirmed.

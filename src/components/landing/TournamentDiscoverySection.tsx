@@ -31,23 +31,23 @@ export async function TournamentDiscoverySection() {
     .limit(6);
 
   return (
-    <section id="tournaments" className="w-full py-12 lg:py-16 bg-[#0d0d13] border-y border-white/5 relative z-10 scroll-mt-20">
+    <section id="tournaments" className="w-full py-12 lg:py-16 bg-background border-y border-border relative z-10 scroll-mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
-            <h2 className="text-3xl font-extrabold text-white tracking-tight">Live & Upcoming Tournaments</h2>
+            <h2 className="text-3xl font-extrabold text-text-primary tracking-tight">Live & Upcoming Tournaments</h2>
             <p className="text-text-secondary mt-2 text-lg">Find your next competition or spectate live action.</p>
           </div>
         </div>
 
         {!tournaments || tournaments.length === 0 ? (
-          <div className="w-full py-16 flex flex-col items-center justify-center border border-dashed border-white/10 rounded-3xl bg-white/[0.02]">
+          <div className="w-full py-16 flex flex-col items-center justify-center border border-dashed border-border rounded-3xl bg-surface">
             <VolleyballIcon className="w-12 h-12 text-text-muted mb-4 opacity-50" />
             <h3 className="text-lg font-bold text-text-primary mb-1">No tournaments right now.</h3>
             <p className="text-text-secondary text-sm mb-6">Be the first to start a new competition.</p>
             <Link 
               href="/organizer/tournaments/new"
-              className="px-6 py-2.5 bg-white/10 hover:bg-white/15 text-white font-semibold rounded-xl transition-colors text-sm"
+              className="px-6 py-2.5 bg-surface-muted hover:bg-surface-muted text-text-primary font-semibold rounded-xl transition-colors text-sm"
             >
               Create Tournament &rarr;
             </Link>

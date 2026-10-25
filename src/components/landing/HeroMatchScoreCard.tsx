@@ -2,10 +2,10 @@ import React from 'react';
 
 export function HeroMatchScoreCard() {
   return (
-    <div className="w-[260px] sm:w-[280px] bg-[#131318] rounded-2xl border border-white/5 shadow-2xl overflow-hidden">
-      <div className="bg-white/5 px-4 py-2 flex justify-between items-center border-b border-white/5">
-        <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Set 2</span>
-        <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-live bg-live/10 border border-live/20 rounded-full flex items-center gap-1">
+    <div className="w-[260px] sm:w-[280px] bg-surface rounded-2xl border border-border shadow-card overflow-hidden">
+      <div className="bg-surface px-4 py-2 flex justify-between items-center border-b border-border">
+        <span className="text-xs font-bold text-text-secondary uppercase tracking-widest">Set 2</span>
+        <span className="px-1.5 py-0.5 text-xs font-bold uppercase tracking-wider text-live bg-live/10 border border-live/20 rounded-full flex items-center gap-1">
           <span className="w-1 h-1 rounded-full bg-live animate-pulse" />
           IN PROGRESS
         </span>

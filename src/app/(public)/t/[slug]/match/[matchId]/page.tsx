@@ -1,13 +1,14 @@
 import { buildTournamentMetadata } from '@/lib/public-tournament-metadata';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
-import { getTournamentHeader } from '@/lib/tournament-header';
+import { getTeamColors, getTournamentHeader } from '@/lib/tournament-header';
 import { PublicTournamentFrame } from '@/components/public/PublicTournamentFrame';
 import { TournamentNotFound } from '@/components/public/TournamentNotFound';
 import { PublicMatchLive } from '@/components/public/PublicMatchLive';
+import { buttonClasses } from '@/components/ui/Button';
 
 import Link from 'next/link';
-import { CalendarDays } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Tv } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,45 +37,44 @@ export default async function PublicMatchPage({ params }: Props) {
     return (
       <PublicTournamentFrame slug={slug} name={tournament.name} logoUrl={tournament.logoUrl} status={tournament.status}>
         <div className="py-16 text-center">
-          <p className="mb-2 text-lg font-bold">Match Not Available</p>
-          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            This match may not exist or is not publicly accessible.
-          </p>
-          <Link
-            href={`/t/${slug}/fixtures`}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors"
-            style={{ background: 'rgba(99,102,241,0.18)', color: '#a5b4fc' }}
-          >
-            ← View Fixtures
+          <p className="mb-2 text-lg font-bold text-text-primary">Match not available</p>
+          <p className="text-sm text-text-secondary">This match may not exist or is not publicly accessible.</p>
+          <Link href={`/t/${slug}/fixtures`} className={buttonClasses({ variant: 'secondary', className: 'mt-6' })}>
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            View fixtures
           </Link>
         </div>
       </PublicTournamentFrame>
     );
   }
 
+  const teams = matchState as unknown as { home_team: { id: string }; away_team: { id: string } };
+  const colors = await getTeamColors([teams.home_team.id, teams.away_team.id]);
+
   return (
     <PublicTournamentFrame slug={slug} name={tournament.name} logoUrl={tournament.logoUrl} status={tournament.status}>
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <Link
-          href={`/t/${slug}/fixtures`}
-          className="inline-flex items-center gap-1.5 text-sm transition-colors"
-          style={{ color: 'rgba(255,255,255,0.45)' }}
-        >
-          <CalendarDays className="h-4 w-4" />
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <Link href={`/t/${slug}/fixtures`} className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-text-secondary hover:text-text-primary">
+          <CalendarDays className="h-4 w-4" aria-hidden="true" />
           All fixtures
         </Link>
         <Link
           href={`/t/${slug}/match/${matchId}/tv`}
-          className="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition-colors"
-          style={{ background: 'rgba(99,102,241,0.12)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.2)' }}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Open TV/projector scoreboard in new tab"
+          aria-label="Open TV scoreboard in a new tab"
+          className={buttonClasses({ variant: 'secondary', size: 'sm' })}
         >
-          📺 TV View
+          <Tv className="h-4 w-4" aria-hidden="true" />
+          TV view
         </Link>
       </div>
-      <PublicMatchLive matchId={matchId} initialState={matchState as never} />
+      <PublicMatchLive
+        matchId={matchId}
+        initialState={matchState as never}
+        homeColor={colors[teams.home_team.id]}
+        awayColor={colors[teams.away_team.id]}
+      />
     </PublicTournamentFrame>
   );
 }

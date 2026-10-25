@@ -31,11 +31,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
-  SCHEDULED: { label: 'Scheduled', color: '#a5b4fc', bg: 'rgba(99,102,241,0.12)' },
-  LIVE: { label: 'Live', color: '#f87171', bg: 'rgba(239,68,68,0.12)' },
-  COMPLETED: { label: 'Completed', color: '#4ade80', bg: 'rgba(34,197,94,0.12)' },
-  POSTPONED: { label: 'Postponed', color: '#fbbf24', bg: 'rgba(245,158,11,0.12)' },
+const STATUS_STYLE: Record<string, { label: string; className: string }> = {
+  SCHEDULED: { label: 'Scheduled', className: 'bg-info/10 text-info' },
+  LIVE: { label: 'Live', className: 'bg-live/10 text-live' },
+  COMPLETED: { label: 'Completed', className: 'bg-success/10 text-success' },
+  POSTPONED: { label: 'Postponed', className: 'bg-warning/10 text-warning' },
 };
 
 function fmtDate(d: string | null) {
@@ -83,7 +83,7 @@ export default async function PublicFixturesPage({ params }: Props) {
   return (
     <PublicTournamentFrame slug={slug} name={tournament.name} logoUrl={tournament.logoUrl} status={tournament.status}>
       <div className="mb-8">
-        <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(165,180,252,0.7)' }}>Schedule</p>
+        <p className="text-primary text-xs font-bold uppercase tracking-[0.2em]">Schedule</p>
         <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Fixtures</h1>
       </div>
 
@@ -117,20 +117,17 @@ export default async function PublicFixturesPage({ params }: Props) {
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         {/* Match label + status */}
                         <div className="flex items-center gap-2">
-                          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                            #{fixture.program_order} · Match {fixture.match_number ?? '—'} · {(fixture.bracket_match_type ?? 'STANDARD').replace('_', ' ')}
+                          <p className="text-text-muted text-xs font-bold uppercase tracking-wider">
+                            #{fixture.program_order} · Match {fixture.match_number ?? '—'}{fixture.bracket_match_type && fixture.bracket_match_type !== 'STANDARD' ? ` · ${fixture.bracket_match_type.replace('_', ' ')}` : ''}
                           </p>
-                          <span
-                            className="rounded-full px-2 py-0.5 text-xs font-bold"
-                            style={{ background: statusCfg.bg, color: statusCfg.color }}
-                          >
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${statusCfg.className}`}>
                             {statusCfg.label}
                           </span>
                         </div>
 
                         {/* Date/time */}
                         {fixture.scheduled_at && (
-                          <div className="flex items-center gap-1.5 text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                          <div className="text-text-muted flex items-center gap-1.5 text-xs">
                             <Clock className="h-3.5 w-3.5" />
                             <span>{fmtDate(fixture.scheduled_at)} · {fmtTime(fixture.scheduled_at)}</span>
                           </div>
@@ -142,21 +139,19 @@ export default async function PublicFixturesPage({ params }: Props) {
                         {/* Home */}
                         <div className="flex flex-1 items-center gap-2.5">
                           <div
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black"
-                            style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc' }}
+                            className="bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black"
                           >
                             {homeShort.slice(0, 3)}
                           </div>
                           <span className="font-bold text-sm leading-tight">{home}</span>
                         </div>
 
-                        <span className="text-xs font-bold px-2" style={{ color: 'rgba(255,255,255,0.25)' }}>vs</span>
+                        <span className="text-text-muted text-xs font-bold px-2">vs</span>
 
                         {/* Away */}
                         <div className="flex flex-1 flex-row-reverse items-center gap-2.5">
                           <div
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black"
-                            style={{ background: 'rgba(168,85,247,0.15)', color: '#c4b5fd' }}
+                            className="bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black"
                           >
                             {awayShort.slice(0, 3)}
                           </div>
@@ -166,18 +161,18 @@ export default async function PublicFixturesPage({ params }: Props) {
 
                       {/* Venue */}
                       {(fixture.venue || fixture.court) && (
-                        <div className="mt-3 flex items-center gap-1.5 text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                        <div className="text-text-muted mt-3 flex items-center gap-1.5 text-xs">
                           <MapPin className="h-3.5 w-3.5" />
                           <span>{[fixture.venue, fixture.court].filter(Boolean).join(' · ')}</span>
                         </div>
                       )}
 
                       {fixture.home_team_id && fixture.away_team_id && (
-                        <div className="mt-4 flex flex-wrap gap-2 border-t border-white/[0.07] pt-4">
-                          <Link href={`/t/${slug}/match/${fixture.id}`} className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-3 py-2 text-xs font-semibold hover:bg-white/[0.1]">
+                        <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+                          <Link href={`/t/${slug}/match/${fixture.id}`} className="inline-flex items-center gap-1.5 rounded-lg bg-surface px-3 py-2 text-xs font-semibold hover:bg-surface-muted">
                             <ExternalLink className="h-3.5 w-3.5" /> Match view
                           </Link>
-                          <Link href={`/t/${slug}/match/${fixture.id}/tv`} className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-3 py-2 text-xs font-semibold hover:bg-white/[0.1]">
+                          <Link href={`/t/${slug}/match/${fixture.id}/tv`} className="inline-flex items-center gap-1.5 rounded-lg bg-surface px-3 py-2 text-xs font-semibold hover:bg-surface-muted">
                             <Tv className="h-3.5 w-3.5" /> TV scoreboard
                           </Link>
                         </div>

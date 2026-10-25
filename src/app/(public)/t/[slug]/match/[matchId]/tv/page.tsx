@@ -11,7 +11,7 @@ import { buildTournamentMetadata } from '@/lib/public-tournament-metadata';
  */
 
 import { createClient } from '@/lib/supabase/server';
-import { getTournamentHeader } from '@/lib/tournament-header';
+import { getTeamColors, getTournamentHeader } from '@/lib/tournament-header';
 import { PublicMatchLive } from '@/components/public/PublicMatchLive';
 import type { Metadata } from 'next';
 
@@ -33,11 +33,8 @@ export default async function TVMatchPage({ params }: Props) {
   const tournament = await getTournamentHeader(slug);
   if (!tournament) {
     return (
-      <div
-        className="fixed inset-0 flex items-center justify-center"
-        style={{ background: '#07060e', color: '#f0f0f4' }}
-      >
-        <p className="text-xl font-bold opacity-50">Tournament not found</p>
+      <div data-theme="dark" className="fixed inset-0 flex items-center justify-center bg-background">
+        <p className="text-xl font-bold text-text-muted">Tournament not found</p>
       </div>
     );
   }
@@ -49,20 +46,22 @@ export default async function TVMatchPage({ params }: Props) {
 
   if (error || !matchState) {
     return (
-      <div
-        className="fixed inset-0 flex items-center justify-center"
-        style={{ background: '#07060e', color: '#f0f0f4' }}
-      >
-        <p className="text-xl font-bold opacity-50">Match not available</p>
+      <div data-theme="dark" className="fixed inset-0 flex items-center justify-center bg-background">
+        <p className="text-xl font-bold text-text-muted">Match not available</p>
       </div>
     );
   }
+
+  const teams = matchState as unknown as { home_team: { id: string }; away_team: { id: string } };
+  const colors = await getTeamColors([teams.home_team.id, teams.away_team.id]);
 
   return (
     <PublicMatchLive
       matchId={matchId}
       initialState={matchState as never}
       tvMode
+      homeColor={colors[teams.home_team.id]}
+      awayColor={colors[teams.away_team.id]}
     />
   );
 }

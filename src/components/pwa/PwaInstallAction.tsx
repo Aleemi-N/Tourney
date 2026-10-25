@@ -70,8 +70,8 @@ export function PwaInstallAction({ className = '', onComplete }: { className?: s
       </button>
       {showIosHelp && (
         <div className="fixed inset-0 z-100 flex items-end justify-center bg-black/70 p-3 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="install-tourny-title">
-          <div className="relative w-full max-w-sm rounded-2xl border border-border bg-surface-raised p-5 shadow-2xl">
-            <button type="button" onClick={() => setShowIosHelp(false)} className="absolute right-3 top-3 rounded-lg p-2 text-text-secondary hover:bg-white/5" aria-label="Close install instructions">
+          <div className="relative w-full max-w-sm rounded-2xl border border-border bg-surface-raised p-5 shadow-card">
+            <button type="button" onClick={() => setShowIosHelp(false)} className="absolute right-3 top-3 rounded-lg p-2 text-text-secondary hover:bg-surface-muted" aria-label="Close install instructions">
               <X className="h-5 w-5" />
             </button>
             <h2 id="install-tourny-title" className="pr-10 text-lg font-bold text-text-primary">Install Tourny</h2>

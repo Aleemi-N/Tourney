@@ -69,9 +69,11 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   2. DARK — Application UI tokens
+   2. DARK — Application UI tokens (whole page via <html>, or one subtree such
+      as the TV scoreboard, which is always dark)
    ───────────────────────────────────────────────────────────────────────────── */
-:root[data-theme="dark"] {
+:root[data-theme="dark"],
+[data-theme="dark"] {
   color-scheme: dark;
 
   --background:        #0b1020;
