@@ -41,6 +41,12 @@ services:
       TOURNY_JWT_SECRET: ${JWT_SECRET}
       TOURNY_POSTGREST_URL: http://postgrest:3000
       TOURNY_CORS_ORIGINS: https://${APP_DOMAIN}
+      # Password-recovery email. Leave SMTP_HOST empty to run without email (recovery then does nothing).
+      TOURNY_SMTP_HOST: ${SMTP_HOST:-}
+      TOURNY_SMTP_PORT: ${SMTP_PORT:-587}
+      TOURNY_SMTP_USER: ${SMTP_USER:-}
+      TOURNY_SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      TOURNY_MAIL_FROM: ${MAIL_FROM:-no-reply@${APP_DOMAIN}}
     volumes:
       - storage:/data/storage
 

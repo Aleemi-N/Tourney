@@ -58,8 +58,15 @@ public class AuthService {
     private final SecureRandom random = new SecureRandom();
     private final Map<String, List<Instant>> failures = new ConcurrentHashMap<>();
 
-    AuthService(JdbcClient jdbc, PasswordEncoder encoder, JwtEncoder jwtEncoder, ObjectMapper mapper,
+    private final RecoveryMailer mailer;
+    private final List<String> siteOrigins;
+    private final Map<String, List<Instant>> recoveries = new ConcurrentHashMap<>();
+
+    AuthService(JdbcClient jdbc, PasswordEncoder encoder, JwtEncoder jwtEncoder, ObjectMapper mapper, RecoveryMailer mailer,
+                @Value("${tourny.cors.origins:}") List<String> siteOrigins,
                 @Value("${tourny.jwt.ttl-seconds}") long ttlSeconds) {
+        this.mailer = mailer;
+        this.siteOrigins = siteOrigins.stream().map(String::trim).filter(o -> !o.isEmpty()).toList();
         this.jdbc = jdbc;
         this.encoder = encoder;
         this.jwtEncoder = jwtEncoder;
@@ -121,6 +128,63 @@ public class AuthService {
             throw new AuthException(422, "user_already_exists", "User already registered");
         }
         return session(findUser("id = :v::uuid", id).orElseThrow());
+    }
+
+    /**
+     * Starts a password reset. The response never reveals whether the email has an account. The link
+     * goes to a site origin we know (redirect_to is checked against tourny.cors.origins) and carries a
+     * one-time code that only the browser holding the PKCE verifier can exchange.
+     */
+    @Transactional
+    public void recover(String email, String codeChallenge, String method, String redirectTo) {
+        String key = email.trim().toLowerCase();
+        Instant cutoff = Instant.now().minus(Duration.ofHours(1));
+        List<Instant> recent = recoveries.getOrDefault(key, List.of()).stream().filter(t -> t.isAfter(cutoff)).toList();
+        if (recent.size() >= 3) throw new AuthException(429, "over_email_send_rate_limit", "Too many reset requests. Try again later.");
+        var attempts = new java.util.ArrayList<>(recent);
+        attempts.add(Instant.now());
+        recoveries.put(key, attempts);
+
+        Optional<Map<String, Object>> user = findUser("lower(email) = :v", key);
+        if (user.isEmpty() || codeChallenge == null || codeChallenge.isBlank() || siteOrigins.isEmpty()) return;
+        String normalizedMethod = "plain".equalsIgnoreCase(method) ? "plain" : "s256";
+
+        byte[] raw = new byte[32];
+        random.nextBytes(raw);
+        String code = Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
+        jdbc.sql("INSERT INTO public.api_auth_codes (user_id, code_hash, code_challenge, code_challenge_method, expires_at) VALUES (:u::uuid, :h, :c, :m, :e)")
+                .param("u", user.get().get("id")).param("h", sha256(code)).param("c", codeChallenge).param("m", normalizedMethod)
+                .param("e", java.sql.Timestamp.from(Instant.now().plus(Duration.ofHours(1)))).update();
+        String base = safeRedirect(redirectTo);
+        mailer.sendRecoveryLink(key, base + (base.contains("?") ? "&" : "?") + "code=" + code);
+    }
+
+    /** Completes the PKCE exchange: the code from the email plus the verifier gives a session. */
+    @Transactional(noRollbackFor = AuthException.class)
+    public Map<String, Object> exchangeCode(String code, String verifier) {
+        Optional<Map<String, Object>> row = jdbc.sql("SELECT id, user_id::text AS user_id, code_challenge, code_challenge_method, expires_at, used_at FROM public.api_auth_codes WHERE code_hash = :h FOR UPDATE")
+                .param("h", sha256(code)).query().listOfRows().stream().findFirst();
+        if (row.isEmpty() || row.get().get("used_at") != null
+                || ((java.sql.Timestamp) row.get().get("expires_at")).toInstant().isBefore(Instant.now())) {
+            throw new AuthException(400, "flow_state_not_found", "Invalid or expired code");
+        }
+        jdbc.sql("UPDATE public.api_auth_codes SET used_at = now() WHERE id = :i").param("i", row.get().get("id")).update(); // single use, even if the verifier is wrong
+        String expected = (String) row.get().get("code_challenge");
+        String actual = "plain".equals(row.get().get("code_challenge_method")) ? verifier
+                : Base64.getUrlEncoder().withoutPadding().encodeToString(sha256Bytes(verifier));
+        if (!java.security.MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), actual.getBytes(StandardCharsets.UTF_8))) {
+            throw new AuthException(400, "bad_code_verifier", "Invalid code verifier");
+        }
+        return session(findUser("id = :v::uuid", (String) row.get().get("user_id")).orElseThrow(() -> new AuthException(400, "user_not_found", "User not found")));
+    }
+
+    private String safeRedirect(String redirectTo) {
+        if (redirectTo != null) {
+            for (String origin : siteOrigins) {
+                if (redirectTo.equals(origin) || redirectTo.startsWith(origin + "/")) return redirectTo;
+            }
+        }
+        return siteOrigins.get(0) + "/auth/callback";
     }
 
     @Transactional
@@ -211,6 +275,14 @@ public class AuthService {
 
     private Object parse(String json) {
         return json == null ? Map.of() : mapper.readValue(json, Object.class);
+    }
+
+    private static byte[] sha256Bytes(String value) {
+        try {
+            return MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static String sha256(String value) {

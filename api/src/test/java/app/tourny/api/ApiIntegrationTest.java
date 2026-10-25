@@ -23,6 +23,7 @@ import org.springframework.test.context.DynamicPropertySource;
  * Runs against the local Supabase database seeded by supabase/seed.sql (supabase db reset --local);
  * skipped when that database is not reachable.
  */
+@org.springframework.context.annotation.Import(ApiIntegrationTest.CapturingMailer.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "server.error.include-message=always")
 class ApiIntegrationTest {
 
@@ -272,5 +273,53 @@ class ApiIntegrationTest {
                 .header("Content-Type", "image/png").header("Authorization", "Bearer " + player)
                 .POST(HttpRequest.BodyPublishers.ofString("<html>nope</html>")).build();
         assertEquals(400, HTTP.send(notImage, HttpResponse.BodyHandlers.ofString()).statusCode());
+    }
+
+    /** Captures recovery links instead of sending email. */
+    @org.springframework.boot.test.context.TestConfiguration
+    static class CapturingMailer {
+        static final java.util.List<String[]> SENT = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+        @org.springframework.context.annotation.Bean
+        @org.springframework.context.annotation.Primary
+        app.tourny.api.security.RecoveryMailer capturing() {
+            return (email, link) -> SENT.add(new String[] {email, link});
+        }
+    }
+
+    private static String challenge(String verifier) throws Exception {
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(java.security.MessageDigest.getInstance("SHA-256").digest(verifier.getBytes()));
+    }
+
+    private String requestRecovery(String email, String verifier, String redirectTo) throws Exception {
+        int before = CapturingMailer.SENT.size();
+        var response = post("/auth/v1/recover" + (redirectTo == null ? "" : "?redirect_to=" + java.net.URLEncoder.encode(redirectTo, "UTF-8")),
+                "{\"email\":\"" + email + "\",\"code_challenge\":\"" + challenge(verifier) + "\",\"code_challenge_method\":\"s256\"}", null);
+        assertEquals(200, response.statusCode(), response.body());
+        return CapturingMailer.SENT.size() > before ? CapturingMailer.SENT.get(CapturingMailer.SENT.size() - 1)[1] : null;
+    }
+
+    @Test
+    void passwordRecoveryUsesAOneTimePkceCode() throws Exception {
+        String verifier = "verifier-" + "x".repeat(50);
+        String link = requestRecovery("player@tourny.local", verifier, "http://localhost:3100/auth/callback?next=/reset-password");
+        assertTrue(link.startsWith("http://localhost:3100/auth/callback?next=/reset-password&code="), link);
+        String code = link.substring(link.indexOf("code=") + 5);
+
+        // A wrong verifier fails and burns the code.
+        assertEquals(400, post("/auth/v1/token?grant_type=pkce", "{\"auth_code\":\"" + code + "\",\"code_verifier\":\"wrong\"}", null).statusCode());
+        assertEquals(400, post("/auth/v1/token?grant_type=pkce", "{\"auth_code\":\"" + code + "\",\"code_verifier\":\"" + verifier + "\"}", null).statusCode());
+
+        String second = requestRecovery("player@tourny.local", verifier, "http://localhost:3100/auth/callback");
+        String code2 = second.substring(second.indexOf("code=") + 5);
+        var session = post("/auth/v1/token?grant_type=pkce", "{\"auth_code\":\"" + code2 + "\",\"code_verifier\":\"" + verifier + "\"}", null);
+        assertEquals(200, session.statusCode(), session.body());
+        assertEquals("player@tourny.local", field(session.body(), "email"));
+        assertEquals(400, post("/auth/v1/token?grant_type=pkce", "{\"auth_code\":\"" + code2 + "\",\"code_verifier\":\"" + verifier + "\"}", null).statusCode()); // single use
+
+        // A link never points at a site we do not know, and unknown emails get the same answer but no mail.
+        String evil = requestRecovery("scorer@tourny.local", verifier, "https://evil.example/steal");
+        assertTrue(evil.startsWith("http://localhost:3000/auth/callback?code=") || evil.startsWith("http://localhost:3100/auth/callback?code=") || evil.startsWith("http://localhost:8081/auth/callback?code="), evil);
+        assertTrue(requestRecovery("nobody@tourny.local", verifier, null) == null);
     }
 }

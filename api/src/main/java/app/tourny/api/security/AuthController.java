@@ -1,8 +1,6 @@
 package app.tourny.api.security;
 
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -23,8 +21,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice(assignableTypes = AuthController.class)
 class AuthController {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
-
     private final AuthService auth;
 
     AuthController(AuthService auth) {
@@ -36,6 +32,7 @@ class AuthController {
         return switch (grantType) {
             case "password" -> auth.signInWithPassword(text(body, "email"), text(body, "password"));
             case "refresh_token" -> auth.refresh(text(body, "refresh_token"));
+            case "pkce" -> auth.exchangeCode(text(body, "auth_code"), text(body, "code_verifier"));
             default -> throw new AuthService.AuthException(400, "unsupported_grant_type", "Unsupported grant_type");
         };
     }
@@ -67,9 +64,8 @@ class AuthController {
 
     /** Always 200, like GoTrue, so the response never reveals whether an email has an account. */
     @PostMapping("/auth/v1/recover")
-    Map<String, Object> recover(@RequestBody Map<String, Object> body) {
-        // ponytail: no mail transport yet; wire SMTP and a one-time recovery token before cutover.
-        log.warn("Password recovery requested but no mail transport is configured");
+    Map<String, Object> recover(@RequestBody Map<String, Object> body, @RequestParam(name = "redirect_to", required = false) String redirectTo) {
+        auth.recover(text(body, "email"), (String) body.get("code_challenge"), (String) body.get("code_challenge_method"), redirectTo);
         return Map.of();
     }
 
