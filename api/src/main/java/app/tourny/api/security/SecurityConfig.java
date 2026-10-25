@@ -55,7 +55,7 @@ class SecurityConfig {
         CorsConfiguration cors = new CorsConfiguration();
         cors.setAllowedOrigins(origins.stream().filter(o -> !o.isBlank()).toList());
         cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
-        cors.setAllowedHeaders(List.of("authorization", "apikey", "content-type", "x-client-info", "x-supabase-api-version", "prefer", "range", "accept-profile", "content-profile", "accept"));
+        cors.setAllowedHeaders(List.of("authorization", "apikey", "content-type", "x-client-info", "x-supabase-api-version", "prefer", "range", "accept-profile", "content-profile", "accept", "x-upsert", "cache-control", "if-none-match"));
         cors.setExposedHeaders(List.of("content-range", "content-type", "preference-applied"));
         cors.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

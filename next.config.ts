@@ -20,6 +20,9 @@ import type { NextConfig } from 'next';
  *     ],
  *   },
  */
+// The API (or Supabase) that serves storage objects, taken from the same variable the clients use.
+const apiUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL) : null;
+
 const nextConfig: NextConfig = {
   // Strict mode helps catch potential issues early in development.
   reactStrictMode: true,
@@ -38,6 +41,14 @@ const nextConfig: NextConfig = {
         port: '54321',
         pathname: '/storage/v1/object/public/**',
       },
+      ...(apiUrl
+        ? [{
+            protocol: apiUrl.protocol.replace(':', '') as 'http' | 'https',
+            hostname: apiUrl.hostname,
+            ...(apiUrl.port ? { port: apiUrl.port } : {}),
+            pathname: '/storage/v1/object/public/**',
+          }]
+        : []),
     ],
   },
 
