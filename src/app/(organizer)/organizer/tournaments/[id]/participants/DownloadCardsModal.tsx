@@ -4,15 +4,16 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Download, Loader2, CheckCircle, Clock, Users } from 'lucide-react';
-import { downloadAllPlayerCardsZip, downloadAllPlayerPhotosZip } from '@/lib/generate-player-card';
+import { downloadAllPlayerCardsZip, downloadAllPlayerPhotosZip, type CardAuctionCategory, type CardSourcePlayer } from '@/lib/generate-player-card';
+import type { createClient } from '@/lib/supabase/client';
 import { ImageIcon } from 'lucide-react';
 
 interface DownloadCardsModalProps {
   open: boolean;
   onClose: () => void;
-  players: any[];
-  auctionCategories: any[];
-  supabase: any;
+  players: CardSourcePlayer[];
+  auctionCategories: CardAuctionCategory[];
+  supabase: ReturnType<typeof createClient>;
 }
 
 export function DownloadCardsModal({
@@ -34,8 +35,11 @@ export function DownloadCardsModal({
   const totalCount = players.length;
 
   // photo counts (only players with an actual photo_path)
-  const hasPhoto = (p: any) => !!(p.photo_path || p.player_profiles?.photo_path || p.profile?.photo_path);
-  const photoCount = (subset: any[]) => subset.filter(hasPhoto).length;
+  const hasPhoto = (p: CardSourcePlayer) => {
+    const joined = Array.isArray(p.player_profiles) ? p.player_profiles[0] : p.player_profiles;
+    return !!(p.photo_path || joined?.photo_path || p.profile?.photo_path);
+  };
+  const photoCount = (subset: CardSourcePlayer[]) => subset.filter(hasPhoto).length;
 
   const getTargetPlayers = () => {
     if (selectedFilter === 'APPROVED') {
@@ -67,14 +71,14 @@ export function DownloadCardsModal({
           (current, total) => setProgress({ current, total })
         );
       } else {
-        let orderMap: Record<string, number> = {};
+        const orderMap: Record<string, number> = {};
         if (targetPlayers.length > 0) {
-          const tId = targetPlayers[0].tournament_id;
+          const tId = targetPlayers[0].tournament_id ?? '';
           const { data: auction } = await supabase.from('auctions').select('id').eq('tournament_id', tId).order('created_at', { ascending: false }).limit(1).single();
           if (auction) {
             const { data: aPlayers } = await supabase.from('auction_players').select('player_id, auction_order').eq('auction_id', auction.id);
             if (aPlayers) {
-              aPlayers.forEach((ap: any) => { orderMap[ap.player_id] = ap.auction_order; });
+              aPlayers.forEach((ap) => { orderMap[ap.player_id] = ap.auction_order; });
             }
           }
         }
@@ -87,9 +91,9 @@ export function DownloadCardsModal({
         );
       }
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to generate ZIP:', err);
-      setError(err?.message || 'Failed to generate ZIP archive. Please try again.');
+      setError((err instanceof Error && err.message) || 'Failed to generate ZIP archive. Please try again.');
     } finally {
       setIsDownloading(false);
       setProgress(null);

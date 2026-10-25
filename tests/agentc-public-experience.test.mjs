@@ -61,9 +61,8 @@ test('PublicTournamentFrame is a Client Component (usePathname active-tab)', () 
 });
 
 test('PublicTournamentFrame shows LIVE badge when tournament status is LIVE', () => {
-  assert.match(frame, /isLive/);
-  assert.match(frame, /LIVE/);
-  assert.match(frame, /Radio/);
+  assert.match(frame, /status === 'LIVE'/);
+  assert.match(frame, /StatusPill status="LIVE"/);
 });
 
 test('PublicTournamentFrame logo display supported', () => {
@@ -437,7 +436,7 @@ test('Tournament home page has Explore navigation tiles for LIVE/COMPLETED statu
 });
 
 test('Tournament home page has Live Now CTA for active tournaments', () => {
-  assert.match(home, /Live Now/);
+  assert.match(home, /Live now/i);
   assert.match(home, /live/);
   assert.match(home, /PREPARATION|LIVE/);
 });

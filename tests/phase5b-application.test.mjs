@@ -10,7 +10,7 @@ const shell = read('src/components/organizer/DashboardShell.tsx');
 const rules = read('src/lib/lot-draw.ts');
 
 test('sidebar is one conditional Lot Draw item shared by desktop and mobile navigation', () => {
-  assert.equal((shell.match(/name: 'Lot Draw'/g) ?? []).length, 1);
+  assert.equal((shell.match(/name: 'Lot draw'/gi) ?? []).length, 1);
   assert.match(shell, /lotEnabledTournamentIds\.includes/);
   assert.doesNotMatch(shell, /name: 'Icon Lot'|name: 'Setter Lot'|name: 'Live'/);
 });

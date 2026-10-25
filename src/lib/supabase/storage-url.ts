@@ -1,4 +1,4 @@
-type PublicStorageClient = {
+export type PublicStorageClient = {
   storage: {
     from: (bucket: string) => {
       getPublicUrl: (path: string) => { data: { publicUrl: string } };

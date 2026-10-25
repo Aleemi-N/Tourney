@@ -1,17 +1,33 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Settings, Save, AlertTriangle } from 'lucide-react';
+import type { createClient } from '@/lib/supabase/client';
+import type { QueuePlayer } from '@/lib/organizer/organizer-auction';
 
 interface ConfigureQueueModalProps {
   open: boolean;
   onClose: () => void;
-  queue: any[];
+  queue: QueuePlayer[];
   playerNameMap: Record<string, string>;
-  supabase: any;
+  supabase: ReturnType<typeof createClient>;
   onSaved: () => void;
+}
+
+type QueueItem = { id: string; order: number | ''; name: string; basePrice: number; category: string | null };
+
+function toItems(queue: QueuePlayer[], playerNameMap: Record<string, string>): QueueItem[] {
+  return [...queue]
+    .sort((a, b) => a.auction_order - b.auction_order)
+    .map((p) => ({
+      id: p.auction_player_id,
+      order: p.auction_order,
+      name: playerNameMap[p.player_id] || 'Unknown',
+      basePrice: p.base_price,
+      category: p.category_code,
+    }));
 }
 
 export function ConfigureQueueModal({
@@ -22,22 +38,10 @@ export function ConfigureQueueModal({
   supabase,
   onSaved,
 }: ConfigureQueueModalProps) {
-  const [items, setItems] = useState<any[]>([]);
+  // The parent mounts this modal only while it is open, so the queue is read once per opening.
+  const [items, setItems] = useState<QueueItem[]>(() => toItems(queue, playerNameMap));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (open) {
-      const sorted = [...queue].sort((a, b) => a.auction_order - b.auction_order);
-      setItems(sorted.map(p => ({
-        id: p.auction_player_id,
-        order: p.auction_order,
-        name: playerNameMap[p.player_id] || 'Unknown',
-        basePrice: p.base_price,
-        category: p.category_code
-      })));
-    }
-  }, [open, queue, playerNameMap]);
 
   const handleOrderChange = (id: string, value: string) => {
     const newOrder = parseInt(value, 10);
@@ -68,14 +72,14 @@ export function ConfigureQueueModal({
       const results = await Promise.all(promises);
       const failed = results.find(r => r.error);
       
-      if (failed) {
+      if (failed?.error) {
         throw new Error(failed.error.message);
       }
       
       onSaved();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update numbers. Check for duplicates!');
+    } catch (err) {
+      setError((err instanceof Error && err.message) || 'Failed to update numbers. Check for duplicates!');
     } finally {
       setBusy(false);
     }

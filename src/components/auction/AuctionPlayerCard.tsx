@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { User, Hand, Award, Phone, Gavel, Shield } from 'lucide-react';
 import Image from 'next/image';
 import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
+import type { createClient } from '@/lib/supabase/client';
 import { formatVolleyballPosition } from '@/lib/volleyball-positions';
 import { PlayerDetailModal, PlayerDetailData } from '@/components/player/PlayerDetailModal';
 
@@ -44,7 +45,7 @@ export interface AuctionPlayerCardProps {
     };
   } | null;
   recentBidsCount?: number;
-  supabase: any;
+  supabase: ReturnType<typeof createClient>;
   isFullscreen?: boolean;
   tournamentName?: string;
   tournamentLogoUrl?: string | null;

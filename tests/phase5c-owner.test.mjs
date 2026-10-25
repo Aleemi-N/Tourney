@@ -23,7 +23,7 @@ test('owner context is active-owner and team scoped for multiple teams', () => {
 
 test('owner dashboard and squad expose the intended owner workflow', () => {
     assert.match(ownerRoot, /redirect\('\/owner\/dashboard'\)/);
-    for (const label of ['Overview', 'My Squad', 'Live Auction', 'Fixtures', 'Results']) assert.match(shell, new RegExp(label));
+    for (const label of ['Overview', 'My Squad', 'Live Auction', 'Fixtures', 'Results']) assert.match(shell, new RegExp(label, 'i'));
     assert.match(squad, /team_players/);
     assert.match(squad, /status', 'ACTIVE'/);
     assert.match(squad, /acquisition_type/);

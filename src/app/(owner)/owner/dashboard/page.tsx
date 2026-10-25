@@ -74,7 +74,7 @@ export default async function OwnerDashboardPage() {
                                         </div>
                                         <h3 className="text-xl font-semibold text-text-primary mb-2">No Active Teams</h3>
                                         <p className="max-w-md text-sm text-text-secondary">
-                                            You don't have any active teams yet. Find a tournament to join or wait for your pending applications to be approved.
+                                            You don&apos;t have any active teams yet. Find a tournament to join or wait for your pending applications to be approved.
                                         </p>
                                     </div>
                                 ) : (

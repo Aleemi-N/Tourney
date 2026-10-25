@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
+import { resolvePublicStorageUrl, type PublicStorageClient } from '@/lib/supabase/storage-url';
 import { formatVolleyballPosition } from '@/lib/volleyball-positions';
 
 export interface PlayerCardData {
@@ -27,6 +27,22 @@ export interface PlayerCardData {
   bidCount?: number;
 }
 
+type CardProfile = Partial<PlayerCardData> & { id?: string };
+
+/** A registration row with its profile joined (object or one-element array), or a bare profile. */
+export type CardSourcePlayer = CardProfile & {
+  tournament_id?: string;
+  player_profiles?: CardProfile | CardProfile[] | null;
+  profile?: CardProfile | null;
+};
+
+export type CardAuctionCategory = { id: string; code?: string | null; base_price?: number | null };
+
+function cardProfile(raw: CardSourcePlayer): CardProfile {
+  const joined = Array.isArray(raw.player_profiles) ? raw.player_profiles[0] : raw.player_profiles;
+  return joined || raw.profile || raw;
+}
+
 /**
  * Draws an 8-point starburst background path for placeholder cards.
  */
@@ -48,7 +64,7 @@ function drawStarburst(ctx: CanvasRenderingContext2D, cx: number, cy: number, ou
  */
 export async function generatePlayerCardCanvas(
   player: PlayerCardData,
-  supabase: any
+  supabase: PublicStorageClient
 ): Promise<HTMLCanvasElement> {
   const canvas = document.createElement('canvas');
   canvas.width = 1200;
@@ -422,7 +438,7 @@ export async function generatePlayerCardCanvas(
  */
 export async function downloadSinglePlayerCardPNG(
   player: PlayerCardData,
-  supabase: any
+  supabase: PublicStorageClient
 ): Promise<void> {
   const canvas = await generatePlayerCardCanvas(player, supabase);
   const dataUrl = canvas.toDataURL('image/png');
@@ -437,9 +453,9 @@ export async function downloadSinglePlayerCardPNG(
  * Downloads ALL player auction cards as a single bundled ZIP file.
  */
 export async function downloadAllPlayerCardsZip(
-  players: any[],
-  auctionCategories: any[],
-  supabase: any,
+  players: CardSourcePlayer[],
+  auctionCategories: CardAuctionCategory[],
+  supabase: PublicStorageClient,
   onProgress?: (current: number, total: number) => void,
   auctionOrderMap?: Record<string, number>
 ): Promise<void> {
@@ -448,7 +464,7 @@ export async function downloadAllPlayerCardsZip(
 
   for (let i = 0; i < players.length; i++) {
     const rawPlayer = players[i];
-    const profile = rawPlayer.player_profiles || rawPlayer.profile || rawPlayer;
+    const profile = cardProfile(rawPlayer);
     const assignedCat = auctionCategories.find(
       (c) => c.id === rawPlayer.auction_price_category_id
     );
@@ -506,8 +522,8 @@ export async function downloadAllPlayerCardsZip(
  * Players without a photo_path are skipped silently.
  */
 export async function downloadAllPlayerPhotosZip(
-  players: any[],
-  supabase: any,
+  players: CardSourcePlayer[],
+  supabase: PublicStorageClient,
   onProgress?: (current: number, total: number) => void
 ): Promise<void> {
   const zip = new JSZip();
@@ -519,11 +535,7 @@ export async function downloadAllPlayerPhotosZip(
   for (let i = 0; i < players.length; i++) {
     const rawPlayer = players[i];
 
-    // player_profiles can be an array (Supabase join) or an object — handle both
-    const profilesRaw = rawPlayer.player_profiles;
-    const profile = Array.isArray(profilesRaw)
-      ? profilesRaw[0]
-      : (profilesRaw || rawPlayer.profile || null);
+    const profile = cardProfile(rawPlayer);
 
     const photoPath: string | null | undefined =
       profile?.photo_path ?? rawPlayer.photo_path ?? null;
