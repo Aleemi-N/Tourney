@@ -27,6 +27,8 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
     const place = formData.get('place') as string;
     const phone = formData.get('phone') as string;
     const email = formData.get('email') as string;
+    const primaryColor = formData.get('primaryColor') as string;
+    const secondaryColor = formData.get('secondaryColor') as string;
 
     if (!logoUrl) {
       setError('Team Logo is required.');
@@ -43,7 +45,9 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
         p_logo_path: logoUrl || undefined,
         p_place: place || undefined,
         p_phone: phone || undefined,
-        p_email: email || undefined
+        p_email: email || undefined,
+        p_primary_color: primaryColor,
+        p_secondary_color: secondaryColor
       });
 
       if (rpcError) throw rpcError;
@@ -120,6 +124,21 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId }: { userId: st
             className={fieldClass}
           />
         </div>
+
+        <fieldset className="flex flex-col gap-1.5 md:col-span-2">
+          <legend className={labelClass}>Team Colours *</legend>
+          <div className="mt-1.5 flex flex-wrap gap-x-6 gap-y-3">
+            <label className="flex items-center gap-3 text-sm text-text-primary">
+              <input type="color" name="primaryColor" defaultValue="#4f46e5" required className="h-11 w-14 cursor-pointer rounded-lg border border-border bg-surface-muted p-1" />
+              Main colour
+            </label>
+            <label className="flex items-center gap-3 text-sm text-text-primary">
+              <input type="color" name="secondaryColor" defaultValue="#ffffff" required className="h-11 w-14 cursor-pointer rounded-lg border border-border bg-surface-muted p-1" />
+              Second colour
+            </label>
+          </div>
+          <p className="ml-1 text-xs text-text-muted">Shown on the scoreboard, fixtures and team pages.</p>
+        </fieldset>
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="email" className={labelClass}>Contact Email</label>

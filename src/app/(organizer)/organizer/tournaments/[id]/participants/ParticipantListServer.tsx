@@ -51,6 +51,8 @@ export async function ParticipantListServer({
         proposed_team_name,
         team_short_name,
         logo_path,
+        primary_color,
+        secondary_color,
         place,
         status,
         profiles:user_id (

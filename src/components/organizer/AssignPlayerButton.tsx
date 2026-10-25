@@ -35,7 +35,7 @@ export function AssignPlayerButton({
                 className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-wider transition ${
                     isFull
                         ? 'cursor-not-allowed border border-border bg-surface text-text-muted'
-                        : 'border border-primary/30 bg-primary text-primary hover:bg-primary hover:text-primary-foreground'
+                        : 'border border-primary/30 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground'
                 }`}
                 title={isFull ? 'Squad full (Maximum squad limit reached)' : 'Manually assign an eligible player'}
             >

@@ -1900,7 +1900,9 @@ export type Database = {
           logo_path: string | null
           phone: string | null
           place: string | null
+          primary_color: string | null
           proposed_team_name: string
+          secondary_color: string | null
           review_notes: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -3377,6 +3379,10 @@ export type Database = {
         Args: { p_name: string; p_team_id: string }
         Returns: Json
       }
+      set_team_colors: {
+        Args: { p_primary_color: string; p_secondary_color?: string | null; p_team_id: string }
+        Returns: Json
+      }
       reopen_player_registration: {
         Args: { p_reason?: string; p_registration_id: string }
         Returns: Json
@@ -3488,7 +3494,9 @@ export type Database = {
           p_logo_path?: string
           p_phone?: string
           p_place?: string
+          p_primary_color?: string
           p_proposed_team_name: string
+          p_secondary_color?: string
           p_team_short_name?: string
           p_tournament_id: string
         }

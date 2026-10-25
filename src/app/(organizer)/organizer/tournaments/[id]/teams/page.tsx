@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { AssignPlayerButton } from '@/components/organizer/AssignPlayerButton';
 import type { EligiblePlayer } from '@/components/organizer/AssignPlayerModal';
-import { TeamRenameForm } from '@/components/organizer/TeamRenameForm';
+import { TeamColorsForm, TeamRenameForm } from '@/components/organizer/TeamRenameForm';
 import { OrganizerTeamsSquadRoster, OrganizerSquadPlayer } from '@/components/organizer/OrganizerTeamsSquadRoster';
 
 export const metadata: Metadata = {
@@ -35,7 +35,7 @@ export default async function OrganizerTeamsPage({
     ] = await Promise.all([
         supabase.from('tournaments').select('id, name, status').eq('id', id).single(),
         supabase.from('tournament_settings').select('min_squad_size, max_squad_size, auction_starting_purse').eq('tournament_id', id).single(),
-        supabase.from('teams').select('id, name, short_name, logo_path, status').eq('tournament_id', id).order('name'),
+        supabase.from('teams').select('id, name, short_name, logo_path, status, primary_color, secondary_color').eq('tournament_id', id).order('name'),
         auction ? supabase.from('auction_team_wallets').select('team_id, starting_balance, spent_amount, remaining_balance').eq('auction_id', auction.id) : Promise.resolve({ data: [] }),
         supabase.from('team_players').select('id, team_id, player_id, acquisition_type, acquisition_amount, player_profiles(id, display_name, photo_path, primary_position, secondary_position, place, height_cm, phone, date_of_birth, playing_history, jersey_name, jersey_number, jersey_size)').eq('tournament_id', id).eq('status', 'ACTIVE'),
         auction ? supabase.from('auction_sales').select('team_id, auction_players!inner(player_id, attempt_number)') : Promise.resolve({ data: [] }),
@@ -147,6 +147,7 @@ export default async function OrganizerTeamsPage({
                                 <div>
                                     <div className="flex flex-wrap items-center gap-3">
                                         <TeamRenameForm teamId={team.id} currentName={team.name} />
+                                        <TeamColorsForm teamId={team.id} primaryColor={team.primary_color} secondaryColor={team.secondary_color} />
                                         <AssignPlayerButton
                                             tournamentId={id}
                                             teamId={team.id}

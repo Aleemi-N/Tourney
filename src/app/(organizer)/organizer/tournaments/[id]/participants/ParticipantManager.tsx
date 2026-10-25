@@ -763,6 +763,15 @@ export function ParticipantManager({
                       <h3 className="font-bold text-lg text-text-primary dark:text-text-primary truncate">
                         {o.proposed_team_name}
                       </h3>
+                      {o.primary_color ? (
+                        <p className="mt-1 flex items-center gap-2 text-sm text-text-secondary">
+                          <span className="flex overflow-hidden rounded-full border border-border" aria-hidden="true">
+                            <span className="h-4 w-4" style={{ backgroundColor: o.primary_color }} />
+                            {o.secondary_color ? <span className="h-4 w-4" style={{ backgroundColor: o.secondary_color }} /> : null}
+                          </span>
+                          Team colours
+                        </p>
+                      ) : null}
                       <div className="text-sm text-text-muted dark:text-text-secondary mt-1 flex flex-col gap-0.5">
                         {o.profiles?.full_name && (
                           <span>Applicant: {o.profiles.full_name}</span>
