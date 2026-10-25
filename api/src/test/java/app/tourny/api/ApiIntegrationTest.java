@@ -23,7 +23,7 @@ import org.springframework.test.context.DynamicPropertySource;
  * Runs against the local Supabase database seeded by supabase/seed.sql (supabase db reset --local);
  * skipped when that database is not reachable.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "server.error.include-message=always")
 class ApiIntegrationTest {
 
     private static final HttpClient HTTP = HttpClient.newHttpClient();
@@ -168,5 +168,54 @@ class ApiIntegrationTest {
         // The profile row comes from the existing handle_new_user trigger.
         var profile = get("/rest/v1/profiles?select=full_name&id=eq." + field(login.body(), "id"), field(login.body(), "access_token"));
         assertTrue(profile.body().contains("Sign Up Test"), profile.body());
+    }
+
+    // A 1x1 PNG.
+    private static final byte[] PNG = java.util.Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==");
+
+    private HttpResponse<String> upload(String path, byte[] bytes, String filename, String token, String method) throws Exception {
+        String boundary = "----tourny" + System.nanoTime();
+        var out = new java.io.ByteArrayOutputStream();
+        out.write(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"cacheControl\"\r\n\r\n3600\r\n").getBytes());
+        out.write(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"\"; filename=\"" + filename + "\"\r\nContent-Type: image/png\r\n\r\n").getBytes());
+        out.write(bytes);
+        out.write(("\r\n--" + boundary + "--\r\n").getBytes());
+        var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary).header("Authorization", "Bearer " + token)
+                .method(method, HttpRequest.BodyPublishers.ofByteArray(out.toByteArray())).build();
+        return HTTP.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    @Test
+    void storageFollowsTheOldBucketRules() throws Exception {
+        String player = login("player@tourny.local");
+        String playerId = field(post("/auth/v1/token?grant_type=password", "{\"email\":\"player@tourny.local\",\"password\":\"" + password + "\"}", null).body(), "id");
+        String name = playerId + "/" + System.nanoTime() + ".png";
+
+        var created = upload("/storage/v1/object/avatars/" + name, PNG, "a.png", player, "POST");
+        assertEquals(200, created.statusCode(), created.body());
+        var read = HTTP.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/v1/object/public/avatars/" + name)).build(), HttpResponse.BodyHandlers.ofByteArray());
+        assertEquals(200, read.statusCode());
+        assertEquals("image/png", read.headers().firstValue("content-type").orElse(""));
+        assertTrue(java.util.Arrays.equals(PNG, read.body()));
+
+        assertEquals(409, upload("/storage/v1/object/avatars/" + name, PNG, "a.png", player, "POST").statusCode()); // no silent overwrite
+        assertEquals(200, upload("/storage/v1/object/avatars/" + name, PNG, "a.png", player, "PUT").statusCode());
+        assertEquals(403, upload("/storage/v1/object/avatars/90000000-0000-0000-0000-000000000001/x.png", PNG, "x.png", player, "POST").statusCode()); // someone else's folder
+        assertEquals(400, upload("/storage/v1/object/avatars/" + playerId + "/fake.png", "<html>not an image</html>".getBytes(), "fake.png", player, "POST").statusCode());
+        assertTrue(upload("/storage/v1/object/avatars/" + playerId + "/..%2Fx.png", PNG, "x.png", player, "POST").statusCode() >= 400); // traversal
+        assertEquals(403, upload("/storage/v1/object/player-photos/" + playerId + "/x.png", PNG, "x.png", player, "POST").statusCode()); // read-only bucket
+
+        // An organizer writes into their tournament's logo folder; a player may not.
+        String organizer = login("organizer@tourny.local");
+        String logo = "/storage/v1/object/logos/90200000-0000-0000-0000-000000000001/" + System.nanoTime() + ".png";
+        assertEquals(200, upload(logo, PNG, "l.png", organizer, "POST").statusCode());
+        assertEquals(403, upload(logo + "x", PNG, "l.png", player, "POST").statusCode());
+
+        var removed = HTTP.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/v1/object/avatars"))
+                .header("Authorization", "Bearer " + player).header("Content-Type", "application/json")
+                .method("DELETE", HttpRequest.BodyPublishers.ofString("{\"prefixes\":[\"" + name + "\"]}")).build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, removed.statusCode(), removed.body());
+        assertEquals(404, HTTP.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/v1/object/public/avatars/" + name)).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
     }
 }

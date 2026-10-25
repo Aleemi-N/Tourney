@@ -50,3 +50,4 @@ screenshots/
 # Sensitive local production recovery material
 /backups/production/
 api/target/
+api/storage-data/
