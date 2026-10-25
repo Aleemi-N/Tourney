@@ -1,0 +1,16 @@
+# Tourny mobile (Expo)
+
+Player, scorer and public screens on the same API as the web app (the Spring Boot API in `../api` speaks the supabase-js protocol, so only the address changes).
+
+```bash
+cp .env.example .env     # EXPO_PUBLIC_API_URL, EXPO_PUBLIC_API_KEY (the deployment's ANON_KEY)
+npm install
+npx expo start           # press a / i, or scan the QR code with Expo Go
+npx expo start --web     # browser build, handy for checking against the API
+```
+
+- Android emulator: use `http://10.0.2.2:8080` for the API; a physical phone needs the computer's LAN address (and that origin does not need CORS, only browsers do).
+- Screens: Tournaments (table, fixtures, results, live match), My matches (scorer), Account/sign-in, and the scorer screen (toss, points, undo, timeouts).
+- `src/lib/court.ts` is a copy of `../src/lib/court.ts` (sides and serve rules); move both into a shared package when the app grows.
+- Not built yet: player registration, team-owner and organizer screens, push notifications, score correction/reset and walkover/draw on mobile.
+- Verified here only through the web build (`node` + Playwright against the API); no phone or emulator was available.
