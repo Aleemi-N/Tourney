@@ -508,4 +508,12 @@ END $$;
 
 UPDATE public.tournaments SET status = 'LIVE' WHERE id = '90200000-0000-0000-0000-000000000002';
 
+-- Approved tournaments went through review like real ones, so the organizer
+-- overview shows "Platform approved" instead of the fresh-draft submit prompt.
+UPDATE public.tournaments
+SET approval_submitted_at = created_at - interval '2 days',
+    approval_reviewed_at = created_at - interval '1 day',
+    approval_reviewed_by = '90000000-0000-0000-0000-000000000005'
+WHERE approval_status = 'APPROVED' AND id::text LIKE '90200000-%';
+
 COMMIT;

@@ -105,14 +105,14 @@ export default async function OrganizerTeamsPage({
         const remaining = Math.max(0, startingPurse - totalSpent);
 
         let squadStatus = 'Valid squad';
-        let statusColor = 'text-emerald-400 bg-emerald-400/10 border-emerald-400/30';
+        let statusColor = 'text-success bg-success/10 border-success/30';
         
         if (count < min) {
             squadStatus = 'Below minimum squad';
-            statusColor = 'text-rose-400 bg-rose-400/10 border-rose-400/30';
+            statusColor = 'text-danger bg-danger/10 border-danger/30';
         } else if (count >= max) {
             squadStatus = 'Maximum squad reached';
-            statusColor = 'text-fuchsia-300 bg-fuchsia-300/10 border-fuchsia-300/30';
+            statusColor = 'text-primary bg-primary/10 border-primary/30';
         }
 
         return {
@@ -134,7 +134,7 @@ export default async function OrganizerTeamsPage({
             <div className="mx-auto max-w-7xl">
                 <div className="mb-8">
                     <h1 className="text-3xl font-black tracking-tight text-text-primary flex items-center gap-3">
-                        <ShieldCheckIcon className="w-8 h-8 text-fuchsia-400" />
+                        <ShieldCheckIcon className="w-8 h-8 text-primary" />
                         Teams & Squads
                     </h1>
                     <p className="mt-2 text-text-secondary">Authoritative view of all tournament teams and their assembled squads.</p>
@@ -143,9 +143,9 @@ export default async function OrganizerTeamsPage({
                 <div className="space-y-8">
                     {teams.map(team => (
                         <div key={team.id} className="rounded-2xl border border-border bg-surface shadow-sm overflow-hidden flex flex-col">
-                            <div className="p-6 border-b border-border bg-surface-muted/30 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+                            <div className="p-6 border-b border-border bg-surface-muted flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
                                 <div>
-                                    <div className="flex items-center gap-4">
+                                    <div className="flex flex-wrap items-center gap-3">
                                         <TeamRenameForm teamId={team.id} currentName={team.name} />
                                         <AssignPlayerButton
                                             tournamentId={id}
@@ -166,12 +166,12 @@ export default async function OrganizerTeamsPage({
                                 </div>
                                 <div className="flex gap-6 text-right">
                                     <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Total Spent</p>
+                                        <p className="text-xs font-bold uppercase tracking-wider text-text-muted">Total Spent</p>
                                         <p className="font-mono text-sm font-bold text-text-primary">₹{team.totalSpent.toLocaleString('en-IN')}</p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Remaining</p>
-                                        <p className="font-mono text-lg font-bold text-fuchsia-400">₹{team.remaining.toLocaleString('en-IN')}</p>
+                                        <p className="text-xs font-bold uppercase tracking-wider text-text-muted">Remaining</p>
+                                        <p className="font-mono text-lg font-bold text-primary">₹{team.remaining.toLocaleString('en-IN')}</p>
                                     </div>
                                 </div>
                             </div>

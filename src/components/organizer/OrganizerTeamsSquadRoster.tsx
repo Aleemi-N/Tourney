@@ -105,11 +105,11 @@ export function OrganizerTeamsSquadRoster({
             <article
               key={p.id}
               onClick={() => setSelectedPlayer(detailData)}
-              className="flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-background p-4 cursor-pointer hover:border-amber-400/50 hover:bg-surface-raised transition-all group relative"
+              className="flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-background p-4 cursor-pointer hover:border-warning/30 hover:bg-surface-raised transition-all group relative"
             >
               <div className="min-w-0 flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <h3 className="truncate font-bold text-text-primary text-sm group-hover:text-amber-300 transition-colors">
+                  <h3 className="truncate font-bold text-text-primary text-sm group-hover:text-warning transition-colors">
                     {displayName}
                   </h3>
                   <p className="truncate text-xs text-text-secondary">
@@ -125,7 +125,7 @@ export function OrganizerTeamsSquadRoster({
                       setRemovingPlayer(p);
                       setRemoveError(null);
                     }}
-                    className="shrink-0 p-1.5 rounded-lg text-rose-400/70 hover:bg-rose-500/10 hover:text-rose-400 transition"
+                    className="shrink-0 p-1.5 rounded-lg text-danger hover:bg-danger/10 hover:text-danger transition"
                     title="Remove manually assigned player"
                   >
                     <TrashIcon className="w-4 h-4" />
@@ -133,7 +133,7 @@ export function OrganizerTeamsSquadRoster({
                 )}
               </div>
               <div className="flex items-end justify-between border-t border-border pt-3 mt-auto">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-400/80">
+                <p className="text-xs font-bold uppercase tracking-wider text-primary">
                   {p.acquisition_type.replaceAll('_', ' ')}
                 </p>
                 <p className="font-mono text-xs font-bold text-text-primary">
@@ -154,27 +154,27 @@ export function OrganizerTeamsSquadRoster({
       />
 
       {removingPlayer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="relative w-full max-w-md rounded-2xl border border-white/15 bg-[#17132a] p-6 shadow-2xl text-white space-y-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <TrashIcon className="w-5 h-5 text-rose-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+          <div className="relative w-full max-w-md rounded-2xl border border-border-strong bg-surface p-6 shadow-card text-text-primary space-y-4">
+            <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
+              <TrashIcon className="w-5 h-5 text-danger" />
               Remove Player from Team
             </h3>
-            <p className="text-sm text-white/80 leading-relaxed">
-              Are you sure you want to remove <strong className="text-white">{removingPlayer.player?.display_name ?? 'this player'}</strong> from <strong className="text-white">{teamName}</strong>?
+            <p className="text-sm text-text-secondary leading-relaxed">
+              Are you sure you want to remove <strong className="text-text-primary">{removingPlayer.player?.display_name ?? 'this player'}</strong> from <strong className="text-text-primary">{teamName}</strong>?
             </p>
             {removingPlayer.acquisition_amount && Number(removingPlayer.acquisition_amount) > 0 ? (
-              <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 p-3 text-xs text-amber-200">
+              <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs text-warning">
                 💰 <strong>Purse Refund:</strong> ₹{Number(removingPlayer.acquisition_amount).toLocaleString('en-IN')} will be refunded back to {teamName}&apos;s purse balance.
               </div>
             ) : (
-              <p className="text-xs text-white/50">
+              <p className="text-xs text-text-secondary">
                 This player will be unassigned and returned to the eligible players list.
               </p>
             )}
 
             {removeError && (
-              <div className="rounded-xl border border-rose-400/30 bg-rose-400/10 p-3 text-xs text-rose-300">
+              <div className="rounded-xl border border-danger/30 bg-danger/10 p-3 text-xs text-danger">
                 {removeError}
               </div>
             )}
@@ -184,7 +184,7 @@ export function OrganizerTeamsSquadRoster({
                 type="button"
                 onClick={() => setRemovingPlayer(null)}
                 disabled={isRemoving}
-                className="rounded-xl border border-white/15 px-4 py-2 text-xs font-bold text-white/70 hover:bg-white/10 hover:text-white transition"
+                className="rounded-xl border border-border-strong px-4 py-2 text-xs font-bold text-text-secondary hover:bg-surface-muted hover:text-text-primary transition"
               >
                 Cancel
               </button>
@@ -192,7 +192,7 @@ export function OrganizerTeamsSquadRoster({
                 type="button"
                 onClick={handleConfirmRemove}
                 disabled={isRemoving}
-                className="rounded-xl bg-rose-500 px-4 py-2 text-xs font-bold text-white hover:bg-rose-600 transition disabled:opacity-50 flex items-center gap-2"
+                className="rounded-xl bg-danger px-4 py-2 text-xs font-bold text-text-inverse hover:bg-danger transition disabled:opacity-50 flex items-center gap-2"
               >
                 {isRemoving ? 'Removing...' : 'Confirm Remove'}
               </button>

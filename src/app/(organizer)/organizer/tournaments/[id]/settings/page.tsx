@@ -11,9 +11,9 @@ export const dynamic = 'force-dynamic';
 function SettingsSkeleton() {
   return (
     <div className="space-y-6 animate-pulse mt-8">
-      <div className="h-10 w-48 bg-slate-200 dark:bg-slate-800 rounded-md" />
-      <div className="h-64 w-full bg-slate-200 dark:bg-slate-800 rounded-xl" />
-      <div className="h-48 w-full bg-slate-200 dark:bg-slate-800 rounded-xl" />
+      <div className="h-10 w-48 bg-surface-muted dark:bg-surface rounded-md" />
+      <div className="h-64 w-full bg-surface-muted dark:bg-surface rounded-xl" />
+      <div className="h-48 w-full bg-surface-muted dark:bg-surface rounded-xl" />
     </div>
   );
 }

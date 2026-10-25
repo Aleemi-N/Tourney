@@ -96,7 +96,7 @@ export function StaffManager({ tournamentId, initialStaff }: { tournamentId: str
         </button>
       </div>
 
-      {message && <div role="status" className={`mt-5 rounded-xl border p-3 text-sm ${message.type === 'error' ? 'border-danger/30 bg-danger/10 text-danger' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'}`}>{message.text}</div>}
+      {message && <div role="status" className={`mt-5 rounded-xl border p-3 text-sm ${message.type === 'error' ? 'border-danger/30 bg-danger/10 text-danger' : 'border-success/30 bg-success/10 text-success'}`}>{message.text}</div>}
 
       {showAdd && (
         <section className="mt-6 rounded-2xl border border-border bg-surface p-4 sm:p-6">
@@ -128,7 +128,7 @@ export function StaffManager({ tournamentId, initialStaff }: { tournamentId: str
               <div className="min-w-0"><h2 className="truncate font-semibold text-text-primary">{person.display_name}</h2><p className="truncate text-sm text-text-secondary">{person.email}</p></div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              {person.is_primary_organizer && <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-300">Primary Organizer</span>}
+              {person.is_primary_organizer && <span className="rounded-full border border-warning/30 bg-warning/10 px-2.5 py-1 text-xs font-semibold text-warning">Primary Organizer</span>}
               {person.roles.map((item) => <span key={item} className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{item === 'ORGANIZER' ? 'Organizer' : 'Scorer'}</span>)}
             </div>
             <div className="mt-5 flex flex-wrap gap-2 border-t border-border pt-4">
@@ -141,7 +141,7 @@ export function StaffManager({ tournamentId, initialStaff }: { tournamentId: str
         ))}
       </div>
 
-      {confirmRemove && <div className="mt-6 rounded-xl border border-danger/30 bg-danger/10 p-4"><p className="text-sm text-text-primary">Remove only this {confirmRemove.role === 'ORGANIZER' ? 'Organizer' : 'Scorer'} role? Any other tournament role remains active.</p><div className="mt-3 flex gap-2"><button type="button" disabled={pending} onClick={removeRole} className="rounded-lg bg-danger px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{pending ? 'Removing…' : 'Remove role'}</button><button type="button" onClick={() => setConfirmRemove(null)} className="rounded-lg border border-border px-4 py-2 text-sm text-text-secondary">Cancel</button></div></div>}
+      {confirmRemove && <div className="mt-6 rounded-xl border border-danger/30 bg-danger/10 p-4"><p className="text-sm text-text-primary">Remove only this {confirmRemove.role === 'ORGANIZER' ? 'Organizer' : 'Scorer'} role? Any other tournament role remains active.</p><div className="mt-3 flex gap-2"><button type="button" disabled={pending} onClick={removeRole} className="rounded-lg bg-danger px-4 py-2 text-sm font-semibold text-text-inverse disabled:opacity-50">{pending ? 'Removing…' : 'Remove role'}</button><button type="button" onClick={() => setConfirmRemove(null)} className="rounded-lg border border-border px-4 py-2 text-sm text-text-secondary">Cancel</button></div></div>}
     </div>
   );
 }

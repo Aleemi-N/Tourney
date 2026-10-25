@@ -103,7 +103,7 @@ function StageFormatEditor({
             }`}
           >
             <span className="text-base font-black">{preset.label}</span>
-            <span className="text-[10px] font-normal opacity-70">
+            <span className="text-xs font-normal opacity-70">
               {preset.sets.join(' · ')} pts
             </span>
           </button>
@@ -111,7 +111,7 @@ function StageFormatEditor({
       </div>
 
       {saved && (
-        <p className="mt-2 text-xs text-emerald-400">✓ Saved!</p>
+        <p className="mt-2 text-xs text-success">✓ Saved!</p>
       )}
       {saving && (
         <p className="mt-2 text-xs text-text-secondary">Saving…</p>

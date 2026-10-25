@@ -122,8 +122,8 @@ export function PlanDaysModal({ stageName, items, onClose, onSaved, ...defaults 
   const input = 'min-h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-text-primary';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-card">
         <div className="flex items-center justify-between border-b border-border p-4 sm:p-5">
           <div>
             <h3 className="text-lg font-black text-text-primary">📅 Plan Match Days</h3>
@@ -161,13 +161,13 @@ export function PlanDaysModal({ stageName, items, onClose, onSaved, ...defaults 
                     </p>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    <label className="flex flex-col gap-1 text-[11px] font-semibold text-text-secondary">Date
+                    <label className="flex flex-col gap-1 text-xs font-semibold text-text-secondary">Date
                       <input type="date" value={day.date} onChange={(e) => updateDay(i, { date: e.target.value })} className={input} />
                     </label>
-                    <label className="flex flex-col gap-1 text-[11px] font-semibold text-text-secondary">Start
+                    <label className="flex flex-col gap-1 text-xs font-semibold text-text-secondary">Start
                       <input type="time" value={day.start} onChange={(e) => updateDay(i, { start: e.target.value })} className={input} />
                     </label>
-                    <label className="flex flex-col gap-1 text-[11px] font-semibold text-text-secondary">Matches
+                    <label className="flex flex-col gap-1 text-xs font-semibold text-text-secondary">Matches
                       <input type="number" min={0} max={items.length} value={day.count} onChange={(e) => updateDay(i, { count: Math.max(0, Number(e.target.value)) })} className={input} />
                     </label>
                   </div>
@@ -177,13 +177,13 @@ export function PlanDaysModal({ stageName, items, onClose, onSaved, ...defaults 
           </div>
 
           <div className="rounded-xl border border-border">
-            <p className="border-b border-border px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">Preview</p>
+            <p className="border-b border-border px-3 py-2 text-xs font-bold uppercase tracking-wider text-text-muted">Preview</p>
             <ul className="max-h-56 divide-y divide-border overflow-y-auto text-sm">
               {slots.map((s, i) => (
                 <li key={s.match.id} className="flex items-center gap-3 px-3 py-2">
                   <span className="w-20 shrink-0 whitespace-nowrap text-xs font-black text-primary">D{s.day + 1} · {hm(s.at)}</span>
                   <span className="min-w-0 flex-1 truncate font-semibold text-text-primary">M{i + 1} · {s.match.home_team?.name ?? 'TBD'} <span className="text-xs font-normal text-text-muted">vs</span> {s.match.away_team?.name ?? 'TBD'}</span>
-                  {LOCKED.includes(s.match.status) && <span className="text-[10px] font-bold text-text-muted">{s.match.status}</span>}
+                  {LOCKED.includes(s.match.status) && <span className="text-xs font-bold text-text-muted">{s.match.status}</span>}
                 </li>
               ))}
             </ul>
@@ -191,7 +191,7 @@ export function PlanDaysModal({ stageName, items, onClose, onSaved, ...defaults 
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4">
-          <p className={`text-xs font-semibold ${error || assigned !== items.length ? 'text-red-400' : saving ? 'text-text-secondary' : 'text-emerald-400'}`}>
+          <p className={`text-xs font-semibold ${error || assigned !== items.length ? 'text-danger' : saving ? 'text-text-secondary' : 'text-success'}`}>
             {error || saving || (assigned === items.length ? `All ${items.length} matches assigned` : `${assigned} of ${items.length} assigned — adjust the match counts`)}
           </p>
           <div className="flex gap-2">

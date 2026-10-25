@@ -34,15 +34,15 @@ async function ParticipantsContent({ params }: { params: Promise<{ id: string }>
       <div className="mb-6 flex flex-col gap-2">
         <Link 
           href={`/organizer/tournaments/${id}`}
-          className="flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 transition-colors w-fit"
+          className="flex items-center gap-1 text-sm font-medium text-text-muted hover:text-text-primary dark:hover:text-text-primary transition-colors w-fit"
         >
           <ArrowLeftIcon className="h-4 w-4" />
           Back to Tournament
           <OrganizerLinkPending />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Participant Management</h1>
-          <p className="text-slate-500 mt-1">{tournament.name}</p>
+          <h1 className="text-3xl font-bold text-text-primary dark:text-text-primary">Participant Management</h1>
+          <p className="text-text-muted mt-1">{tournament.name}</p>
         </div>
       </div>
 

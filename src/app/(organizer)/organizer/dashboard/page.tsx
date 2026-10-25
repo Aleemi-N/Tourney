@@ -34,7 +34,7 @@ export default async function OrganizerDashboardPage() {
         <div className="absolute -top-10 -left-10 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="relative z-10">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-primary tracking-tight">
             Welcome back, {user.user_metadata?.full_name?.split(' ')[0] || 'Organizer'}
           </h1>
           <p className="text-text-secondary mt-1.5 text-base sm:text-lg">
@@ -43,7 +43,7 @@ export default async function OrganizerDashboardPage() {
         </div>
         <Link
           href="/organizer/tournaments/new"
-          className="relative z-10 inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-primary to-primary-hover text-primary-foreground font-semibold rounded-2xl hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:-translate-y-0.5 active:scale-95"
+          className="relative z-10 inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3.5 bg-primary text-primary-foreground font-semibold rounded-2xl hover:shadow-primary/30 transition-all duration-300 active:scale-95"
         >
           <PlusIcon className="w-5 h-5" />
           Create Tournament

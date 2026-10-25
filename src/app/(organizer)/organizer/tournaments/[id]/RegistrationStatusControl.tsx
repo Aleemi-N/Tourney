@@ -66,7 +66,7 @@ export function RegistrationStatusControl({ tournamentId, status }: Registration
           {canClose && (
             confirming ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-amber-500 font-medium flex items-center gap-1">
+                <span className="text-xs text-warning font-medium flex items-center gap-1">
                   <ExclamationTriangleIcon className="w-3.5 h-3.5" />
                   Confirm close?
                 </span>
@@ -82,7 +82,7 @@ export function RegistrationStatusControl({ tournamentId, status }: Registration
                   type="button"
                   onClick={handleClose}
                   disabled={isPending}
-                  className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  className="rounded-lg bg-warning px-3 py-1.5 text-xs font-semibold text-text-inverse hover:bg-warning transition-colors disabled:opacity-50 flex items-center gap-1.5"
                 >
                   <LockClosedIcon className="w-3.5 h-3.5" />
                   {isPending ? 'Closing…' : 'Yes, Close'}
@@ -93,7 +93,7 @@ export function RegistrationStatusControl({ tournamentId, status }: Registration
                 type="button"
                 onClick={handleClose}
                 disabled={isPending}
-                className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 hover:bg-amber-500/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-1.5 text-xs font-semibold text-warning hover:bg-warning/15 transition-colors disabled:opacity-50 flex items-center gap-1.5"
               >
                 <LockClosedIcon className="w-3.5 h-3.5" />
                 Close Registration
@@ -106,7 +106,7 @@ export function RegistrationStatusControl({ tournamentId, status }: Registration
               type="button"
               onClick={handleReopen}
               disabled={isPending}
-              className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-500 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              className="rounded-lg border border-success/30 bg-success/10 px-3 py-1.5 text-xs font-semibold text-success hover:bg-success/15 transition-colors disabled:opacity-50 flex items-center gap-1.5"
             >
               <LockOpenIcon className="w-3.5 h-3.5" />
               {isPending ? 'Reopening…' : 'Reopen Registration'}
@@ -121,7 +121,7 @@ export function RegistrationStatusControl({ tournamentId, status }: Registration
           className={`mt-3 rounded-lg border px-3 py-2 text-xs font-medium ${
             message.type === 'error'
               ? 'border-danger/30 bg-danger/10 text-danger'
-              : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+              : 'border-success/30 bg-success/10 text-success'
           }`}
         >
           {message.text}

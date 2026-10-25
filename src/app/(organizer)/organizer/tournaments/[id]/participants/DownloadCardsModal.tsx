@@ -105,7 +105,7 @@ export function DownloadCardsModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-40 bg-black/60"
             onClick={isDownloading ? undefined : onClose}
           />
           <motion.div
@@ -114,26 +114,26 @@ export function DownloadCardsModal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-            className="fixed inset-x-4 bottom-0 z-50 mx-auto max-w-lg rounded-t-3xl border border-glass-border bg-[#13111e] shadow-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl"
+            className="fixed inset-x-4 bottom-0 z-50 mx-auto max-w-lg rounded-t-3xl border border-glass-border bg-surface shadow-card sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl"
             role="dialog"
             aria-modal="true"
             aria-label="Download Player Cards"
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <div className="flex items-center gap-2.5">
                 <div className={`flex h-9 w-9 items-center justify-center rounded-xl border ${
                   downloadMode === 'PHOTOS'
-                    ? 'bg-sky-500/20 text-sky-400 border-sky-500/30'
-                    : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                    ? 'bg-info/15 text-info border-info/30'
+                    : 'bg-warning/15 text-warning border-warning/30'
                 }`}>
                   {downloadMode === 'PHOTOS' ? <ImageIcon className="h-4 w-4" /> : <Download className="h-4 w-4" />}
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-white">
+                  <h2 className="text-base font-bold text-text-primary">
                     {downloadMode === 'PHOTOS' ? 'Download Player Photos' : 'Download Player Cards'}
                   </h2>
-                  <p className="text-xs text-white/50">
+                  <p className="text-xs text-text-secondary">
                     {downloadMode === 'PHOTOS'
                       ? 'Download raw player photos as a ZIP bundle'
                       : 'Select which player cards to include in the ZIP bundle'}
@@ -144,7 +144,7 @@ export function DownloadCardsModal({
                 type="button"
                 onClick={onClose}
                 disabled={isDownloading}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-surface-muted hover:text-text-primary disabled:opacity-30"
                 aria-label="Close"
               >
                 <XMarkIcon className="h-5 w-5" />
@@ -160,8 +160,8 @@ export function DownloadCardsModal({
                 disabled={isDownloading}
                 className={`flex flex-1 items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-bold uppercase tracking-wider transition-all ${
                   downloadMode === 'CARDS'
-                    ? 'border-amber-500/60 bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30'
-                    : 'border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
+                    ? 'border-warning/30 bg-warning/10 text-warning ring-1 ring-warning/30'
+                    : 'border-border bg-surface text-text-secondary hover:bg-surface-muted hover:text-text-primary'
                 }`}
               >
                 <Download className="h-3.5 w-3.5" />
@@ -174,8 +174,8 @@ export function DownloadCardsModal({
                 disabled={isDownloading}
                 className={`flex flex-1 items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-bold uppercase tracking-wider transition-all ${
                   downloadMode === 'PHOTOS'
-                    ? 'border-sky-500/60 bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30'
-                    : 'border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
+                    ? 'border-info/30 bg-info/10 text-info ring-1 ring-info/30'
+                    : 'border-border bg-surface text-text-secondary hover:bg-surface-muted hover:text-text-primary'
                 }`}
               >
                 <ImageIcon className="h-3.5 w-3.5" />
@@ -186,7 +186,7 @@ export function DownloadCardsModal({
             {/* Options Body */}
             <div className="space-y-4 px-6 py-5">
               {error && (
-                <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-400">
+                <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm font-medium text-danger">
                   {error}
                 </div>
               )}
@@ -204,20 +204,20 @@ export function DownloadCardsModal({
                       disabled={isDownloading}
                       className={`flex items-center justify-between rounded-2xl border p-4 text-left transition-all ${
                         selectedFilter === 'AUCTION'
-                          ? 'border-fuchsia-500/60 bg-fuchsia-500/10 ring-1 ring-fuchsia-500/40'
-                          : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                          ? 'border-primary/30 bg-primary/10 ring-1 ring-primary/30'
+                          : 'border-border bg-surface hover:border-border-strong hover:bg-surface-muted'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-fuchsia-500/20 text-fuchsia-400">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
                           <Users className="h-5 w-5" />
                         </div>
                         <div>
-                          <div className="font-bold text-white text-sm">Main Auction Players Only</div>
-                          <div className="text-xs text-white/50">Only players assigned to an auction category</div>
+                          <div className="font-bold text-text-primary text-sm">Main Auction Players Only</div>
+                          <div className="text-xs text-text-secondary">Only players assigned to an auction category</div>
                         </div>
                       </div>
-                      <span className="rounded-full bg-fuchsia-500/20 px-3 py-1 text-xs font-black text-fuchsia-400 border border-fuchsia-500/30">
+                      <span className="rounded-full bg-primary/15 px-3 py-1 text-xs font-black text-primary border border-primary/30">
                         {count} {count === 1 ? unit : `${unit}s`}
                       </span>
                     </button>
@@ -236,20 +236,20 @@ export function DownloadCardsModal({
                       disabled={isDownloading}
                       className={`flex items-center justify-between rounded-2xl border p-4 text-left transition-all ${
                         selectedFilter === 'APPROVED'
-                          ? 'border-emerald-500/60 bg-emerald-500/10 ring-1 ring-emerald-500/40'
-                          : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                          ? 'border-success/30 bg-success/10 ring-1 ring-success/30'
+                          : 'border-border bg-surface hover:border-border-strong hover:bg-surface-muted'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-success/15 text-success">
                           <CheckCircle className="h-5 w-5" />
                         </div>
                         <div>
-                          <div className="font-bold text-white text-sm">Approved Players Only</div>
-                          <div className="text-xs text-white/50">Ready for auction cards &amp; printing</div>
+                          <div className="font-bold text-text-primary text-sm">Approved Players Only</div>
+                          <div className="text-xs text-text-secondary">Ready for auction cards &amp; printing</div>
                         </div>
                       </div>
-                      <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-black text-emerald-400 border border-emerald-500/30">
+                      <span className="rounded-full bg-success/15 px-3 py-1 text-xs font-black text-success border border-success/30">
                         {count} {count === 1 ? unit : `${unit}s`}
                       </span>
                     </button>
@@ -268,20 +268,20 @@ export function DownloadCardsModal({
                       disabled={isDownloading}
                       className={`flex items-center justify-between rounded-2xl border p-4 text-left transition-all ${
                         selectedFilter === 'PENDING'
-                          ? 'border-amber-500/60 bg-amber-500/10 ring-1 ring-amber-500/40'
-                          : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                          ? 'border-warning/30 bg-warning/10 ring-1 ring-warning/30'
+                          : 'border-border bg-surface hover:border-border-strong hover:bg-surface-muted'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-warning/15 text-warning">
                           <Clock className="h-5 w-5" />
                         </div>
                         <div>
-                          <div className="font-bold text-white text-sm">Pending Players Only</div>
-                          <div className="text-xs text-white/50">Unapproved registrations awaiting review</div>
+                          <div className="font-bold text-text-primary text-sm">Pending Players Only</div>
+                          <div className="text-xs text-text-secondary">Unapproved registrations awaiting review</div>
                         </div>
                       </div>
-                      <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-black text-amber-400 border border-amber-500/30">
+                      <span className="rounded-full bg-warning/15 px-3 py-1 text-xs font-black text-warning border border-warning/30">
                         {count} {count === 1 ? unit : `${unit}s`}
                       </span>
                     </button>
@@ -299,20 +299,20 @@ export function DownloadCardsModal({
                       disabled={isDownloading}
                       className={`flex items-center justify-between rounded-2xl border p-4 text-left transition-all ${
                         selectedFilter === 'ALL'
-                          ? 'border-purple-500/60 bg-purple-500/10 ring-1 ring-purple-500/40'
-                          : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                          ? 'border-primary/30 bg-primary/10 ring-1 ring-primary/30'
+                          : 'border-border bg-surface hover:border-border-strong hover:bg-surface-muted'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/20 text-purple-400">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
                           <Users className="h-5 w-5" />
                         </div>
                         <div>
-                          <div className="font-bold text-white text-sm">All Registered Players</div>
-                          <div className="text-xs text-white/50">Bundle all players regardless of status</div>
+                          <div className="font-bold text-text-primary text-sm">All Registered Players</div>
+                          <div className="text-xs text-text-secondary">Bundle all players regardless of status</div>
                         </div>
                       </div>
-                      <span className="rounded-full bg-purple-500/20 px-3 py-1 text-xs font-black text-purple-400 border border-purple-500/30">
+                      <span className="rounded-full bg-primary/15 px-3 py-1 text-xs font-black text-primary border border-primary/30">
                         {count} {count === 1 ? unit : `${unit}s`}
                       </span>
                     </button>
@@ -324,15 +324,15 @@ export function DownloadCardsModal({
               {isDownloading && progress && (
                 <div className={`space-y-2 rounded-2xl border p-4 ${
                   downloadMode === 'PHOTOS'
-                    ? 'border-sky-500/30 bg-sky-500/10'
-                    : 'border-amber-500/30 bg-amber-500/10'
+                    ? 'border-info/30 bg-info/10'
+                    : 'border-warning/30 bg-warning/10'
                 }`}>
                   <div className={`flex items-center justify-between text-xs font-bold ${
-                    downloadMode === 'PHOTOS' ? 'text-sky-300' : 'text-amber-300'
+                    downloadMode === 'PHOTOS' ? 'text-info' : 'text-warning'
                   }`}>
                     <span className="flex items-center gap-2">
                       <Loader2 className={`h-4 w-4 animate-spin ${
-                        downloadMode === 'PHOTOS' ? 'text-sky-400' : 'text-amber-400'
+                        downloadMode === 'PHOTOS' ? 'text-info' : 'text-warning'
                       }`} />
                       {downloadMode === 'PHOTOS' ? 'Fetching Photos…' : 'Generating ZIP Bundle…'}
                     </span>
@@ -340,12 +340,12 @@ export function DownloadCardsModal({
                       {progress.current} / {progress.total}
                     </span>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-black/40">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-surface-muted">
                     <div
                       className={`h-full transition-all duration-200 ${
                         downloadMode === 'PHOTOS'
-                          ? 'bg-gradient-to-r from-sky-500 to-cyan-400'
-                          : 'bg-gradient-to-r from-amber-500 to-yellow-400'
+                          ? 'bg-info'
+                          : 'bg-warning'
                       }`}
                       style={{ width: `${Math.round((progress.current / progress.total) * 100)}%` }}
                     />
@@ -355,8 +355,8 @@ export function DownloadCardsModal({
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between border-t border-white/10 px-6 py-4">
-              <span className="text-xs text-white/40 font-medium">
+            <div className="flex items-center justify-between border-t border-border px-6 py-4">
+              <span className="text-xs text-text-muted font-medium">
                 {selectedCount} {selectedCount === 1 ? (downloadMode === 'PHOTOS' ? 'player' : 'card') : (downloadMode === 'PHOTOS' ? 'players' : 'cards')} selected
               </span>
 
@@ -365,7 +365,7 @@ export function DownloadCardsModal({
                   type="button"
                   onClick={onClose}
                   disabled={isDownloading}
-                  className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white/60 transition-colors hover:bg-white/5 hover:text-white disabled:opacity-40"
+                  className="rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-muted hover:text-text-primary disabled:opacity-40"
                 >
                   Cancel
                 </button>
@@ -374,15 +374,15 @@ export function DownloadCardsModal({
                   id="download-zip-btn"
                   onClick={handleDownload}
                   disabled={isDownloading || selectedCount === 0}
-                  className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-slate-950 shadow-lg transition-all active:scale-95 disabled:opacity-40 ${
+                  className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-text-primary shadow-card transition-all active:scale-95 disabled:opacity-40 ${
                     downloadMode === 'PHOTOS'
-                      ? 'bg-gradient-to-r from-sky-400 to-cyan-400 hover:from-sky-300 hover:to-cyan-300 shadow-sky-500/20'
-                      : 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 shadow-amber-500/20'
+                      ? 'bg-info '
+                      : 'bg-warning '
                   }`}
                 >
                   {isDownloading ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
+                      <Loader2 className="h-4 w-4 animate-spin text-text-primary" />
                       Downloading…
                     </>
                   ) : downloadMode === 'PHOTOS' ? (

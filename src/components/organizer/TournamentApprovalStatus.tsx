@@ -80,10 +80,10 @@ export function TournamentApprovalStatus({
 
   if (optimisticStatus === 'PENDING_APPROVAL') {
     return (
-      <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
-        <ClockIcon className="w-5 h-5 text-amber-400 shrink-0 animate-pulse" />
+      <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-warning/30 bg-warning/10">
+        <ClockIcon className="w-5 h-5 text-warning shrink-0 animate-pulse" />
         <div>
-          <p className="text-sm font-semibold text-amber-400">Pending Tourny Approval</p>
+          <p className="text-sm font-semibold text-warning">Pending Tourny Approval</p>
           <p className="text-xs text-text-muted mt-0.5">
             Waiting for platform review.{approvalSubmittedAt ? ` Submitted ${new Date(approvalSubmittedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}.` : ''} You cannot publish until approved.
           </p>
@@ -118,7 +118,7 @@ export function TournamentApprovalStatus({
           id={`resubmit-btn-${tournamentId}`}
           onClick={handleSubmit}
           disabled={isPending}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ArrowPathIcon className="w-4 h-4" />
           {isPending ? 'Submitting…' : 'Resubmit for Approval'}
@@ -129,7 +129,7 @@ export function TournamentApprovalStatus({
 
   // APPROVED but it's a fresh/grandfathered draft — show Submit button
   return (
-    <div className="rounded-xl border border-border bg-surface-muted/50 p-4">
+    <div className="rounded-xl border border-border bg-surface-muted p-4">
       <div className="flex items-start gap-2 mb-3">
         <CheckCircleIcon className="w-5 h-5 text-text-muted shrink-0 mt-0.5" />
         <div>
@@ -148,7 +148,7 @@ export function TournamentApprovalStatus({
         id={`submit-approval-btn-${tournamentId}`}
         onClick={handleSubmit}
         disabled={isPending}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <PaperAirplaneIcon className="w-4 h-4" />
         {isPending ? 'Submitting…' : 'Submit for Approval'}

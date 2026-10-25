@@ -109,11 +109,11 @@ function ApprovedPlayerPanel({
     <div className="space-y-2">
       {/* Allocation route badge */}
       <div className="flex flex-wrap gap-2">
-        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+        <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-semibold text-success dark:text-success">
           ✓ Approved
         </span>
         {player.auction_category && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-400">
+          <span className="inline-flex items-center gap-1 rounded-full bg-info/10 px-2 py-0.5 text-xs font-semibold text-info dark:text-info">
             {allocationRouteLabel(player.auction_category)}
           </span>
         )}
@@ -131,7 +131,7 @@ function ApprovedPlayerPanel({
           </div>
         ) : (
           <div className="space-y-1">
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <label className="block text-xs font-bold uppercase tracking-wider text-text-muted">
               Auction Price Category
             </label>
             <select
@@ -150,7 +150,7 @@ function ApprovedPlayerPanel({
           </div>
         )
       ) : player.auction_category ? (
-        <div className="flex items-center gap-1.5 rounded-md bg-slate-100 dark:bg-slate-800/60 px-2.5 py-1.5 text-xs text-slate-500">
+        <div className="flex items-center gap-1.5 rounded-md bg-surface-muted dark:bg-surface px-2.5 py-1.5 text-xs text-text-muted">
           <Tag className="h-3.5 w-3.5 shrink-0" />
           Lot Draw — No Auction Category Required
         </div>
@@ -386,7 +386,7 @@ export function ParticipantManager({
           role="status"
           className={`rounded-xl border p-3 text-sm ${message.type === 'error'
               ? 'border-danger/30 bg-danger/10 text-danger'
-              : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+              : 'border-success/30 bg-success/10 text-success'
             }`}
         >
           {message.text}
@@ -395,7 +395,7 @@ export function ParticipantManager({
 
       {/* Tabs + Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex bg-surface-raised/50 backdrop-blur-xl border border-glass-border p-1.5 rounded-xl w-fit shadow-sm">
+        <div className="flex bg-surface-raised border border-glass-border p-1.5 rounded-xl w-fit shadow-sm">
           {(
             [
               ['PLAYERS', `Players (${players.length})`],
@@ -407,7 +407,7 @@ export function ParticipantManager({
               onClick={() => setTab(value)}
               className={`px-5 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${tab === value
                   ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-surface-muted'
                 }`}
             >
               {label}
@@ -421,7 +421,7 @@ export function ParticipantManager({
               type="button"
               onClick={() => setShowDownloadModal(true)}
               disabled={players.length === 0}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-md transition-all active:scale-95 disabled:opacity-50 border border-amber-300/40"
+              className="flex items-center gap-2 rounded-xl bg-warning px-4 py-2.5 text-xs font-black uppercase tracking-wider text-text-primary shadow-md transition-all active:scale-95 disabled:opacity-50 border border-warning/30"
               title="Download a ZIP archive containing high-res auction cards for registered players"
             >
               <span>📦</span>
@@ -433,7 +433,7 @@ export function ParticipantManager({
             <button
               type="button"
               onClick={() => setShowAddPlayer(true)}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-md transition-all active:scale-95 border border-emerald-400/30"
+              className="flex items-center gap-2 rounded-xl bg-success px-4 py-2.5 text-xs font-black uppercase tracking-wider text-text-inverse shadow-md transition-all active:scale-95 border border-success/30"
               title="Manually register a player who has trouble registering themselves"
             >
               <UserPlus className="h-4 w-4" />
@@ -448,12 +448,12 @@ export function ParticipantManager({
             id="statusFilter"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="p-2.5 rounded-xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl text-text-primary text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary shadow-sm transition-all bg-[#181825]"
+            className="p-2.5 rounded-xl border border-glass-border bg-surface-raised text-text-primary text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary shadow-sm transition-all bg-surface"
           >
-            <option value="ALL" className="bg-[#181825] text-white">All Statuses ({getCount('ALL')})</option>
-            <option value="PENDING" className="bg-[#181825] text-white">Pending ({getCount('PENDING')})</option>
-            <option value="APPROVED" className="bg-[#181825] text-white">Approved ({getCount('APPROVED')})</option>
-            <option value="REJECTED" className="bg-[#181825] text-white">Rejected ({getCount('REJECTED')})</option>
+            <option value="ALL" className="bg-surface text-text-primary">All Statuses ({getCount('ALL')})</option>
+            <option value="PENDING" className="bg-surface text-text-primary">Pending ({getCount('PENDING')})</option>
+            <option value="APPROVED" className="bg-surface text-text-primary">Approved ({getCount('APPROVED')})</option>
+            <option value="REJECTED" className="bg-surface text-text-primary">Rejected ({getCount('REJECTED')})</option>
           </select>
         </div>
       </div>
@@ -468,7 +468,7 @@ export function ParticipantManager({
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4"
           >
             {filteredPlayers.length === 0 ? (
-              <p className="text-slate-500 text-sm col-span-full">
+              <p className="text-text-muted text-sm col-span-full">
                 {statusFilter === 'ALL'
                   ? 'No players found.'
                   : `No ${statusFilter.toLowerCase()} players.`}
@@ -505,7 +505,7 @@ export function ParticipantManager({
                 };
 
                 return (
-                  <motion.div variants={itemVariants} key={p.id} className="group relative flex h-full flex-col overflow-visible rounded-2xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl shadow-[0_4px_20px_rgb(0,0,0,0.1)] transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.15)] hover:border-primary/40 hover:-translate-y-1 hover:z-50 focus-within:z-50">
+                  <motion.div variants={itemVariants} key={p.id} className="group relative flex h-full flex-col overflow-visible rounded-2xl border border-glass-border bg-surface-raised shadow-card transition-all duration-300 hover:border-primary/40 hover:z-50 focus-within:z-50">
                     {/* Player photo */}
                     <div
                       onClick={openPlayerModal}
@@ -518,11 +518,11 @@ export function ParticipantManager({
                           alt={profile.display_name}
                           fill
                           unoptimized
-                          className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                          className="object-cover object-top transition-transform duration-700"
                           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-slate-400 dark:text-slate-500 bg-slate-900/60">
+                        <div className="flex h-full w-full items-center justify-center text-text-secondary dark:text-text-muted bg-surface">
                           <span className="text-4xl font-bold tracking-widest opacity-40">
                             {(profile?.display_name ?? '?').split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()}
                           </span>
@@ -536,28 +536,28 @@ export function ParticipantManager({
                           e.stopPropagation();
                           openPlayerModal();
                         }}
-                        className="absolute top-3 left-3 z-10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-amber-500/90 text-slate-950 hover:bg-amber-400 backdrop-blur-md shadow-md transition-all border border-amber-300/40 flex items-center gap-1 active:scale-95"
+                        className="absolute top-3 left-3 z-10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider rounded-lg bg-warning/15 text-text-primary hover:bg-warning shadow-md transition-all border border-warning/30 flex items-center gap-1 active:scale-95"
                         title="Download printable pre-auction card PNG"
                       >
                         <span>🎴</span> Print Card
                       </button>
 
                       {/* Status badge */}
-                      <span className={`absolute top-3 right-3 z-10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg backdrop-blur-md shadow-sm border ${
-                          p.status === 'APPROVED' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
-                          p.status === 'REJECTED' ? 'bg-red-500/20 text-red-300 border-red-500/30' :
-                          p.status === 'PENDING' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
-                          'bg-orange-500/20 text-orange-300 border-orange-500/30'
+                      <span className={`absolute top-3 right-3 z-10 px-2.5 py-1 text-xs font-black uppercase tracking-wider rounded-lg  shadow-sm border ${
+                          p.status === 'APPROVED' ? 'bg-success/15 text-success border-success/30' :
+                          p.status === 'REJECTED' ? 'bg-danger/15 text-danger border-danger/30' :
+                          p.status === 'PENDING' ? 'bg-warning/15 text-warning border-warning/30' :
+                          'bg-warning/15 text-warning border-warning/30'
                         }`}>
                         {p.status === 'CHANGES_REQUESTED' ? 'CHANGES' : p.status}
                       </span>
                     </div>
 
                     {/* Player info */}
-                    <div className="flex flex-1 flex-col px-4 pt-3.5 pb-4 relative z-10 bg-surface-raised/90 border-t border-glass-border/40">
+                    <div className="flex flex-1 flex-col px-4 pt-3.5 pb-4 relative z-10 bg-surface-raised border-t border-glass-border/40">
                       <h3
                         onClick={openPlayerModal}
-                        className="line-clamp-2 text-base font-black tracking-tight text-slate-900 dark:text-slate-100 cursor-pointer hover:text-primary transition-colors"
+                        className="line-clamp-2 text-base font-black tracking-tight text-text-primary dark:text-text-primary cursor-pointer hover:text-primary transition-colors"
                       >
                         {profile?.display_name}
                       </h3>
@@ -566,7 +566,7 @@ export function ParticipantManager({
                         {formatVolleyballPosition(profile?.primary_position)}
                       </p>
                       {profile?.secondary_position && (
-                        <p className="mt-0.5 truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        <p className="mt-0.5 truncate text-xs font-medium text-text-muted dark:text-text-secondary">
                           Secondary: {formatVolleyballPosition(profile.secondary_position)}
                         </p>
                       )}
@@ -576,7 +576,7 @@ export function ParticipantManager({
                         <div className="mt-3 space-y-2">
                           {/* Allocation route */}
                           <div>
-                            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-text-muted mb-1">
                               Allocation Route ({auctionCategories.length})
                             </label>
                             <AnimatedSelect
@@ -599,7 +599,7 @@ export function ParticipantManager({
                               tournamentSettings
                             ) && (
                               <div>
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-text-muted mb-1">
                                   Auction Price Category
                                 </label>
                                 <AnimatedSelect
@@ -654,7 +654,7 @@ export function ParticipantManager({
                     </div>
 
                     {/* Actions footer */}
-                    <div className="border-t border-glass-border bg-surface-muted/20 p-4 backdrop-blur-md">
+                    <div className="border-t border-glass-border bg-surface-muted p-4">
                       {isPending && (
                         <div className="flex flex-col min-[450px]:flex-row gap-3">
                           <button
@@ -670,7 +670,7 @@ export function ParticipantManager({
                             type="button"
                             onClick={() => handleApprovePlayer(p.id)}
                             disabled={isSubmitting}
-                            className="h-11 flex-1 rounded-xl bg-gradient-to-r from-success/90 to-emerald-500/90 hover:from-success hover:to-emerald-500 px-4 text-sm font-bold text-white shadow-[0_4px_15px_rgb(16,185,129,0.25)] hover:shadow-[0_8px_25px_rgb(16,185,129,0.35)] disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 hover:-translate-y-0.5 border border-success/20"
+                            className="h-11 flex-1 rounded-xl bg-success px-4 text-sm font-bold text-text-inverse shadow-card disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 border border-success/20"
                           >
                             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                             Approve
@@ -679,7 +679,7 @@ export function ParticipantManager({
                       )}
                       {isApproved && !isAuctionLeague && (
                         <div className="flex items-center gap-2">
-                          <span className="block flex-1 text-center px-2 py-1 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold uppercase">
+                          <span className="block flex-1 text-center px-2 py-1 rounded bg-success/10 dark:bg-success/15 text-success dark:text-success text-xs font-bold uppercase">
                             Approved
                           </span>
                           <button
@@ -728,7 +728,7 @@ export function ParticipantManager({
         {tab === 'TEAM_OWNERS' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredOwners.length === 0 ? (
-              <p className="text-slate-500 text-sm col-span-full">
+              <p className="text-text-muted text-sm col-span-full">
                 {statusFilter === 'ALL'
                   ? 'No team owner applications found.'
                   : `No ${statusFilter.toLowerCase()} team owner applications.`}
@@ -737,7 +737,7 @@ export function ParticipantManager({
               filteredOwners.map((o) => (
                 <div
                   key={o.id}
-                  className="group flex flex-col overflow-hidden rounded-2xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl shadow-[0_4px_20px_rgb(0,0,0,0.1)] transition-all duration-300 hover:shadow-lg hover:border-primary/30 hover:-translate-y-1"
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-glass-border bg-surface-raised shadow-card transition-all duration-300 hover:border-primary/30"
                 >
                   <div className="h-32 bg-surface relative flex items-center justify-center border-b border-glass-border/50">
                     {o.logo_path ? (
@@ -753,17 +753,17 @@ export function ParticipantManager({
                         unoptimized
                       />
                     ) : (
-                      <div className="text-slate-400 dark:text-slate-600 font-bold text-2xl">
+                      <div className="text-text-secondary dark:text-text-muted font-bold text-2xl">
                         {o.team_short_name || 'TEAM'}
                       </div>
                     )}
                   </div>
                   <div className="p-4 flex flex-col gap-3 flex-1">
                     <div>
-                      <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 truncate">
+                      <h3 className="font-bold text-lg text-text-primary dark:text-text-primary truncate">
                         {o.proposed_team_name}
                       </h3>
-                      <div className="text-sm text-slate-500 dark:text-slate-400 mt-1 flex flex-col gap-0.5">
+                      <div className="text-sm text-text-muted dark:text-text-secondary mt-1 flex flex-col gap-0.5">
                         {o.profiles?.full_name && (
                           <span>Applicant: {o.profiles.full_name}</span>
                         )}
@@ -786,7 +786,7 @@ export function ParticipantManager({
                           type="button"
                           onClick={() => handleApproveOwner(o.id)}
                           disabled={loadingId === o.id}
-                          className="h-11 flex-1 rounded-xl bg-gradient-to-r from-success/90 to-emerald-500/90 hover:from-success hover:to-emerald-500 px-4 text-sm font-bold text-white shadow-[0_4px_15px_rgb(16,185,129,0.25)] hover:shadow-[0_8px_25px_rgb(16,185,129,0.35)] disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 hover:-translate-y-0.5 border border-success/20"
+                          className="h-11 flex-1 rounded-xl bg-success px-4 text-sm font-bold text-text-inverse shadow-card disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 border border-success/20"
                         >
                           {loadingId === o.id && <Loader2 className="h-4 w-4 animate-spin" />}
                           Approve
@@ -796,14 +796,14 @@ export function ParticipantManager({
 
                     {o.status === 'APPROVED' && (
                       <div className="mt-auto pt-2">
-                        <span className="block w-full text-center px-2 py-1 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold uppercase">
+                        <span className="block w-full text-center px-2 py-1 rounded bg-success/10 dark:bg-success/15 text-success dark:text-success text-xs font-bold uppercase">
                           Approved
                         </span>
                       </div>
                     )}
                     {o.status === 'REJECTED' && (
                       <div className="mt-auto pt-2">
-                        <span className="block w-full text-center px-2 py-1 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold uppercase">
+                        <span className="block w-full text-center px-2 py-1 rounded bg-danger/10 dark:bg-danger/15 text-danger dark:text-danger text-xs font-bold uppercase">
                           Rejected
                         </span>
                       </div>
@@ -827,7 +827,7 @@ export function ParticipantManager({
             aria-modal="true"
             aria-labelledby="correction-title"
             aria-describedby="correction-description"
-            className="w-full max-w-md rounded-3xl border border-glass-border bg-surface-raised/90 backdrop-blur-3xl p-6 sm:p-8 shadow-[0_16px_60px_rgb(0,0,0,0.5)] transform transition-all"
+            className="w-full max-w-md rounded-3xl border border-glass-border bg-surface-raised p-6 sm:p-8 shadow-card transform transition-all"
           >
             <h2 id="correction-title" className="text-xl font-bold text-text-primary">
               {correction.action === 'revoke' ? 'Revoke approval?' : 'Reopen application?'}
@@ -850,7 +850,7 @@ export function ParticipantManager({
                   setCorrection({ ...correction, reason: event.target.value })
                 }
                 placeholder="Add an internal audit note"
-                className="mt-2 w-full resize-y rounded-xl border border-glass-border bg-surface/50 backdrop-blur-sm px-4 py-3 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all"
+                className="mt-2 w-full resize-y rounded-xl border border-glass-border bg-surface px-4 py-3 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all"
               />
             </label>
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -858,7 +858,7 @@ export function ParticipantManager({
                 type="button"
                 disabled={loadingId === correction.id}
                 onClick={() => setCorrection(null)}
-                className="min-h-[44px] rounded-xl border border-glass-border bg-surface-muted/30 px-6 text-sm font-bold text-text-secondary hover:bg-surface-muted hover:text-text-primary disabled:opacity-50 transition-all"
+                className="min-h-[44px] rounded-xl border border-glass-border bg-surface-muted px-6 text-sm font-bold text-text-secondary hover:bg-surface-muted hover:text-text-primary disabled:opacity-50 transition-all"
               >
                 Cancel
               </button>
@@ -866,9 +866,9 @@ export function ParticipantManager({
                 type="button"
                 disabled={loadingId === correction.id}
                 onClick={handleCorrection}
-                className={`min-h-[44px] rounded-xl px-6 text-sm font-bold text-white shadow-lg disabled:opacity-50 transition-all hover:-translate-y-0.5 active:scale-95 ${correction.action === 'revoke'
-                    ? 'bg-gradient-to-r from-danger to-red-600 shadow-danger/25 hover:shadow-danger/40'
-                    : 'bg-gradient-to-r from-primary to-primary-hover shadow-primary/25 hover:shadow-primary/40'
+                className={`min-h-[44px] rounded-xl px-6 text-sm font-bold text-text-primary shadow-card disabled:opacity-50 transition-all  active:scale-95 ${correction.action === 'revoke'
+                    ? 'bg-danger shadow-danger/25 hover:shadow-danger/40'
+                    : 'bg-primary shadow-primary/25 hover:shadow-primary/40'
                   }`}
               >
                 {loadingId === correction.id

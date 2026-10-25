@@ -42,7 +42,7 @@ export default async function OrganizerStandingsPage({ params }: { params: Promi
                 <>
                   <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-surface">
                     <table className="w-full text-sm tabular-nums">
-                      <thead className="bg-surface-muted text-[11px] uppercase tracking-wider text-text-muted">
+                      <thead className="bg-surface-muted text-xs uppercase tracking-wider text-text-muted">
                         <tr>
                           <th className="w-11 py-3 pl-3 text-left font-bold">#</th>
                           <th className="py-3 pl-2 text-left font-bold">Team</th>

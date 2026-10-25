@@ -170,8 +170,8 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
     <section className="space-y-4"><h2 className="text-xl font-bold">Competition Structure</h2>{stages.length===0?<div className="rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-5"><h3 className="font-bold">No competition stage configured.</h3><p className="mt-2 text-sm">{tournament.format} · {tournament.teamCount} teams · Rules {tournament.rulesReady?'ready':'missing'}</p>{!showSetup?<button onClick={()=>setShowSetup(true)} className="mt-5 min-h-11 rounded-lg bg-primary px-4 font-bold">Set Up Competition</button>:<div className="mt-5 grid gap-3 sm:grid-cols-3"><input aria-label="Stage name" placeholder="Stage name (e.g. League Stage)" value={stageName} onChange={(e)=>setStageName(e.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />{tournament.format==='LEAGUE'&&<input aria-label="Teams qualifying" placeholder="Teams to qualify (e.g. 4)" type="number" min="1" max={tournament.teamCount} value={qualificationCount} onChange={(e)=>setQualificationCount(Number(e.target.value))} className="min-h-11 rounded-lg border border-border bg-background px-3"/>}<button disabled={pending!==null||!tournament.rulesReady} onClick={()=>void createStage()} className="min-h-11 rounded-lg bg-primary px-4 font-bold disabled:opacity-40">Confirm & Create</button></div>}</div>:stages.map((stage)=>{const count=matches.filter((m)=>m.stage_id===stage.id).length;return <article key={stage.id} className="rounded-xl border border-border bg-surface p-5"><div className="flex flex-wrap justify-between gap-3"><div><p className="text-xs font-bold text-primary">{stage.stage_type} STAGE</p><h3 className="text-lg font-bold">{stage.name}</h3><p className="text-sm text-text-secondary">Stage {stage.sequence} · {stage.status} · {count} fixtures{stage.qualification_count?` · Top ${stage.qualification_count} qualify`:''}</p></div><button disabled={pending!==null||count>0||!tournament.rulesReady} onClick={()=>void call(stage.id,()=>createClient().rpc('generate_stage_fixtures',{p_stage_id:stage.id}),'Fixtures generated.')} className="min-h-11 rounded-lg bg-primary px-4 font-bold disabled:opacity-40">{count?'Fixtures Generated':'Generate Fixtures'}</button></div>{stage.stage_type==='LEAGUE'&&<form onSubmit={(event)=>void saveRules(event,stage.id)} className="mt-4 border-t border-border pt-4 space-y-3"><p className="text-xs text-text-secondary font-semibold uppercase tracking-wider">Points Table Rules</p><div className="grid gap-3 sm:grid-cols-3"><label className="flex flex-col gap-1 text-xs text-text-secondary">Points for a Win<input name="win_points" type="number" min="0" defaultValue={stage.standings_rules?.win_points??2} className="min-h-10 rounded-lg border border-border bg-background px-3 text-text-primary text-base font-bold"/></label><label className="flex flex-col gap-1 text-xs text-text-secondary">Points for a Loss<input name="loss_points" type="number" min="0" defaultValue={stage.standings_rules?.loss_points??0} className="min-h-10 rounded-lg border border-border bg-background px-3 text-text-primary text-base font-bold"/></label><label className="flex flex-col gap-1 text-xs text-text-secondary">Tiebreaker order <span className="text-text-muted normal-case font-normal">(comma-separated)</span><input name="tie_break_rules" defaultValue={(stage.standings_rules?.tie_break_rules??['WINS','SET_DIFFERENCE','POINT_DIFFERENCE','NAME']).join(',')} className="min-h-10 rounded-lg border border-border bg-background px-3 text-text-primary text-sm"/></label></div><button disabled={pending!==null} className="min-h-10 rounded-lg border border-border px-4 font-semibold text-sm">Save Points Rules</button></form>}</article>;})}</section>
 
     {completeLeague && (
-      <section className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5">
-        <p className="text-xs font-black uppercase tracking-[.2em] text-emerald-400">League Stage Complete</p>
+      <section className="rounded-2xl border border-success/30 bg-success/10 p-5">
+        <p className="text-xs font-black uppercase tracking-[.2em] text-success">League Stage Complete</p>
         <h2 className="mt-2 text-2xl font-black">What happens next?</h2>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           {[
@@ -226,7 +226,7 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
             <button
               disabled={pending !== null}
               onClick={() => void confirmNext(completeLeague.id)}
-              className="mt-5 min-h-11 rounded-lg bg-emerald-600 px-5 font-bold text-white disabled:opacity-40"
+              className="mt-5 min-h-11 rounded-lg bg-success px-5 font-bold text-text-inverse disabled:opacity-40"
             >
               {decision === 'FINISH_AFTER_LEAGUE' ? 'Confirm & Finish Tournament' : 'Confirm & Create Next Stage'}
             </button>
@@ -260,7 +260,7 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
                   <button
                     onClick={() => void saveMatchOrder(stage.id, round, interleaveMatchesForMaxRest(items))}
                     disabled={pending !== null}
-                    className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5"
+                    className="rounded-lg border border-success/30 bg-success/10 px-3 py-1.5 text-xs font-bold text-success hover:bg-success/15 transition-colors flex items-center gap-1.5"
                     title="Automatically arrange matches so teams get maximum rest between games (no back-to-back matches)"
                   >
                     🔄 Auto-Spread Rest
@@ -273,18 +273,18 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
                   </button>
                   <button
                     onClick={() => setPlanDaysGroup({ stage, items })}
-                    className="rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-1.5 text-xs font-bold text-sky-400 hover:bg-sky-500/20 transition-colors flex items-center gap-1.5"
+                    className="rounded-lg border border-info/30 bg-info/10 px-3 py-1.5 text-xs font-bold text-info hover:bg-info/15 transition-colors flex items-center gap-1.5"
                   >
                     📅 Plan Days
                   </button>
                 </div>
               )}
             </div>
-            <div className="h-px w-full bg-gradient-to-r from-primary/40 to-transparent mb-4" />
+            <div className="h-px w-full bg-primary/10 mb-4" />
             <div className="space-y-3">
               {items.map((match, index) => {
                 const isLocked = ['LIVE', 'COMPLETED', 'CANCELLED'].includes(match.status);
-                const statusColor = match.status === 'COMPLETED' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : match.status === 'LIVE' ? 'bg-red-500/15 text-red-400 border-red-500/30 animate-pulse' : match.status === 'POSTPONED' ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-primary/10 text-primary border-primary/30';
+                const statusColor = match.status === 'COMPLETED' ? 'bg-success/10 text-success border-success/30' : match.status === 'LIVE' ? 'bg-danger/10 text-danger border-danger/30 animate-pulse' : match.status === 'POSTPONED' ? 'bg-warning/10 text-warning border-warning/30' : 'bg-primary/10 text-primary border-primary/30';
                 return (
                   <article key={match.id} className="overflow-hidden rounded-2xl border border-border bg-surface transition-all hover:border-primary/40">
                     <div className="p-4 space-y-3">
@@ -294,11 +294,11 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
                           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-black text-primary">#{match.program_order}</div>
                           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
                             <p className="min-w-0 truncate text-sm font-black text-text-primary sm:text-base">{match.home_team?.name ?? 'TBD'}</p>
-                            <span className="shrink-0 rounded-md bg-surface-muted px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-text-muted">VS</span>
+                            <span className="shrink-0 rounded-md bg-surface-muted px-2 py-0.5 text-xs font-black uppercase tracking-widest text-text-muted">VS</span>
                             <p className="min-w-0 truncate text-sm font-black text-text-primary sm:text-base">{match.away_team?.name ?? 'TBD'}</p>
                           </div>
                         </div>
-                        <span className={`shrink-0 inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${statusColor}`}>{match.status}</span>
+                        <span className={`shrink-0 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-black uppercase tracking-wider ${statusColor}`}>{match.status}</span>
                       </div>
 
                       {/* Reorder & Action Bar Row */}
@@ -320,7 +320,7 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
                               className="h-8 rounded-lg border border-border bg-background px-2 text-xs font-bold text-primary hover:border-primary focus:outline-none transition-colors cursor-pointer"
                             >
                               {items.map((_, pos) => (
-                                <option key={pos} value={pos} className="bg-[#181825] text-white">
+                                <option key={pos} value={pos} className="bg-surface text-text-primary">
                                   #{pos + 1}
                                 </option>
                               ))}
@@ -367,8 +367,8 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
                           <input aria-label="Venue" name="venue" defaultValue={match.venue ?? tournament.venue ?? ''} placeholder="Venue" className="min-h-10 rounded-lg border border-border bg-background px-3 text-sm text-text-primary" />
                           <input aria-label="Court" name="court" defaultValue={match.court ?? ''} placeholder="Court" className="min-h-10 rounded-lg border border-border bg-background px-3 text-sm text-text-primary" />
                           <select aria-label="Schedule status" name="status" defaultValue={match.status === 'POSTPONED' ? 'POSTPONED' : 'SCHEDULED'} className="min-h-10 rounded-lg border border-border bg-background px-3 text-sm text-text-primary cursor-pointer">
-                            <option className="bg-[#181825] text-white">SCHEDULED</option>
-                            <option className="bg-[#181825] text-white">POSTPONED</option>
+                            <option className="bg-surface text-text-primary">SCHEDULED</option>
+                            <option className="bg-surface text-text-primary">POSTPONED</option>
                           </select>
                           <button disabled={pending !== null || isLocked} className="min-h-10 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-40">{match.scheduled_at ? 'Update' : 'Schedule'}</button>
                         </form>
@@ -383,9 +383,9 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
                               onChange={(e) => e.target.value && void call(match.id, () => createClient().rpc('assign_match_scorer', { p_match_id: match.id, p_scorer_user_id: e.target.value }), 'Scorer assigned.')}
                               className="min-h-10 flex-1 min-w-[200px] max-w-md rounded-lg border border-border bg-background px-3 text-sm font-medium text-text-primary focus:border-primary focus:outline-none transition-colors cursor-pointer"
                             >
-                              <option value="" className="bg-[#181825] text-white">Unassigned (Anyone with link can score if permitted)</option>
+                              <option value="" className="bg-surface text-text-primary">Unassigned (Anyone with link can score if permitted)</option>
                               {scorers.map((s) => (
-                                <option key={s.user_id} value={s.user_id} className="bg-[#181825] text-white">
+                                <option key={s.user_id} value={s.user_id} className="bg-surface text-text-primary">
                                   {s.display_name} · {s.email}
                                 </option>
                               ))}
@@ -466,8 +466,8 @@ function EasyReorderModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-xl max-h-[90vh] flex flex-col rounded-2xl border border-border bg-surface shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 animate-in fade-in duration-200">
+      <div className="w-full max-w-xl max-h-[90vh] flex flex-col rounded-2xl border border-border bg-surface shadow-card overflow-hidden">
         <div className="flex items-center justify-between border-b border-border p-4 sm:p-5">
           <div>
             <h3 className="text-lg font-black text-text-primary">⚡ Easy Match Reorder</h3>
@@ -477,7 +477,7 @@ function EasyReorderModal({
             <button
               onClick={() => setList(interleaveMatchesForMaxRest(list))}
               disabled={isSaving}
-              className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5"
+              className="rounded-lg border border-success/30 bg-success/10 px-3 py-1.5 text-xs font-bold text-success hover:bg-success/15 transition-colors flex items-center gap-1.5"
               title="Automatically arrange matches so teams get maximum rest between games"
             >
               🔄 Auto-Spread Rest

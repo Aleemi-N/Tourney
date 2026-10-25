@@ -73,7 +73,7 @@ export function RegistrationLinks({ slug, tournamentName, isLeague, status }: Re
       <div className="flex items-center gap-3 mb-4">
         <h2 className="text-xl font-semibold text-text-primary">Registration Links</h2>
         {!isRegistrationOpen && (
-          <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded">
+          <span className="px-2 py-0.5 text-xs font-bold uppercase tracking-wider bg-warning/10 text-warning border border-warning/30 rounded">
             Currently Closed
           </span>
         )}
@@ -114,7 +114,7 @@ export function RegistrationLinks({ slug, tournamentName, isLeague, status }: Re
               className="flex items-center justify-center gap-1.5 py-2 px-3 bg-surface-muted text-text-primary border border-border text-sm font-medium rounded-lg hover:bg-surface-hover transition-colors"
               title="Copy Player Registration Link"
             >
-              {copiedPlayer ? <CheckIcon className="w-4 h-4 text-emerald-500" /> : <ClipboardDocumentIcon className="w-4 h-4" />}
+              {copiedPlayer ? <CheckIcon className="w-4 h-4 text-success" /> : <ClipboardDocumentIcon className="w-4 h-4" />}
               <span>{copiedPlayer ? 'Copied' : 'Copy'}</span>
             </button>
           </div>
@@ -124,7 +124,7 @@ export function RegistrationLinks({ slug, tournamentName, isLeague, status }: Re
         {isLeague && (
           <div className="bg-surface border border-border rounded-xl p-5 flex flex-col">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-500">
+              <div className="p-2 bg-primary/10 rounded-lg text-primary">
                 <ShieldCheckIcon className="w-5 h-5" />
               </div>
               <h3 className="font-semibold text-text-primary">Team Registration</h3>
@@ -136,7 +136,7 @@ export function RegistrationLinks({ slug, tournamentName, isLeague, status }: Re
               <Link
                 href={`/t/${slug}/register/team`}
                 target="_blank"
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary transition-colors"
               >
                 Open <ArrowTopRightOnSquareIcon className="w-4 h-4" />
               </Link>
@@ -146,7 +146,7 @@ export function RegistrationLinks({ slug, tournamentName, isLeague, status }: Re
                 className="flex items-center justify-center gap-1.5 py-2 px-3 bg-surface-muted text-text-primary border border-border text-sm font-medium rounded-lg hover:bg-surface-hover transition-colors"
                 title="Share Team Registration Link"
               >
-                <ShareIcon className="w-4 h-4 text-indigo-400" />
+                <ShareIcon className="w-4 h-4 text-primary" />
                 <span>Share</span>
               </button>
               <button
@@ -155,7 +155,7 @@ export function RegistrationLinks({ slug, tournamentName, isLeague, status }: Re
                 className="flex items-center justify-center gap-1.5 py-2 px-3 bg-surface-muted text-text-primary border border-border text-sm font-medium rounded-lg hover:bg-surface-hover transition-colors"
                 title="Copy Team Registration Link"
               >
-                {copiedTeam ? <CheckIcon className="w-4 h-4 text-emerald-500" /> : <ClipboardDocumentIcon className="w-4 h-4" />}
+                {copiedTeam ? <CheckIcon className="w-4 h-4 text-success" /> : <ClipboardDocumentIcon className="w-4 h-4" />}
                 <span>{copiedTeam ? 'Copied' : 'Copy'}</span>
               </button>
             </div>

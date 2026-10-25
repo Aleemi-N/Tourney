@@ -427,7 +427,7 @@ export function TournamentWizard({ initialData }: { initialData?: any }) {
                 type="button"
                 onClick={handlePublish}
                 disabled={pending}
-                className="w-full sm:w-auto px-6 py-3 font-semibold text-white bg-success rounded-lg hover:bg-success/80 transition-colors disabled:opacity-50"
+                className="w-full sm:w-auto px-6 py-3 font-semibold text-text-inverse bg-success rounded-lg hover:bg-success/80 transition-colors disabled:opacity-50"
               >
                 {pending ? 'Publishing...' : 'Open Registration'}
               </button>

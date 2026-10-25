@@ -107,7 +107,7 @@ export function TournamentDetailsForm({ tournament, initialLogoPath, initialLogo
     <form onSubmit={save} className="rounded-xl border border-border bg-surface overflow-hidden">
       <div className="border-b border-border px-4 py-5 sm:px-6"><h2 className="text-lg font-semibold text-text-primary">Tournament Details</h2><p className="mt-1 text-sm text-text-secondary">Update the tournament&apos;s basic information and branding.</p></div>
       <div className="space-y-6 p-4 sm:p-6">
-        {message && <div role="status" className={`rounded-lg border p-3 text-sm ${message.type === 'error' ? 'border-danger/30 bg-danger/10 text-danger' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'}`}>{message.text}</div>}
+        {message && <div role="status" className={`rounded-lg border p-3 text-sm ${message.type === 'error' ? 'border-danger/30 bg-danger/10 text-danger' : 'border-success/30 bg-success/10 text-success'}`}>{message.text}</div>}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-background">
             {logoUrl ? <Image src={logoUrl} alt="Tournament logo preview" fill sizes="96px" className="object-contain p-2" unoptimized /> : <PhotoIcon className="h-9 w-9 text-text-muted" />}

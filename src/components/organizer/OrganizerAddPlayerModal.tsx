@@ -96,16 +96,16 @@ export function OrganizerAddPlayerModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg rounded-2xl bg-[#1A0B2E] border border-white/10 shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+      <div className="relative w-full max-w-lg rounded-2xl bg-surface border border-border shadow-card flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 p-5 shrink-0">
+        <div className="flex items-center justify-between border-b border-border p-5 shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-white">Add Player to Queue</h2>
-            <p className="text-sm text-white/50 mt-1">Player will be added to the end of the WAITING queue.</p>
+            <h2 className="text-xl font-bold text-text-primary">Add Player to Queue</h2>
+            <p className="text-sm text-text-secondary mt-1">Player will be added to the end of the WAITING queue.</p>
           </div>
-          <button onClick={onClose} className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white transition">
+          <button onClick={onClose} className="rounded-full p-2 text-text-secondary hover:bg-surface-muted hover:text-text-primary transition">
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
@@ -115,25 +115,25 @@ export function OrganizerAddPlayerModal({
           
           <div className="flex-1 overflow-y-auto p-5 space-y-5">
             {/* Mode Switcher */}
-            <div className="flex rounded-lg bg-white/5 p-1">
+            <div className="flex rounded-lg bg-surface p-1">
               <button
                 type="button"
                 onClick={() => setMode('EXISTING')}
-                className={`flex-1 rounded-md py-2 text-sm font-semibold transition ${mode === 'EXISTING' ? 'bg-fuchsia-500 text-white shadow' : 'text-white/50 hover:text-white'}`}
+                className={`flex-1 rounded-md py-2 text-sm font-semibold transition ${mode === 'EXISTING' ? 'bg-primary text-primary-foreground shadow' : 'text-text-secondary hover:text-primary-foreground'}`}
               >
                 Existing Player
               </button>
               <button
                 type="button"
                 onClick={() => setMode('NEW')}
-                className={`flex-1 rounded-md py-2 text-sm font-semibold transition ${mode === 'NEW' ? 'bg-fuchsia-500 text-white shadow' : 'text-white/50 hover:text-white'}`}
+                className={`flex-1 rounded-md py-2 text-sm font-semibold transition ${mode === 'NEW' ? 'bg-primary text-primary-foreground shadow' : 'text-text-secondary hover:text-primary-foreground'}`}
               >
                 Quick Add New
               </button>
             </div>
 
             {error && (
-              <div className="rounded-xl bg-red-500/20 p-4 text-sm font-semibold text-red-200 border border-red-500/30">
+              <div className="rounded-xl bg-danger/15 p-4 text-sm font-semibold text-danger border border-danger/30">
                 {error}
               </div>
             )}
@@ -141,12 +141,12 @@ export function OrganizerAddPlayerModal({
             {mode === 'NEW' ? (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-1">Display Name *</label>
-                  <input required type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white focus:border-fuchsia-300 focus:outline-none" />
+                  <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-1">Display Name *</label>
+                  <input required type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} className="w-full rounded-xl border border-border bg-surface p-3 text-text-primary focus:border-primary/30 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-1">Primary Position *</label>
-                  <select required value={primaryPosition} onChange={e => setPrimaryPosition(e.target.value)} className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white focus:border-fuchsia-300 focus:outline-none appearance-none">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-1">Primary Position *</label>
+                  <select required value={primaryPosition} onChange={e => setPrimaryPosition(e.target.value)} className="w-full rounded-xl border border-border bg-surface p-3 text-text-primary focus:border-primary/30 focus:outline-none appearance-none">
                     <option value="SETTER">Setter</option>
                     <option value="LIBERO">Libero</option>
                     <option value="MIDDLE_BLOCKER">Middle Blocker</option>
@@ -156,8 +156,8 @@ export function OrganizerAddPlayerModal({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-1">Secondary Position</label>
-                  <select value={secondaryPosition} onChange={e => setSecondaryPosition(e.target.value)} className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white focus:border-fuchsia-300 focus:outline-none appearance-none">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-1">Secondary Position</label>
+                  <select value={secondaryPosition} onChange={e => setSecondaryPosition(e.target.value)} className="w-full rounded-xl border border-border bg-surface p-3 text-text-primary focus:border-primary/30 focus:outline-none appearance-none">
                     <option value="">None</option>
                     <option value="SETTER">Setter</option>
                     <option value="LIBERO">Libero</option>
@@ -168,15 +168,15 @@ export function OrganizerAddPlayerModal({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-1">Phone (Optional)</label>
-                  <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white focus:border-fuchsia-300 focus:outline-none" />
+                  <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-1">Phone (Optional)</label>
+                  <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full rounded-xl border border-border bg-surface p-3 text-text-primary focus:border-primary/30 focus:outline-none" />
                 </div>
               </div>
             ) : (
               <div className="space-y-3 flex flex-col h-[300px]">
-                <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-1">Select Player *</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-1">Select Player *</label>
                 <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-white/40">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-text-muted">
                     <MagnifyingGlassIcon className="h-5 w-5" />
                   </div>
                   <input
@@ -184,20 +184,20 @@ export function OrganizerAddPlayerModal({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search name or position..."
-                    className="w-full rounded-xl border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm text-white focus:border-fuchsia-400 focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-surface py-2 pl-10 pr-4 text-sm text-text-primary focus:border-primary focus:outline-none"
                   />
                 </div>
                 
-                <div className="flex-1 overflow-y-auto rounded-xl border border-white/10 bg-white/5 divide-y divide-white/5">
+                <div className="flex-1 overflow-y-auto rounded-xl border border-border bg-surface divide-y divide-border">
                   {loadingPlayers ? (
-                    <div className="p-4 text-center text-sm text-white/50">Loading eligible players...</div>
+                    <div className="p-4 text-center text-sm text-text-secondary">Loading eligible players...</div>
                   ) : filteredPlayers.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-white/50">No eligible players found.</div>
+                    <div className="p-4 text-center text-sm text-text-secondary">No eligible players found.</div>
                   ) : (
                     filteredPlayers.map((p) => (
                       <label
                         key={p.id}
-                        className={`flex cursor-pointer items-center gap-3 p-3 transition hover:bg-white/5 ${existingPlayerId === p.id ? 'bg-fuchsia-500/10' : ''}`}
+                        className={`flex cursor-pointer items-center gap-3 p-3 transition hover:bg-surface-muted ${existingPlayerId === p.id ? 'bg-primary/10' : ''}`}
                       >
                         <input
                           type="radio"
@@ -205,21 +205,21 @@ export function OrganizerAddPlayerModal({
                           value={p.id}
                           checked={existingPlayerId === p.id}
                           onChange={() => setExistingPlayerId(p.id)}
-                          className="h-4 w-4 border-white/20 bg-transparent text-fuchsia-500 focus:ring-fuchsia-500 focus:ring-offset-0"
+                          className="h-4 w-4 border-border-strong bg-transparent text-primary focus:ring-primary focus:ring-offset-0"
                         />
                         {p.photo_path ? (
-                          <img src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${p.photo_path}`} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover bg-white/10" />
+                          <img src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${p.photo_path}`} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover bg-surface-muted" />
                         ) : (
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-white/50">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-muted text-xs font-bold text-text-secondary">
                             {p.display_name.charAt(0).toUpperCase()}
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-white truncate">{p.display_name}</div>
-                          <div className="text-xs text-white/50 flex gap-2">
+                          <div className="font-semibold text-text-primary truncate">{p.display_name}</div>
+                          <div className="text-xs text-text-secondary flex gap-2">
                             <span>{formatVolleyballPosition(p.primary_position)}</span>
                             {p.registration_status !== 'APPROVED' && (
-                              <span className="text-red-300 font-medium">({p.registration_status})</span>
+                              <span className="text-danger font-medium">({p.registration_status})</span>
                             )}
                           </div>
                         </div>
@@ -231,8 +231,8 @@ export function OrganizerAddPlayerModal({
             )}
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-1">Auction Category *</label>
-              <select required value={categoryId} onChange={e => setCategoryId(e.target.value)} className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white focus:border-fuchsia-300 focus:outline-none appearance-none">
+              <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-1">Auction Category *</label>
+              <select required value={categoryId} onChange={e => setCategoryId(e.target.value)} className="w-full rounded-xl border border-border bg-surface p-3 text-text-primary focus:border-primary/30 focus:outline-none appearance-none">
                 {categories.map(c => (
                   <option key={c.id} value={c.id}>{c.display_name} — ₹{Number(c.base_price).toLocaleString('en-IN')}</option>
                 ))}
@@ -241,11 +241,11 @@ export function OrganizerAddPlayerModal({
 
           </div>
 
-          <div className="p-5 border-t border-white/10 shrink-0 bg-[#1A0B2E]">
+          <div className="p-5 border-t border-border shrink-0 bg-surface">
             <button
               type="submit"
               disabled={busy || (mode === 'EXISTING' && !existingPlayerId)}
-              className="w-full rounded-xl bg-fuchsia-300 py-3.5 text-sm font-black text-[#211334] transition hover:bg-fuchsia-200 disabled:opacity-50"
+              className="w-full rounded-xl bg-primary py-3.5 text-sm font-black text-primary-foreground transition hover:bg-primary-hover disabled:opacity-50"
             >
               {busy ? 'Processing…' : 'Add to Auction Queue'}
             </button>
