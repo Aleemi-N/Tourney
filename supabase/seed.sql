@@ -105,7 +105,7 @@ VALUES
 ON CONFLICT (volleyball_rule_id, set_number) DO UPDATE SET target_points = EXCLUDED.target_points;
 
 INSERT INTO public.matches (id, tournament_id, stage_id, match_number, home_team_id, away_team_id, status, venue, court)
-VALUES ('90700000-0000-0000-0000-000000000001', '90200000-0000-0000-0000-000000000001', '90500000-0000-0000-0000-000000000001', 1, '90300000-0000-0000-0000-000000000001', '90300000-0000-0000-0000-000000000002', 'SCHEDULED', 'Local QA Arena', 'Court 1')
+VALUES ('90700000-0000-0000-0000-000000000001', '90200000-0000-0000-0000-000000000001', '90500000-0000-0000-0000-000000000001', 1, '90300000-0000-0000-0000-000000000001', '90300000-0000-0000-0000-000000000002', 'SCHEDULED', 'Local QA Arena', '1')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.match_sets (match_id, set_number, target_points, status)
@@ -385,11 +385,11 @@ BEGIN
 
   UPDATE public.matches m SET
     scheduled_at = date_trunc('day', now()) + interval '9 hours' + ((m.program_order - 1) * interval '75 minutes') - interval '1 day',
-    venue = 'Harbour Sports Arena', court = 'Court ' || (1 + (m.program_order - 1) % 2)
+    venue = 'Harbour Sports Arena', court = (1 + (m.program_order - 1) % 2)::text
   WHERE m.stage_id = '90500000-0000-0000-0000-000000000003';
   UPDATE public.matches m SET
     scheduled_at = date_trunc('day', now()) - interval '60 days' + interval '9 hours' + ((m.program_order - 1) * interval '60 minutes'),
-    venue = 'Beach Road Court', court = 'Court 1'
+    venue = 'Beach Road Court', court = '1'
   WHERE m.stage_id = '90500000-0000-0000-0000-000000000004';
 
   FOR v_match IN SELECT id FROM public.matches WHERE stage_id = '90500000-0000-0000-0000-000000000003' ORDER BY program_order LIMIT 7 LOOP
