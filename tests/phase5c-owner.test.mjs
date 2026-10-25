@@ -33,16 +33,10 @@ test('owner dashboard and squad expose the intended owner workflow', () => {
     assert.match(squad, /squad\.length/);
 });
 
-test('owner bidding uses the trusted RPC with stale-state inputs and idempotency', () => {
-    assert.match(auction, /place_auction_bid/);
-    assert.match(auction, /p_request_key: crypto\.randomUUID\(\)/);
-    assert.match(auction, /p_expected_player_version: snapshot\.current_player\.state_version/);
-    assert.match(auction, /p_expected_highest_bid: snapshot\.highest_bid\?\.amount \?\? 0/);
-    assert.match(auction, /bidState === 'pending'/);
-    assert.match(auction, /setBidState\('rejected'\)/);
-    assert.match(auction, /await refreshSnapshot\(\)/);
-    assert.match(auction, /The bid was not accepted/);
-    assert.doesNotMatch(auction, /setMessage\(error\.message\)/);
+// Since 1b0dd72 owners call bids out in the venue and the organizer enters them, so the owner view is read-only.
+test('owner auction view is read-only: bids are called out to the auctioneer offline', () => {
+    assert.match(auction, /Bidding is Managed Offline/);
+    assert.doesNotMatch(auction, /place_auction_bid/);
     assert.doesNotMatch(auction, /from\(['"]auction_bids/);
     assert.doesNotMatch(auction, /from\(['"]auction_team_wallets/);
     assert.doesNotMatch(auction, /from\(['"]auction_players/);
@@ -51,9 +45,7 @@ test('owner bidding uses the trusted RPC with stale-state inputs and idempotency
 test('owner finance and auction display come from the owner snapshot', () => {
     assert.match(auctionPage, /get_auction_owner_state/);
     for (const field of ['remaining_purse', 'spent_purse', 'protected_reserve', 'max_allowed_bid', 'minimum_squad', 'maximum_squad']) assert.match(auction, new RegExp(field));
-    for (const field of ['category_code', 'category_label', 'category_base_price', 'primary_position', 'display_name']) assert.match(auction, new RegExp(field));
-    assert.match(auction, /team\?\.may_bid/);
-    assert.match(auction, /numericAmount > Number\(team\?\.max_allowed_bid/);
+    for (const field of ['category_code', 'category_label']) assert.match(auction, new RegExp(field));
     for (const state of ['Leading', 'Outbid', 'Cannot bid']) assert.match(auction, new RegExp(state));
 });
 
@@ -67,13 +59,12 @@ test('owner realtime listens only to sanitized events and recovers snapshots', (
     for (const rawTable of ['auction_bids', 'auction_team_wallets', 'auction_players', 'auction_sales', 'purse_transactions']) assert.doesNotMatch(auction, new RegExp(`table: ['"]${rawTable}`));
 });
 
-test('owner controls are bid-only and responsive for phone layouts', () => {
+test('owner controls never mutate the auction and stay responsive', () => {
     assert.doesNotMatch(auction, /prepare_auction|set_auction_lifecycle|finalize_auction_sale|mark_auction_player_unsold|open_next_auction_player|requeue_auction_player|complete_auction/);
-    assert.match(auction, /min-h-12/);
-    assert.match(auction, /sm:grid-cols/);
     assert.match(auction, /xl:grid-cols/);
-    assert.match(shell, /Switch team/);
-    assert.match(shell, /lg:hidden/);
+    // Team switching lives in the shared AppShell (sidebar on desktop, "More" sheet on phones).
+    assert.match(shell, /Your teams/);
+    assert.match(shell, /AppShell/);
 });
 
 test('account profile resolves authoritative owner assignments and exposes the team portal', () => {

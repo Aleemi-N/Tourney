@@ -1000,17 +1000,18 @@ export function OrganizerAuctionClient({
         <ReadinessPanel readiness={readiness} />
       )}
 
-      {/* Desktop: two-column layout / Mobile: single column */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+      {/* Wide screens: arena + side panel. Below 2xl the side panel stacks under the arena,
+          so the player card never drops under ~400px. */}
+      <div className="grid grid-cols-1 gap-6 2xl:grid-cols-3">
         {/* Left / main broadcast arena */}
-        <div className="space-y-6 xl:col-span-2">
+        <div className="space-y-6 2xl:col-span-2">
           {/* Current player + Bidding console side-by-side */}
           {snapshot && (
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-              <div className="md:col-span-6 xl:col-span-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+              <div>
                 <CurrentPlayerPanel snapshot={snapshot} storageBase={storageBase} tournamentName={tournamentName} />
               </div>
-              <div className="md:col-span-6 xl:col-span-6">
+              <div>
                 <AuctioneerBiddingPanel snapshot={snapshot} teamNameMap={teamNameMap} onPlaceBid={handlePlaceBid} busy={busy} minimumBidIncrement={minimumBidIncrement} />
               </div>
             </div>
@@ -1245,8 +1246,8 @@ export function OrganizerAuctionClient({
           )}
         </div>
 
-        {/* Right column */}
-        <div className="space-y-6">
+        {/* Side panel: two columns while stacked under the arena, one column beside it */}
+        <div className="grid content-start gap-6 md:grid-cols-2 2xl:grid-cols-1">
           {/* Progress */}
           {snapshot && <AuctionProgress snapshot={snapshot} />}
 

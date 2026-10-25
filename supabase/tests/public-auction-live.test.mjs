@@ -117,8 +117,12 @@ test('COMPLETED auctions are visible', () => assert.strictEqual(isAuctionVisible
 test('DRAFT auctions NOT shown (only lot view)', () => assert.strictEqual(isAuctionVisible('DRAFT'), false));
 test('anon auction discovery uses sanitized public events, not the RLS-protected auctions table', () => {
   assert.match(publicPage, /from\('auction_public_events'\)/);
-  assert.match(publicPage, /latestAuctionEvent\.auction_id/);
-  assert.doesNotMatch(publicPage, /from\('auctions'\)/);
+  assert.match(publicPage, /latestAuctionEvent\??\.auction_id/);
+  // A direct auctions read may follow only as a fallback for signed-in members (RLS returns nothing to anon).
+  const eventsAt = publicPage.indexOf("from('auction_public_events')");
+  const auctionsAt = publicPage.indexOf("from('auctions')");
+  assert.ok(auctionsAt === -1 || auctionsAt > eventsAt);
+  assert.match(publicPage, /if \(!targetAuctionId\)/);
 });
 
 // ─── Test: progress calculation ───────────────────────────────────────────────

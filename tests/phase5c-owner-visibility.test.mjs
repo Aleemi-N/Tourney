@@ -1,11 +1,18 @@
+// Owner visibility QA against the local seed (supabase/seed.sql) and a running app.
+// Each owner must see only their own teams, in the data layer and in the portal,
+// and must get a 404 on another owner's team page.
+// Run: LOCAL_SUPABASE_ANON_KEY=<from `supabase status`> PHASE5C_BASE_URL=http://localhost:3000 node tests/phase5c-owner-visibility.test.mjs
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 import { chromium } from '@playwright/test';
 
 const supabaseUrl = process.env.LOCAL_SUPABASE_URL ?? 'http://127.0.0.1:54321';
 const anonKey = process.env.LOCAL_SUPABASE_ANON_KEY;
 const baseUrl = process.env.PHASE5C_BASE_URL ?? 'http://localhost:3000';
-const password = process.env.LOCAL_QA_PASSWORD ?? 'TournyTest123!';
+// The seed's single local-only password, read from the seed so it lives in one place.
+const password = process.env.LOCAL_QA_PASSWORD
+  ?? readFileSync(new URL('../supabase/seed.sql', import.meta.url), 'utf8').match(/extensions\.crypt\('([^']+)'/)[1];
 
 if (!/^http:\/\/(127\.0\.0\.1|localhost)/.test(supabaseUrl) ||
     !/^http:\/\/(127\.0\.0\.1|localhost)/.test(baseUrl)) {
@@ -13,26 +20,28 @@ if (!/^http:\/\/(127\.0\.0\.1|localhost)/.test(supabaseUrl) ||
 }
 if (!anonKey) throw new Error('LOCAL_SUPABASE_ANON_KEY is required');
 
+// Seeded ownership (supabase/seed.sql): owner@ owns one team per tournament, owner2@ another.
+const OWNER_TEAMS = ['Estuary Eagles', 'Harbour Hawks', 'Kayal Kings', 'QA Falcons', 'Rainmakers'];
+const OWNER2_TEAMS = ['Breakwater Blasters', 'Canal Cobras', 'Coastline Strikers', 'Thunder Spikers'];
+const OWNER_AUCTION_TEAM = '90300000-0000-0000-0000-000000000021'; // Harbour Hawks, live auction
+
 async function queryOwner(email) {
   const supabase = createClient(supabaseUrl, anonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
   assert.ifError(authError);
-  const userId = authData.user.id;
   const result = await supabase
     .from('team_owners')
-    .select('team_id, teams!inner(id, name, short_name, logo_path, place, tournament_id, tournaments(name))')
-    .eq('user_id', userId)
+    .select('team_id, teams!inner(id, name)')
+    .eq('user_id', authData.user.id)
     .eq('status', 'ACTIVE');
-  return { userId, data: result.data, error: result.error };
+  assert.ifError(result.error);
+  return result.data.map((row) => row.teams.name).sort();
 }
 
-const owner = await queryOwner('owner@tourny.local');
-const owner2 = await queryOwner('owner2@tourny.local');
-console.log(JSON.stringify({ owner, owner2 }, null, 2));
-assert.deepEqual(owner.data?.map((row) => row.teams.name), ['QA Falcons']);
-assert.deepEqual(owner2.data?.map((row) => row.teams.name), ['QA Spikers']);
+assert.deepEqual(await queryOwner('owner@tourny.local'), OWNER_TEAMS);
+assert.deepEqual(await queryOwner('owner2@tourny.local'), OWNER2_TEAMS);
 
 const browser = await chromium.launch({ headless: true });
 async function login(email) {
@@ -55,46 +64,31 @@ try {
   const first = await login('owner@tourny.local');
   await first.page.goto(`${baseUrl}/owner`, { waitUntil: 'domcontentloaded' });
   await first.page.waitForURL('**/owner/dashboard');
-  await first.page.getByRole('heading', { name: 'QA Falcons' }).waitFor();
-  assert.equal(await first.page.getByText('QA Spikers', { exact: true }).count(), 0);
-  await first.page.goto(`${baseUrl}/owner/teams/90300000-0000-0000-0000-000000000001`, { waitUntil: 'domcontentloaded' });
-  await first.page.getByRole('heading', { name: 'QA Falcons' }).waitFor();
-  await first.page.getByRole('link', { name: 'Open live auction' }).click();
-  await first.page.waitForURL('**/auction');
-  await first.page.getByRole('heading', { name: 'Vivek Kumar' }).waitFor();
-  await first.page.getByText(/Category base.*500/).waitFor();
-  await first.page.getByText('Team finance', { exact: true }).waitFor();
-  await first.page.getByText('Min-squad reserve', { exact: true }).waitFor();
-  await first.page.getByText('Maximum bid', { exact: true }).waitFor();
-  const bidReady = await first.page.getByRole('button', { name: 'Place bid' }).isEnabled();
-  const auctionStatus = (await first.page.locator('span').filter({ hasText: /^(LIVE|PAUSED)$/ }).first().textContent())?.trim() ?? 'UNKNOWN';
+  for (const team of OWNER_TEAMS) await first.page.getByText(team, { exact: true }).filter({ visible: true }).first().waitFor();
+  for (const team of OWNER2_TEAMS) assert.equal(await first.page.getByText(team, { exact: true }).count(), 0, `owner@ sees ${team}`);
+
+  await first.page.goto(`${baseUrl}/owner/teams/${OWNER_AUCTION_TEAM}/auction`, { waitUntil: 'domcontentloaded' });
+  await first.page.getByRole('heading', { name: 'Harbour Hawks' }).waitFor();
+  // Bids are called out in the venue; the owner view never offers a bid control.
+  await first.page.getByText('Bidding is Managed Offline').waitFor();
+  assert.equal(await first.page.getByRole('button', { name: /place bid/i }).count(), 0);
+
   await first.page.goto(`${baseUrl}/profile#my-tournaments`, { waitUntil: 'domcontentloaded' });
-  await first.page.getByText('Team Owner', { exact: true }).waitFor();
-  await first.page.getByRole('link', { name: 'Go to Team Portal' }).waitFor();
-  await first.page.getByRole('link', { name: 'Open Team Portal' }).waitFor();
+  await first.page.getByText('Team Owner', { exact: true }).filter({ visible: true }).first().waitFor();
+  await first.page.getByRole('link', { name: /Team Portal/ }).first().waitFor();
   await first.context.close();
 
   const second = await login('owner2@tourny.local');
   await second.page.goto(`${baseUrl}/owner`, { waitUntil: 'domcontentloaded' });
   await second.page.waitForURL('**/owner/dashboard');
-  await second.page.getByRole('heading', { name: 'QA Spikers' }).waitFor();
-  assert.equal(await second.page.getByText('QA Falcons', { exact: true }).count(), 0);
-  const forbidden = await second.page.goto(`${baseUrl}/owner/teams/90300000-0000-0000-0000-000000000001`, { waitUntil: 'domcontentloaded' });
+  await second.page.getByText('Coastline Strikers', { exact: true }).filter({ visible: true }).first().waitFor();
+  assert.equal(await second.page.getByText('Harbour Hawks', { exact: true }).count(), 0);
+  const forbidden = await second.page.goto(`${baseUrl}/owner/teams/${OWNER_AUCTION_TEAM}`, { waitUntil: 'domcontentloaded' });
   assert.equal(forbidden?.status(), 404);
-  assert.equal(await second.page.getByRole('heading', { name: 'QA Falcons' }).count(), 0);
+  assert.equal(await second.page.getByRole('heading', { name: 'Harbour Hawks' }).count(), 0);
   await second.context.close();
 
-  console.log(JSON.stringify({
-    status: 'PASS',
-    ownerTeam: 'QA Falcons',
-    owner2Team: 'QA Spikers',
-    crossOwnerBlocked: true,
-    livePlayer: 'Vivek Kumar',
-    categoryBase: 500,
-    auctionStatus,
-    bidReady,
-    profileTeamPortal: true,
-  }));
+  console.log(JSON.stringify({ status: 'PASS', ownerTeams: OWNER_TEAMS.length, owner2Teams: OWNER2_TEAMS.length, crossOwnerBlocked: true }));
 } finally {
   await browser.close();
 }

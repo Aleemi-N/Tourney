@@ -5,6 +5,7 @@ import test from 'node:test';
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
 const metadata = read('src/lib/public-tournament-metadata.ts');
+const origin = read('src/lib/origin.ts');
 const publicPage = read('src/app/(public)/t/[slug]/page.tsx');
 const playerPage = read('src/app/(public)/t/[slug]/register/player/page.tsx');
 const ownerPage = read('src/app/(public)/t/[slug]/register/team/page.tsx');
@@ -19,7 +20,9 @@ test('public tournament and registration metadata is dynamic, absolute, and craw
   assert.match(publicPage, /buildTournamentMetadata\(slug, 'tournament'\)/);
   assert.match(playerPage, /buildTournamentMetadata\(slug, 'player'\)/);
   assert.match(ownerPage, /buildTournamentMetadata\(slug, 'owner'\)/);
-  assert.match(metadata, /https:\/\/tournyappfyniti\.vercel\.app/);
+  // The production origin lives in lib/origin.ts; metadata builds absolute URLs from it.
+  assert.match(origin, /TOURNY_PRODUCTION_ORIGIN = 'https:\/\/tournyappfyniti\.vercel\.app'/);
+  assert.match(metadata, /from '\.\/origin'/);
   assert.match(rootLayout, /metadataBase: new URL\('https:\/\/tournyappfyniti\.vercel\.app'\)/);
   assert.match(metadata, /alternates: \{ canonical \}/);
   assert.match(metadata, /siteName: 'Tourny'/);
@@ -37,7 +40,7 @@ test('dynamic share card is 1200x630 and supports tournament logo plus fallback'
 });
 
 test('participant controls only render for actionable statuses', () => {
-  assert.match(manager, /\['PENDING', 'CHANGES_REQUESTED'\]\.includes\(p\.status\)/);
+  assert.match(manager, /\['PENDING', 'CHANGES_REQUESTED'\]\.includes\(p\.status\)|p\.status === 'PENDING' \|\| p\.status === 'CHANGES_REQUESTED'/);
   assert.match(manager, /\['PENDING', 'CHANGES_REQUESTED'\]\.includes\(o\.status\)/);
   assert.match(reviewCard, /status === 'PENDING' \|\| status === 'CHANGES_REQUESTED'/);
   assert.doesNotMatch(manager, /alert\(/);
