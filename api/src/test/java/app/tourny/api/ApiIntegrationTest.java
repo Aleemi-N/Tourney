@@ -67,7 +67,7 @@ class ApiIntegrationTest {
     }
 
     private String login(String email) throws Exception {
-        var response = post("/auth/login", "{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}", null);
+        var response = post("/auth/v1/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}", null);
         assertEquals(200, response.statusCode(), response.body());
         var m = Pattern.compile("\"access_token\":\"([^\"]+)\"").matcher(response.body());
         assertTrue(m.find());
@@ -76,8 +76,8 @@ class ApiIntegrationTest {
 
     @Test
     void loginRejectsWrongPasswordAndUnknownEmail() throws Exception {
-        assertEquals(401, post("/auth/login", "{\"email\":\"organizer@tourny.local\",\"password\":\"nope\"}", null).statusCode());
-        assertEquals(401, post("/auth/login", "{\"email\":\"nobody@tourny.local\",\"password\":\"nope\"}", null).statusCode());
+        assertEquals(400, post("/auth/v1/token?grant_type=password", "{\"email\":\"organizer@tourny.local\",\"password\":\"nope\"}", null).statusCode());
+        assertEquals(400, post("/auth/v1/token?grant_type=password", "{\"email\":\"nobody@tourny.local\",\"password\":\"nope\"}", null).statusCode());
     }
 
     @Test
@@ -127,5 +127,46 @@ class ApiIntegrationTest {
 
         // A forged token never reaches the database.
         assertEquals(401, get("/rest/teams?select=id", "not-a-token").statusCode());
+    }
+
+    private static String field(String json, String name) {
+        var m = Pattern.compile("\"" + name + "\":\"([^\"]+)\"").matcher(json);
+        assertTrue(m.find(), json);
+        return m.group(1);
+    }
+
+    @Test
+    void sessionsRefreshRotateAndReuseEndsTheSession() throws Exception {
+        var first = post("/auth/v1/token?grant_type=password", "{\"email\":\"player@tourny.local\",\"password\":\"" + password + "\"}", null);
+        assertEquals(200, first.statusCode(), first.body());
+        String access = field(first.body(), "access_token");
+        String refresh = field(first.body(), "refresh_token");
+
+        var me = get("/auth/v1/user", access);
+        assertEquals(200, me.statusCode(), me.body());
+        assertEquals("player@tourny.local", field(me.body(), "email"));
+        assertEquals(401, get("/auth/v1/user", null).statusCode());
+
+        var second = post("/auth/v1/token?grant_type=refresh_token", "{\"refresh_token\":\"" + refresh + "\"}", null);
+        assertEquals(200, second.statusCode(), second.body());
+        String rotated = field(second.body(), "refresh_token");
+
+        // Replaying the old token is theft: it fails and revokes the rotated one too.
+        assertEquals(400, post("/auth/v1/token?grant_type=refresh_token", "{\"refresh_token\":\"" + refresh + "\"}", null).statusCode());
+        assertEquals(400, post("/auth/v1/token?grant_type=refresh_token", "{\"refresh_token\":\"" + rotated + "\"}", null).statusCode());
+    }
+
+    @Test
+    void signUpCreatesAnAccountThatCanSignIn() throws Exception {
+        String email = "signup-" + System.nanoTime() + "@tourny.local";
+        var created = post("/auth/v1/signup", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\",\"data\":{\"full_name\":\"Sign Up Test\"}}", null);
+        assertEquals(200, created.statusCode(), created.body());
+        assertEquals(422, post("/auth/v1/signup", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\"}", null).statusCode());
+        assertEquals(422, post("/auth/v1/signup", "{\"email\":\"x" + email + "\",\"password\":\"short\"}", null).statusCode());
+        var login = post("/auth/v1/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\"}", null);
+        assertEquals(200, login.statusCode(), login.body());
+        // The profile row comes from the existing handle_new_user trigger.
+        var profile = get("/rest/v1/profiles?select=full_name&id=eq." + field(login.body(), "id"), field(login.body(), "access_token"));
+        assertTrue(profile.body().contains("Sign Up Test"), profile.body());
     }
 }

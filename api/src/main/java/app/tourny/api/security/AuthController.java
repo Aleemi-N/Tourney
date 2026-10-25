@@ -1,70 +1,88 @@
 package app.tourny.api.security;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
-import org.springframework.security.oauth2.jwt.JwsHeader;
-import org.springframework.security.oauth2.jwt.JwtClaimsSet;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * Logs in against the existing users table (bcrypt hashes are kept as they are) and issues an
- * access token whose subject is the user id, the same id Postgres policies see as auth.uid().
+ * The subset of the GoTrue API that supabase-js and @supabase/ssr call, so web and mobile keep
+ * their existing auth code and only change the project URL.
  */
 @RestController
+@RestControllerAdvice(assignableTypes = AuthController.class)
 class AuthController {
 
-    record LoginRequest(@NotBlank String email, @NotBlank String password) {}
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
-    private final JdbcClient jdbc;
-    private final PasswordEncoder encoder;
-    private final JwtEncoder jwtEncoder;
-    private final long ttlSeconds;
+    private final AuthService auth;
 
-    AuthController(JdbcClient jdbc, PasswordEncoder encoder, JwtEncoder jwtEncoder,
-                   @Value("${tourny.jwt.ttl-seconds}") long ttlSeconds) {
-        this.jdbc = jdbc;
-        this.encoder = encoder;
-        this.jwtEncoder = jwtEncoder;
-        this.ttlSeconds = ttlSeconds;
-        this.dummyHash = encoder.encode("not-a-real-password");
+    AuthController(AuthService auth) {
+        this.auth = auth;
     }
 
-    // Matches a hash that never verifies, so unknown emails cost the same as wrong passwords.
-    private final String dummyHash;
+    @PostMapping("/auth/v1/token")
+    Map<String, Object> token(@RequestParam("grant_type") String grantType, @RequestBody Map<String, Object> body) {
+        return switch (grantType) {
+            case "password" -> auth.signInWithPassword(text(body, "email"), text(body, "password"));
+            case "refresh_token" -> auth.refresh(text(body, "refresh_token"));
+            default -> throw new AuthService.AuthException(400, "unsupported_grant_type", "Unsupported grant_type");
+        };
+    }
 
-    @PostMapping("/auth/login")
-    Map<String, Object> login(@Valid @RequestBody LoginRequest request) {
-        String email = request.email().trim().toLowerCase();
-        List<Map<String, Object>> rows = jdbc.sql(
-                "SELECT id::text AS id, encrypted_password FROM auth.users WHERE lower(email) = :email AND deleted_at IS NULL")
-                .param("email", email).query().listOfRows();
-        String hash = rows.isEmpty() ? dummyHash : (String) rows.get(0).get("encrypted_password");
-        boolean ok = encoder.matches(request.password(), hash == null ? dummyHash : hash);
-        if (rows.isEmpty() || !ok) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
+    @PostMapping("/auth/v1/signup")
+    Map<String, Object> signUp(@RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> data = (Map<String, Object>) body.get("data");
+        return auth.signUp(text(body, "email"), text(body, "password"), data);
+    }
+
+    @GetMapping("/auth/v1/user")
+    Map<String, Object> user(@AuthenticationPrincipal Jwt jwt) {
+        return auth.getUser(jwt.getSubject());
+    }
+
+    @PutMapping("/auth/v1/user")
+    Map<String, Object> updateUser(@AuthenticationPrincipal Jwt jwt, @RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> data = (Map<String, Object>) body.get("data");
+        return auth.updateUser(jwt.getSubject(), (String) body.get("password"), data);
+    }
+
+    @PostMapping("/auth/v1/logout")
+    ResponseEntity<Void> logout(@AuthenticationPrincipal Jwt jwt) {
+        auth.signOut(jwt.getSubject());
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Always 200, like GoTrue, so the response never reveals whether an email has an account. */
+    @PostMapping("/auth/v1/recover")
+    Map<String, Object> recover(@RequestBody Map<String, Object> body) {
+        // ponytail: no mail transport yet; wire SMTP and a one-time recovery token before cutover.
+        log.warn("Password recovery requested but no mail transport is configured");
+        return Map.of();
+    }
+
+    private static String text(Map<String, Object> body, String key) {
+        Object value = body.get(key);
+        if (!(value instanceof String s) || s.isBlank()) {
+            throw new AuthService.AuthException(400, "validation_failed", key + " is required");
         }
-        String userId = (String) rows.get(0).get("id");
+        return s;
+    }
 
-        Instant now = Instant.now();
-        JwtClaimsSet claims = JwtClaimsSet.builder()
-                .subject(userId).issuedAt(now).expiresAt(now.plus(Duration.ofSeconds(ttlSeconds)))
-                .claim("role", "authenticated").build();
-        String token = jwtEncoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
-        return Map.of("access_token", token, "token_type", "Bearer", "expires_in", ttlSeconds,
-                "user", Map.of("id", userId, "email", email));
+    @ExceptionHandler(AuthService.AuthException.class)
+    ResponseEntity<Map<String, Object>> failed(AuthService.AuthException e) {
+        return ResponseEntity.status(e.status).body(Map.of("code", e.status, "error_code", e.code, "msg", e.getMessage()));
     }
 }

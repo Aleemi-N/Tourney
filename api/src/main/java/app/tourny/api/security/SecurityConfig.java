@@ -17,6 +17,10 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.List;
 
 /** Stateless API: callers log in once and send the access token as a Bearer header. */
 @Configuration
@@ -35,13 +39,28 @@ class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
+                .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable()) // bearer tokens only, no cookies
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/auth/login", "/actuator/health", "/rest/**", "/rpc/**").permitAll() // a token is decoded when sent; the database roles decide what is allowed
+                        .requestMatchers("/auth/v1/token", "/auth/v1/signup", "/auth/v1/recover", "/actuator/health", "/rest/**", "/rpc/**").permitAll() // a token is decoded when sent; the database roles decide what is allowed
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(o -> o.jwt(Customizer.withDefaults()))
                 .build();
+    }
+
+    /** Browser clients (the web app) call the API from their own origin; list them in tourny.cors.origins. */
+    @Bean
+    CorsConfigurationSource corsConfigurationSource(@Value("${tourny.cors.origins:}") List<String> origins) {
+        CorsConfiguration cors = new CorsConfiguration();
+        cors.setAllowedOrigins(origins.stream().filter(o -> !o.isBlank()).toList());
+        cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
+        cors.setAllowedHeaders(List.of("authorization", "apikey", "content-type", "x-client-info", "x-supabase-api-version", "prefer", "range", "accept-profile", "content-profile", "accept"));
+        cors.setExposedHeaders(List.of("content-range", "content-type", "preference-applied"));
+        cors.setMaxAge(3600L);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cors);
+        return source;
     }
 
     @Bean
