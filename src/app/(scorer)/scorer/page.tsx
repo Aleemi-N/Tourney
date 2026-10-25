@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { ScorerShell } from '@/components/scorer/ScorerShell';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CalendarClock } from 'lucide-react';
+import { StatusPill } from '@/components/ui/StatusPill';
 
 export const metadata: Metadata = { title: 'Assigned Matches' };
 
@@ -24,7 +25,7 @@ export default async function ScorerHomePage() {
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary/70">
           Scorer workspace
         </p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-text-primary sm:text-4xl drop-shadow-sm">
+        <h1 className="mt-3 text-3xl font-black tracking-tight text-text-primary sm:text-4xl">
           Assigned matches
         </h1>
         <p className="mt-3 text-base leading-7 text-text-secondary font-medium">
@@ -37,11 +38,11 @@ export default async function ScorerHomePage() {
               <Link
                 key={match.match.id}
                 href={`/scorer/matches/${match.match.id}`}
-                className="group block rounded-2xl border border-glass-border bg-surface-raised/80 backdrop-blur-xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.1)] transition-all duration-300 hover:shadow-lg hover:border-primary/40 hover:-translate-y-1 sm:rounded-3xl sm:p-6"
+                className="block rounded-2xl border border-border bg-surface p-5 shadow-card transition-colors hover:border-primary/40 sm:p-6"
               >
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary/70">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/70">
                       Match {match.match.match_number ?? '—'}
                     </p>
                     <h2 className="mt-2 break-words text-xl font-black text-text-primary sm:text-2xl">
@@ -51,9 +52,7 @@ export default async function ScorerHomePage() {
                       {match.match.venue ?? 'Venue pending'}
                     </p>
                   </div>
-                  <span className="rounded-full border border-glass-border bg-surface-muted/50 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary shadow-sm">
-                    {match.match.status}
-                  </span>
+                  <StatusPill status={match.match.status} />
                 </div>
               </Link>
             ) : null

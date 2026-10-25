@@ -2,8 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCcw, Undo2, Trophy, Clock, Wifi, WifiOff, Hourglass } from 'lucide-react';
+import { RefreshCcw, Undo2, Trophy, Clock, Wifi, WifiOff, Hourglass, MapPin } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/Button';
+import { cardClasses } from '@/components/ui/Card';
+import { StatusPill } from '@/components/ui/StatusPill';
+import { cn, teamColorStyle } from '@/lib/utils';
 
 type ActiveTimeout = {
   id: string;
@@ -61,7 +65,16 @@ function getFriendlyErrorMessage(err: { message?: string } | null): string {
   return 'Score could not be updated. The latest match state has been restored.';
 }
 
-export function ScorerMatchClient({ initialState }: { initialState: MatchState }) {
+export function ScorerMatchClient({
+  initialState,
+  homeColor,
+  awayColor,
+}: {
+  initialState: MatchState;
+  /** Team colours (teams.primary_color); defaults apply when a team has none. */
+  homeColor?: string | null;
+  awayColor?: string | null;
+}) {
   const [state, setState] = useState<MatchState>(initialState);
   const [pending, setPending] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -281,11 +294,6 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
   const awaySetsWon = state.sets.filter((s) => s.winner_team_id === state.away_team.id).length;
 
   const isCompleted = state.match.status === 'COMPLETED';
-  const matchStatusStyle = isCompleted
-    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-    : state.match.status === 'LIVE'
-      ? 'animate-pulse border-red-500/30 bg-red-500/10 text-red-400'
-      : 'border-violet-400/30 bg-violet-400/10 text-violet-200';
   const showUndo = !isCompleted && state.sets.some((s) => s.home_score > 0 || s.away_score > 0);
 
   const activeTimeout = state.timeouts?.active && countdown > 0 ? state.timeouts.active : null;
@@ -296,291 +304,223 @@ export function ScorerMatchClient({ initialState }: { initialState: MatchState }
   const maxTimeouts = state.timeouts?.max_per_set ?? 2;
   const homeTimeoutsUsed = state.timeouts?.home_used ?? 0;
   const awayTimeoutsUsed = state.timeouts?.away_used ?? 0;
+  const scoringLocked = pending || isCompleted || Boolean(activeTimeout);
+  const home = { ...state.home_team, color: homeColor ?? DEFAULT_HOME_COLOR };
+  const away = { ...state.away_team, color: awayColor ?? DEFAULT_AWAY_COLOR };
 
   return (
-    <div className="space-y-5 select-none sm:space-y-6 lg:space-y-8" aria-busy={pending}>
-      {/* HEADER */}
-      <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/3 p-4 sm:rounded-3xl sm:p-6 lg:p-8">
+    <div className="mx-auto max-w-3xl select-none space-y-4" aria-busy={pending}>
+      <header className={`${cardClasses} flex flex-wrap items-center justify-between gap-3 p-4`}>
         <div className="min-w-0">
-          <div className="mb-2 flex items-center gap-3">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-300">
-              Match {state.match.match_number ?? '—'}
-            </p>
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider
-                ${conn === 'live'
-                  ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
-                  : 'border-amber-400/30 bg-amber-400/10 text-amber-400'
-                }`}
-            >
-              {conn === 'live' ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-              {conn === 'live' ? 'Live' : 'Reconnecting'}
-            </span>
-          </div>
-          <h1 className="break-words text-2xl font-black tracking-tight text-white sm:text-3xl lg:text-4xl">
-            {state.home_team.short_name ?? state.home_team.name} <span className="mx-1 text-2xl text-white/30">vs</span> {state.away_team.short_name ?? state.away_team.name}
-          </h1>
-          <p className="mt-2 flex items-center gap-2 text-sm font-medium text-white/50">
-            <Clock className="h-4 w-4" />
-            {state.match.venue ?? 'Venue pending'}{state.match.court ? ` · Court ${state.match.court}` : ''}
+          <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+            Match {state.match.match_number ?? '—'}
+            {state.match.court ? ` · Court ${state.match.court}` : ''}
           </p>
+          <h1 className="mt-0.5 text-lg font-bold leading-snug text-text-primary sm:text-xl">
+            {home.name} <span className="font-medium text-text-muted">vs</span> {away.name}
+          </h1>
+          {state.match.venue ? (
+            <p className="mt-0.5 flex items-center gap-1.5 text-sm text-text-secondary">
+              <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+              {state.match.venue}
+            </p>
+          ) : null}
         </div>
-        <div className="text-center">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Status</p>
-          <span className={`inline-block rounded-xl border px-4 py-2 text-sm font-black uppercase tracking-widest
-            ${matchStatusStyle}`}>
-            {state.match.status}
-          </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusPill tone={conn === 'live' ? 'success' : 'warning'}>
+            {conn === 'live' ? <Wifi className="h-3.5 w-3.5" aria-hidden="true" /> : <WifiOff className="h-3.5 w-3.5" aria-hidden="true" />}
+            {conn === 'live' ? 'Connected' : 'Reconnecting'}
+          </StatusPill>
+          <StatusPill status={state.match.status} />
         </div>
       </header>
 
-      {/* ERROR MESSAGE */}
       <AnimatePresence>
         {errorMsg && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
+          <motion.p
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-center text-sm font-semibold text-red-200"
+            className="rounded-xl border border-danger/30 bg-danger/10 p-3 text-center text-sm font-semibold text-danger"
             role="alert"
           >
             {errorMsg}
-          </motion.div>
+          </motion.p>
         )}
       </AnimatePresence>
 
-      {/* ACTIVE TIMEOUT OVERLAY BANNER */}
       <AnimatePresence>
         {activeTimeout && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+          <motion.section
+            initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="rounded-3xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 via-amber-600/20 to-amber-500/20 p-5 text-center shadow-[0_0_40px_rgba(245,158,11,0.2)] sm:p-6"
+            exit={{ opacity: 0, scale: 0.97 }}
+            className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-warning/30 bg-warning/10 p-4"
             role="status"
             aria-live="polite"
           >
-            <div className="flex flex-col items-center justify-center gap-2">
-              <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-amber-300">
-                <Hourglass className="h-4 w-4 animate-spin" /> Timeout Active
-              </span>
-              <p className="mt-1 text-xl font-black uppercase tracking-tight text-white">
-                {timeoutTeamName}
-              </p>
-              <p className="font-mono text-5xl font-black text-amber-300">
-                00:{String(countdown).padStart(2, '0')}
-              </p>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => void handleEndTimeout()}
-                className="mt-3 inline-flex min-h-12 items-center rounded-xl border border-amber-400/40 bg-amber-400/20 px-5 py-2 text-xs font-bold uppercase tracking-wider text-amber-200 transition hover:bg-amber-400/30 disabled:opacity-50"
-              >
-                End Timeout
-              </button>
+            <div className="flex items-center gap-3 text-warning">
+              <Hourglass className="h-6 w-6 shrink-0" aria-hidden="true" />
+              <div>
+                <p className="text-sm font-semibold">Timeout · {timeoutTeamName}</p>
+                <p className="font-mono text-3xl font-bold tabular-nums">00:{String(countdown).padStart(2, '0')}</p>
+              </div>
             </div>
-          </motion.div>
+            <Button variant="secondary" disabled={pending} onClick={() => void handleEndTimeout()}>
+              End timeout
+            </Button>
+          </motion.section>
         )}
       </AnimatePresence>
 
-      {/* MATCH SCORE / LIVE CONTROLS */}
-      <section className="rounded-3xl border border-white/10 bg-linear-to-b from-[#1c1533] to-[#120e21] p-3 min-[360px]:p-4 sm:rounded-4xl sm:p-8">
-        {/* Set Score Banner */}
-        <div className="mb-6 flex items-center justify-center gap-4 sm:mb-8 sm:gap-6">
-          <div className="text-right">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">{state.home_team.short_name ?? state.home_team.name}</p>
-            <p className="text-4xl font-black text-white">{homeSetsWon}</p>
-          </div>
-          <div className="flex flex-col items-center px-4">
-            <span className="mb-2 text-xs font-bold uppercase tracking-[0.3em] text-fuchsia-300/60">Sets</span>
-            <div className="h-8 w-px bg-white/10" />
-          </div>
-          <div className="text-left">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">{state.away_team.short_name ?? state.away_team.name}</p>
-            <p className="text-4xl font-black text-white">{awaySetsWon}</p>
-          </div>
-        </div>
-
-        {/* Current Set Info */}
-        <div className="mb-6 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-fuchsia-200">
+      <section className={`${cardClasses} p-3 sm:p-4`} aria-label="Score">
+        <div className="mb-3 flex items-center justify-between gap-2 px-1">
+          <SetsWon team={home} won={homeSetsWon} />
+          <p className="text-center text-sm font-semibold text-text-secondary">
             Set {activeSet?.set_number ?? 1}
-            <span className="text-fuchsia-300/40">·</span>
-            Target {activeSet?.target_points ?? 25}
-          </span>
+            <span className="block text-xs font-medium text-text-muted">to {activeSet?.target_points ?? 25}</span>
+          </p>
+          <SetsWon team={away} won={awaySetsWon} reverse />
         </div>
 
-        {/* Big Scoring Buttons */}
-        <div className="relative grid grid-cols-2 gap-2 min-[390px]:gap-4 lg:gap-8">
-          <ScoreButton
-            teamName={state.home_team.short_name ?? state.home_team.name}
-            score={activeSet?.home_score ?? 0}
-            active={state.home_team.id === activeSet?.winner_team_id}
-            color="fuchsia"
-            onClick={() => void awardPoint(state.home_team.id)}
-            disabled={pending || isCompleted || Boolean(activeTimeout)}
-          />
-          <ScoreButton
-            teamName={state.away_team.short_name ?? state.away_team.name}
-            score={activeSet?.away_score ?? 0}
-            active={state.away_team.id === activeSet?.winner_team_id}
-            color="cyan"
-            onClick={() => void awardPoint(state.away_team.id)}
-            disabled={pending || isCompleted || Boolean(activeTimeout)}
-          />
-
-          {/* Floating Undo Button */}
+        <div className="relative grid grid-cols-2 gap-2 sm:gap-3">
+          <ScoreButton team={home} score={activeSet?.home_score ?? 0} disabled={scoringLocked} onClick={() => void awardPoint(home.id)} />
+          <ScoreButton team={away} score={activeSet?.away_score ?? 0} disabled={scoringLocked} onClick={() => void awardPoint(away.id)} />
           {showUndo && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-              <button
-                type="button"
-                disabled={pending || Boolean(activeTimeout)}
-                onClick={() => void undo()}
-              className="group flex h-12 w-12 items-center justify-center rounded-full border-4 border-[#120e21] bg-[#282136] text-white/80 shadow-xl transition hover:bg-[#352d45] active:scale-95 disabled:opacity-50 sm:h-14 sm:w-14"
-                aria-label="Undo last point"
-              >
-                <Undo2 className="h-6 w-6 transition-transform group-hover:-rotate-45" />
-              </button>
-            </div>
+            <button
+              type="button"
+              disabled={pending || Boolean(activeTimeout)}
+              onClick={() => void undo()}
+              aria-label="Undo last point"
+              className="absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-surface bg-surface-raised text-text-primary shadow-overlay transition-colors hover:bg-surface-muted disabled:opacity-50"
+            >
+              <Undo2 className="h-6 w-6" aria-hidden="true" />
+            </button>
           )}
         </div>
-
-        {/* Team Timeout Controls */}
-        <div className="mt-8 grid grid-cols-2 gap-4 border-t border-white/10 pt-6 lg:gap-8">
-          {/* Home Team Timeout */}
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-[11px] font-bold tracking-wider text-white/50 uppercase">
-              Timeouts: {homeTimeoutsUsed} / {maxTimeouts}
-            </span>
-            <button
-              type="button"
-              disabled={pending || isCompleted || Boolean(activeTimeout) || homeTimeoutsUsed >= maxTimeouts}
-              onClick={() => void handleCallTimeout(state.home_team.id)}
-              className="min-h-11 rounded-xl border border-fuchsia-400/30 bg-fuchsia-400/10 px-3 py-2 text-xs font-bold tracking-wider text-fuchsia-200 uppercase transition hover:bg-fuchsia-400/20 disabled:cursor-not-allowed disabled:opacity-30 sm:px-4"
-            >
-              Timeout
-            </button>
-          </div>
-
-          {/* Away Team Timeout */}
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-[11px] font-bold tracking-wider text-white/50 uppercase">
-              Timeouts: {awayTimeoutsUsed} / {maxTimeouts}
-            </span>
-            <button
-              type="button"
-              disabled={pending || isCompleted || Boolean(activeTimeout) || awayTimeoutsUsed >= maxTimeouts}
-              onClick={() => void handleCallTimeout(state.away_team.id)}
-              className="min-h-11 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-3 py-2 text-xs font-bold tracking-wider text-cyan-200 uppercase transition hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-30 sm:px-4"
-            >
-              Timeout
-            </button>
-          </div>
-        </div>
       </section>
 
-      {/* SET HISTORY */}
-      <section className="rounded-4xl border border-white/10 bg-white/2 p-6 lg:p-8">
-        <h2 className="mb-6 flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-white/50">
-          <Trophy className="h-4 w-4" /> Match History
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+        <TimeoutButton
+          used={homeTimeoutsUsed}
+          max={maxTimeouts}
+          disabled={scoringLocked || homeTimeoutsUsed >= maxTimeouts}
+          onClick={() => void handleCallTimeout(home.id)}
+          label={`Call timeout for ${home.name}`}
+        />
+        <TimeoutButton
+          used={awayTimeoutsUsed}
+          max={maxTimeouts}
+          disabled={scoringLocked || awayTimeoutsUsed >= maxTimeouts}
+          onClick={() => void handleCallTimeout(away.id)}
+          label={`Call timeout for ${away.name}`}
+        />
+      </div>
+
+      <section className={`${cardClasses} px-4 py-1`} aria-labelledby="set-history">
+        <h2 id="set-history" className="flex items-center gap-2 pb-1 pt-3 text-sm font-semibold text-text-secondary">
+          <Trophy className="h-4 w-4" aria-hidden="true" />
+          Sets
         </h2>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {state.sets.map((set) => (
-            <div
-              key={set.id}
-              className={`flex flex-col items-center justify-center rounded-2xl border p-4 transition-colors
-                ${set.status === 'COMPLETED' ? 'border-white/10 bg-black/30' : 'border-fuchsia-500/20 bg-fuchsia-500/5'}`}
-            >
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Set {set.set_number}</p>
-              <div className="flex items-center gap-4 text-2xl font-black">
-                <span className={set.winner_team_id === state.home_team.id ? 'text-fuchsia-300' : 'text-white'}>
-                  {set.home_score}
+        <ul role="list" className="divide-y divide-border">
+          {state.sets.map((set) => {
+            const winner = set.winner_team_id === home.id ? home : set.winner_team_id === away.id ? away : null;
+            return (
+              <li key={set.id} className="flex min-h-12 items-center justify-between gap-3">
+                <span className="w-14 text-sm font-medium text-text-secondary">Set {set.set_number}</span>
+                <span className={cn('text-base font-bold tabular-nums', set.status === 'PENDING' ? 'text-text-muted' : 'text-text-primary')}>
+                  {set.home_score} – {set.away_score}
                 </span>
-                <span className="text-sm text-white/20">—</span>
-                <span className={set.winner_team_id === state.away_team.id ? 'text-cyan-300' : 'text-white'}>
-                  {set.away_score}
+                <span className="flex w-16 justify-end">
+                  {winner ? (
+                    <TeamChip team={winner} />
+                  ) : set.status === 'LIVE' ? (
+                    <StatusPill status="LIVE" />
+                  ) : (
+                    <span className="text-xs text-text-muted">{set.status === 'PENDING' ? 'Not started' : ''}</span>
+                  )}
                 </span>
-              </div>
-              <p className={`mt-3 text-[9px] font-black uppercase tracking-[0.25em] 
-                ${set.status === 'COMPLETED' ? 'text-emerald-500/70' : 'text-fuchsia-300/70'}`}>
-                {set.status}
-              </p>
-            </div>
-          ))}
-        </div>
+              </li>
+            );
+          })}
+        </ul>
       </section>
 
-      {/* DEBUG/MANUAL REFRESH */}
-      <div className="flex justify-end px-4">
-        <button
-          type="button"
-          onClick={() => void refresh()}
-          className="flex items-center gap-2 text-xs font-semibold text-white/30 transition-colors hover:text-white/70"
-        >
-          <RefreshCcw className="h-3 w-3" />
-          Sync State
-        </button>
+      <div className="flex justify-end">
+        <Button variant="ghost" size="sm" onClick={() => void refresh()}>
+          <RefreshCcw className="h-4 w-4" aria-hidden="true" />
+          Sync state
+        </Button>
       </div>
     </div>
   );
 }
 
-function ScoreButton({
-  teamName,
-  score,
-  active,
-  color,
-  onClick,
-  disabled,
-}: {
-  teamName: string;
-  score: number;
-  active: boolean;
-  color: 'fuchsia' | 'cyan';
-  onClick: () => void;
-  disabled: boolean;
-}) {
-  const bgColors = color === 'fuchsia'
-    ? 'bg-fuchsia-500 hover:bg-fuchsia-400 text-white'
-    : 'bg-cyan-500 hover:bg-cyan-400 text-white';
+// Fallbacks when a team has no colour of its own.
+const DEFAULT_HOME_COLOR = '#4f46e5';
+const DEFAULT_AWAY_COLOR = '#0f766e';
 
-  const borderColors = color === 'fuchsia'
-    ? 'border-fuchsia-400/50'
-    : 'border-cyan-400/50';
+type ScorerTeam = { id: string; name: string; short_name: string | null; color: string };
 
-  const activeGlow = active
-    ? color === 'fuchsia' ? 'shadow-[0_0_30px_rgba(217,70,239,0.2)]' : 'shadow-[0_0_30px_rgba(6,182,212,0.2)]'
-    : '';
+function TeamChip({ team }: { team: ScorerTeam }) {
+  return (
+    <span className="rounded-md px-2 py-0.5 text-xs font-bold" style={teamColorStyle(team.color)}>
+      {(team.short_name ?? team.name).slice(0, 4).toUpperCase()}
+    </span>
+  );
+}
 
+function SetsWon({ team, won, reverse = false }: { team: ScorerTeam; won: number; reverse?: boolean }) {
+  return (
+    <div className={cn('flex items-center gap-2', reverse && 'flex-row-reverse')}>
+      <TeamChip team={team} />
+      <span className="text-2xl font-bold tabular-nums text-text-primary" aria-label={`${team.name} sets won: ${won}`}>{won}</span>
+    </div>
+  );
+}
+
+function ScoreButton({ team, score, disabled, onClick }: { team: ScorerTeam; score: number; disabled: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
-      aria-label={`Award point to ${teamName}. Current score ${score}`}
-      className={`group relative flex min-h-52 min-w-0 flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/5 bg-white/5 px-1 py-8 transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 min-[390px]:px-2 sm:min-h-72 sm:rounded-3xl sm:py-16 ${activeGlow}`}
+      aria-label={`Award point to ${team.name}. Current score ${score}`}
+      className="flex min-h-64 min-w-0 flex-col items-center justify-between gap-3 rounded-2xl border border-border border-t-[6px] px-2 pb-4 pt-5 transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-80"
+      style={{ borderTopColor: team.color, backgroundColor: `color-mix(in srgb, ${team.color} 8%, var(--surface))` }}
     >
-      <div className={`absolute inset-0 opacity-0 transition-opacity group-hover:opacity-10 group-active:opacity-20 ${color === 'fuchsia' ? 'bg-fuchsia-500' : 'bg-cyan-500'}`} />
-
-      <p className="relative z-10 mb-3 max-w-full break-words text-center text-[10px] font-bold uppercase tracking-[0.12em] text-white/60 min-[390px]:text-xs min-[390px]:tracking-[0.16em] lg:text-sm">
-        {teamName}
-      </p>
-
-      <motion.p
+      <span className="line-clamp-2 max-w-full text-center text-sm font-semibold text-text-primary sm:text-base">{team.name}</span>
+      <motion.span
         key={score}
-        initial={{ scale: 1.1, opacity: 0 }}
+        initial={{ scale: 1.08, opacity: 0.6 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="relative z-10 text-6xl font-black leading-none tracking-tighter text-white min-[390px]:text-7xl sm:text-[7rem] lg:text-[9rem]"
+        className="text-7xl font-bold leading-none tracking-tight text-text-primary tabular-nums sm:text-9xl"
       >
         {score}
-      </motion.p>
+      </motion.span>
+      <span className="inline-flex min-h-11 items-center rounded-full px-5 text-sm font-semibold" style={teamColorStyle(team.color)}>
+        +1 point
+      </span>
+    </button>
+  );
+}
 
-      <div className="relative z-10 mt-5 md:mt-8">
-        <span className={`inline-flex min-h-11 items-center rounded-full border px-3 py-2 text-[10px] font-black uppercase tracking-wider transition-colors min-[390px]:px-5 min-[390px]:text-xs sm:px-6 sm:py-3 ${bgColors} ${borderColors}`}>
-          Award Point
-        </span>
-      </div>
+function TimeoutButton({ used, max, disabled, onClick, label }: { used: number; max: number; disabled: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      aria-label={label}
+      className="flex min-h-14 flex-col items-center justify-center rounded-xl border border-border-strong bg-surface text-text-primary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      <span className="flex items-center gap-1.5 text-sm font-semibold">
+        <Clock className="h-4 w-4" aria-hidden="true" />
+        Timeout
+      </span>
+      <span className="text-xs text-text-muted">
+        {used} of {max} used
+      </span>
     </button>
   );
 }

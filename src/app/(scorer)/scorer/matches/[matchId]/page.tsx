@@ -28,5 +28,14 @@ export default async function ScorerMatchPage({ params }: { params: Promise<{ ma
       </ScorerShell>
     );
   }
-  return <ScorerShell><ScorerMatchClient initialState={data as never} /></ScorerShell>;
+  // Team colours for the score buttons; teams outside the scorer's RLS view fall back to defaults.
+  const teams = data as unknown as { home_team: { id: string }; away_team: { id: string } };
+  const { data: colors } = await supabase.from('teams').select('id, primary_color').in('id', [teams.home_team.id, teams.away_team.id]);
+  const colorOf = (id: string) => colors?.find((team) => team.id === id)?.primary_color ?? null;
+
+  return (
+    <ScorerShell>
+      <ScorerMatchClient initialState={data as never} homeColor={colorOf(teams.home_team.id)} awayColor={colorOf(teams.away_team.id)} />
+    </ScorerShell>
+  );
 }
