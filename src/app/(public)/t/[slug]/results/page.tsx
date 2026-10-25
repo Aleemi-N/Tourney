@@ -38,7 +38,7 @@ export default async function PublicResultsPage({ params }: Props) {
 
   const { data: results } = await supabase
     .from('public_fixture_view')
-    .select('id,match_number,status,home_team_id,away_team_id,total_home_score,total_away_score,home_sets_won,away_sets_won,winner_team_id')
+    .select('id,match_number,status,home_team_id,away_team_id,total_home_score,total_away_score,home_sets_won,away_sets_won,winner_team_id,result_type')
     .eq('tournament_id', tournament.id)
     .eq('status', 'COMPLETED')
     .order('match_number', { ascending: false });
@@ -84,6 +84,7 @@ export default async function PublicResultsPage({ params }: Props) {
               >
                 <p className="text-text-muted mb-4 text-xs font-bold uppercase tracking-wider">
                   Match {result.match_number ?? '—'}
+                  {result.result_type === 'WALKOVER' ? ' · Walkover' : result.result_type === 'DRAW' ? ' · Draw' : ''}
                 </p>
 
                 <div className="space-y-3">
@@ -101,8 +102,7 @@ export default async function PublicResultsPage({ params }: Props) {
                       <Trophy className="text-warning h-4 w-4 shrink-0" />
                     )}
                     <span
-                      className="text-xl font-black tabular-nums"
-                      style={{ color: homeWon ? '#f0f0f4' : 'rgba(255,255,255,0.45)' }}
+                      className={`text-xl font-black tabular-nums ${homeWon ? 'text-text-primary' : 'text-text-muted'}`}
                     >
                       {homeSets}
                     </span>
@@ -125,8 +125,7 @@ export default async function PublicResultsPage({ params }: Props) {
                       <Trophy className="text-warning h-4 w-4 shrink-0" />
                     )}
                     <span
-                      className="text-xl font-black tabular-nums"
-                      style={{ color: awayWon ? '#f0f0f4' : 'rgba(255,255,255,0.45)' }}
+                      className={`text-xl font-black tabular-nums ${awayWon ? 'text-text-primary' : 'text-text-muted'}`}
                     >
                       {awaySets}
                     </span>

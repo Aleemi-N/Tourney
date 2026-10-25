@@ -134,3 +134,54 @@ test('score correction: live set, completed match, undo guard, and reset', () =>
   assert.equal((await db.one("SELECT count(*)::int c FROM public.match_sets WHERE match_id=$1 AND (home_score>0 OR away_score>0 OR status<>'PENDING')", [done.id])).c, 0);
   assert.ok(await db.one("SELECT 1 FROM public.audit_logs WHERE action='MATCH_RESET' AND entity_id=$1", [done.id]));
 }));
+
+const STAGE1 = '90500000-0000-0000-0000-000000000001';
+
+test('walkover and draw: points, standings and locks', () => inTransaction(async (db) => {
+  const m = await db.one("SELECT id, home_team_id, away_team_id FROM public.matches WHERE stage_id=$1 AND status='SCHEDULED' ORDER BY program_order LIMIT 1", [STAGE3]);
+  const stand = (team) => db.one('SELECT played, won, lost, drawn, league_points, sets_won, sets_lost, points_for FROM public.standings WHERE team_id=$1 AND stage_id=$2', [team, STAGE3]);
+  const before = await stand(m.home_team_id);
+  const scorer = '90000000-0000-0000-0000-000000000004';
+  await assert.rejects(db.as(scorer, "SELECT public.declare_match_result($1, 'DRAW', NULL, 'x')", [m.id]), /Unauthorized/);
+  await assert.rejects(db.as(ORGANIZER, "SELECT public.declare_match_result($1, 'WALKOVER', $2, 'no show')", [m.id, '90300000-0000-0000-0000-00000000dead']), /one of the two teams/);
+  await assert.rejects(db.as(ORGANIZER, "SELECT public.declare_match_result($1, 'DRAW', NULL, '')", [m.id]), /reason is required/);
+
+  await db.as(ORGANIZER, "SELECT public.declare_match_result($1, 'WALKOVER', $2, 'Away team did not show up')", [m.id, m.home_team_id]);
+  const won = await stand(m.home_team_id);
+  assert.equal(won.won, before.won + 1);
+  const winPoints = (await db.one('SELECT COALESCE((SELECT win_points FROM public.standings_rules WHERE stage_id=$1), 2) AS p', [STAGE3])).p;
+  assert.equal(won.league_points, before.league_points + winPoints);
+  assert.equal(won.sets_won, before.sets_won + 3);
+  assert.equal(won.points_for, before.points_for);
+  assert.equal((await db.one('SELECT result_type FROM public.matches WHERE id=$1', [m.id])).result_type, 'WALKOVER');
+
+  // Replace the walkover with a draw: 1 point each by default.
+  await db.as(ORGANIZER, "SELECT public.declare_match_result($1, 'DRAW', NULL, 'Both teams agreed')", [m.id]);
+  const drawn = await stand(m.home_team_id);
+  assert.deepEqual([drawn.drawn, drawn.won, drawn.league_points], [before.drawn + 1, before.won, before.league_points + 1]);
+  assert.equal((await stand(m.away_team_id)).drawn, 1 + (await db.one('SELECT drawn FROM public.standings WHERE team_id=$1 AND stage_id=$2', [m.away_team_id, STAGE3])).drawn - 1);
+
+  await db.as(ORGANIZER, `SELECT public.save_standings_rules($1, $2, 0, '["WINS","NAME"]'::jsonb, 3)`, [STAGE3, winPoints]);
+  await db.one('UPDATE public.matches SET status = status WHERE id=$1', [m.id]);
+  assert.equal((await stand(m.home_team_id)).league_points, before.league_points + 3);
+
+  // Reset puts it back to a normal unplayed match.
+  await db.as(ORGANIZER, "SELECT public.reset_match($1, 'declared by mistake')", [m.id]);
+  const back = await db.one('SELECT status, result_type FROM public.matches WHERE id=$1', [m.id]);
+  assert.deepEqual(back, { status: 'SCHEDULED', result_type: 'PLAYED' });
+  assert.equal((await stand(m.home_team_id)).drawn, before.drawn);
+}));
+
+test('draw is league-only; a knockout walkover advances the winner', () => inTransaction(async (db) => {
+  const ko = await db.one(`
+    WITH s AS (INSERT INTO public.tournament_stages (tournament_id, name, stage_type, sequence, status) VALUES ($1, 'KO', 'KNOCKOUT', 9, 'ACTIVE') RETURNING id)
+    SELECT id FROM s`, [T3]);
+  const teams = (await db.one('SELECT array_agg(id ORDER BY id) t FROM public.teams WHERE tournament_id=$1', [T3])).t;
+  const final = await db.one("INSERT INTO public.matches (tournament_id, stage_id, match_number, round_number, bracket_position, bracket_match_type, status) VALUES ($1,$2,2,2,1,'FINAL','SCHEDULED') RETURNING id", [T3, ko.id]);
+  const semi = await db.one("INSERT INTO public.matches (tournament_id, stage_id, match_number, round_number, bracket_position, bracket_match_type, home_team_id, away_team_id, status, next_match_id, next_match_slot, sets_to_win, win_by_two) VALUES ($1,$2,1,1,1,'SEMIFINAL',$3,$4,'SCHEDULED',$5,'HOME',2,true) RETURNING id", [T3, ko.id, teams[0], teams[1], final.id]);
+  await db.one("INSERT INTO public.volleyball_rules (tournament_id, stage_id, sets_to_win, win_by_two) VALUES ($1,$2,2,true)", [T3, ko.id]);
+  await db.one("INSERT INTO public.volleyball_set_rules (volleyball_rule_id, set_number, target_points) SELECT id, n, 25 FROM public.volleyball_rules, generate_series(1,3) n WHERE stage_id=$1", [ko.id]);
+  await assert.rejects(db.as(ORGANIZER, "SELECT public.declare_match_result($1, 'DRAW', NULL, 'x')", [semi.id]), /Only league matches/);
+  await db.as(ORGANIZER, "SELECT public.declare_match_result($1, 'WALKOVER', $2, 'forfeit')", [semi.id, teams[1]]);
+  assert.equal((await db.one('SELECT home_team_id FROM public.matches WHERE id=$1', [final.id])).home_team_id, teams[1]);
+}));

@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { ShareStandingsButton } from '@/components/organizer/ShareStandingsButton';
 
-type Standing = { rank: number; team_id: string; team_name: string; played: number; won: number; lost: number; league_points: number; sets_won: number; sets_lost: number; points_for: number; points_against: number };
+type Standing = { rank: number; team_id: string; team_name: string; played: number; won: number; lost: number; drawn: number; league_points: number; sets_won: number; sets_lost: number; points_for: number; points_against: number };
 
 export default async function OrganizerStandingsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -48,6 +48,7 @@ export default async function OrganizerStandingsPage({ params }: { params: Promi
                           <th className="py-3 pl-2 text-left font-bold">Team</th>
                           <th className={th}>P</th>
                           <th className={th}>W</th>
+                          <th className={th}>D</th>
                           <th className={th}>L</th>
                           <th className={`${th} ${wide}`}>Sets</th>
                           <th className={th} title="Set difference">+/-</th>
@@ -68,6 +69,7 @@ export default async function OrganizerStandingsPage({ params }: { params: Promi
                               <td className="w-full max-w-0 truncate py-3 pl-2 pr-1 font-bold text-text-primary">{row.team_name}</td>
                               <td className="px-1 text-center sm:px-2 text-text-secondary">{row.played}</td>
                               <td className="px-1 text-center sm:px-2 text-text-secondary">{row.won}</td>
+                              <td className="px-1 text-center sm:px-2 text-text-secondary">{row.drawn}</td>
                               <td className="px-1 text-center sm:px-2 text-text-secondary">{row.lost}</td>
                               <td className={`px-2 text-center text-text-secondary ${wide}`}>{row.sets_won}-{row.sets_lost}</td>
                               <td className="px-1 text-center sm:px-2 text-text-secondary">{signed(row.sets_won - row.sets_lost)}</td>

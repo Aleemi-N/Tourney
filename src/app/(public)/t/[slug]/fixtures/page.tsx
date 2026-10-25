@@ -108,11 +108,7 @@ export default async function PublicFixturesPage({ params }: Props) {
                   return (
                     <article
                       key={fixture.id}
-                      className="rounded-2xl p-5 transition-colors"
-                      style={{
-                        background: isLiveMatch ? 'rgba(239,68,68,0.07)' : 'rgba(255,255,255,0.025)',
-                        border: isLiveMatch ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(255,255,255,0.07)',
-                      }}
+                      className={`rounded-2xl border p-5 shadow-card transition-colors ${isLiveMatch ? 'border-danger/30 bg-danger/5' : 'border-border bg-surface'}`}
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         {/* Match label + status */}

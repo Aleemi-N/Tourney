@@ -1023,6 +1023,7 @@ export type Database = {
           next_match_id: string | null
           next_match_slot: string | null
           program_order: number
+          result_type: string
           round_number: number | null
           scheduled_at: string | null
           sets_to_win: number | null
@@ -1781,6 +1782,7 @@ export type Database = {
       }
       standings: {
         Row: {
+          drawn: number
           league_points: number
           lost: number
           played: number
@@ -1795,6 +1797,7 @@ export type Database = {
           won: number
         }
         Insert: {
+          drawn?: number
           league_points?: number
           lost?: number
           played?: number
@@ -1809,6 +1812,7 @@ export type Database = {
           won?: number
         }
         Update: {
+          drawn?: number
           league_points?: number
           lost?: number
           played?: number
@@ -1862,6 +1866,7 @@ export type Database = {
       }
       standings_rules: {
         Row: {
+          draw_points: number
           loss_points: number
           stage_id: string
           tie_break_rules: Json
@@ -1870,6 +1875,7 @@ export type Database = {
           win_points: number
         }
         Insert: {
+          draw_points?: number
           loss_points?: number
           stage_id: string
           tie_break_rules?: Json
@@ -2869,6 +2875,7 @@ export type Database = {
           id: string | null
           match_number: number | null
           program_order: number | null
+          result_type: string | null
           round_number: number | null
           scheduled_at: string | null
           stage_id: string | null
@@ -3382,6 +3389,10 @@ export type Database = {
         Args: { p_name: string; p_team_id: string }
         Returns: Json
       }
+      declare_match_result: {
+        Args: { p_match_id: string; p_reason: string; p_result_type: string; p_winner_team_id?: string | null }
+        Returns: Json
+      }
       correct_set_score: {
         Args: { p_away_score: number; p_home_score: number; p_match_id: string; p_reason: string; p_set_number: number }
         Returns: Json
@@ -3424,6 +3435,7 @@ export type Database = {
       }
       save_standings_rules: {
         Args: {
+          p_draw_points?: number
           p_loss_points: number
           p_stage_id: string
           p_tie_break_rules: Json

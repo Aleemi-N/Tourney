@@ -14,6 +14,7 @@ type StandingsRow = {
   played: number;
   won: number;
   lost: number;
+  drawn: number;
   league_points: number;
   sets_won: number;
   sets_lost: number;
@@ -74,6 +75,7 @@ export default async function PublicTablePage({ params }: Props) {
                   { key: 'Team',  tip: 'Team' },
                   { key: 'P',     tip: 'Played' },
                   { key: 'W',     tip: 'Won' },
+                  { key: 'D',     tip: 'Drawn' },
                   { key: 'L',     tip: 'Lost' },
                   { key: 'Pts',   tip: 'Points' },
                   { key: 'SW',    tip: 'Sets Won' },
@@ -99,10 +101,7 @@ export default async function PublicTablePage({ params }: Props) {
                 return (
                   <tr
                     key={`${row.stage_id}-${row.team_id}`}
-                    className="transition-colors"
-                    style={{
-                      borderBottom: index < rows.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                    }}
+                    className="border-b border-border transition-colors last:border-b-0"
                   >
                     {/* Rank */}
                     <td className="px-4 py-3.5 tabular-nums">
@@ -123,6 +122,7 @@ export default async function PublicTablePage({ params }: Props) {
                     </td>
                     <td className="text-text-secondary px-4 py-3.5 text-sm tabular-nums">{row.played}</td>
                     <td className="text-success px-4 py-3.5 text-sm tabular-nums">{row.won}</td>
+                    <td className="text-text-secondary px-4 py-3.5 text-sm tabular-nums">{row.drawn}</td>
                     <td className="text-danger px-4 py-3.5 text-sm tabular-nums">{row.lost}</td>
                     {/* Points — highlighted */}
                     <td className="px-4 py-3.5">
