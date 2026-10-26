@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { Calendar, ClipboardList, Settings, Users } from 'lucide-react-native';
+import { Calendar, ClipboardList, Gavel, Settings, Users } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { OrganizerFrame } from '@/components/organizer';
@@ -9,7 +9,7 @@ import { Button, ErrorText, Loading, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useTheme } from '@/theme';
 
-type Info = { name: string; slug: string; status: string; format: string | null; description: string | null; approval_status: string | null; approval_rejection_reason: string | null };
+type Info = { name: string; slug: string; status: string; format: string | null; league_mode: string | null; description: string | null; approval_status: string | null; approval_submitted_at: string | null; approval_rejection_reason: string | null };
 
 /** Overview of one tournament: status, numbers, registration control and the way to the other organizer pages. */
 export default function OrganizerOverview() {
@@ -28,7 +28,7 @@ export default function OrganizerOverview() {
       return q;
     };
     const [i, players, pending, teams, fixtures] = await Promise.all([
-      api.from('tournaments').select('name,slug,status,format,description,approval_status,approval_rejection_reason').eq('id', id).maybeSingle(),
+      api.from('tournaments').select('name,slug,status,format,league_mode,description,approval_status,approval_submitted_at,approval_rejection_reason').eq('id', id).maybeSingle(),
       count('player_tournament_registrations'), count('player_tournament_registrations', ['PENDING', 'CHANGES_REQUESTED']),
       count('teams'), count('matches'),
     ]);
@@ -48,6 +48,16 @@ export default function OrganizerOverview() {
     if (e) setError(e.message); else await load();
   }
 
+  async function submitApproval() {
+    setBusy(true);
+    setError(null);
+    const { data, error: e } = await api.rpc('submit_tournament_for_approval', { p_tournament_id: id });
+    setBusy(false);
+    const ok = (typeof data === 'string' ? JSON.parse(data) : data) as { ok?: boolean } | null;
+    if (e || ok?.ok !== true) return setError(e?.message ?? 'Failed to submit for approval.');
+    await load();
+  }
+
   const tile = (label: string, value: number | string) => (
     <View key={label} style={[portalCard(t), { flex: 1, minWidth: 140, padding: 16, gap: 2 }]}>
       <Text style={{ color: t.textMuted, fontSize: 12, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' }}>{label}</Text>
@@ -55,7 +65,7 @@ export default function OrganizerOverview() {
     </View>
   );
 
-  const nav = (label: string, text: string, Icon: typeof Users, path: '/organizer/[id]/participants' | '/organizer/[id]/fixtures' | '/organizer/[id]/settings') => (
+  const nav = (label: string, text: string, Icon: typeof Users, path: '/organizer/[id]/participants' | '/organizer/[id]/fixtures' | '/organizer/[id]/settings' | '/organizer/[id]/lot' | '/organizer/[id]/auction') => (
     <Pressable key={label} accessibilityRole="link" accessibilityLabel={label} onPress={() => router.push({ pathname: path, params: { id } })} style={[portalCard(t), { flexDirection: 'row', alignItems: 'center', gap: 14 }]}>
       <Icon size={22} color={t.primary} />
       <View style={{ flex: 1, gap: 2 }}>
@@ -78,10 +88,15 @@ export default function OrganizerOverview() {
               <StatusPill status={info.status} />
               {info.approval_status && info.approval_status !== 'APPROVED' ? <StatusPill status={info.approval_status} /> : null}
             </View>
+            {info.approval_status === 'PENDING_APPROVAL' ? <Text style={{ color: t.warning, fontSize: 14, fontWeight: '600' }}>Waiting for platform approval. You will be able to make the tournament public once it is approved.</Text> : null}
             {info.approval_status === 'REJECTED' && info.approval_rejection_reason ? <Text style={{ color: t.danger, fontSize: 14 }}>{info.approval_rejection_reason}</Text> : null}
             {info.description ? <Text style={{ color: t.textSecondary, fontSize: 15, lineHeight: 22 }}>{info.description}</Text> : null}
             <Text style={{ color: t.textMuted, fontSize: 13 }}>{info.format ? `${info.format[0]}${info.format.slice(1).toLowerCase()}` : 'Tournament'} · manage settings, participants and fixtures from here.</Text>
           </View>
+
+          {info.approval_status === 'REJECTED' || (info.approval_status === 'APPROVED' && !info.approval_submitted_at && info.status === 'DRAFT') ? (
+            <Button tone="secondary" title={info.approval_status === 'REJECTED' ? 'Edit and resubmit for approval' : 'Submit for approval'} loading={busy} onPress={() => void submitApproval()} />
+          ) : null}
 
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
             {tile('Players', counts.players)}
@@ -110,6 +125,8 @@ export default function OrganizerOverview() {
 
           <Section title="Manage">
             {nav('Participants', `${counts.pending} waiting for a decision`, Users, '/organizer/[id]/participants')}
+            {info.format === 'LEAGUE' && info.league_mode === 'AUCTION' ? nav('Lot Draw', 'Run the icon and setter lot draws', Gavel, '/organizer/[id]/lot') : null}
+            {info.format === 'LEAGUE' && info.league_mode === 'AUCTION' ? nav('Auction Control', 'Prepare and run the live player auction', Gavel, '/organizer/[id]/auction') : null}
             {nav('Fixtures & Scorers', 'Stages, schedule, scorers and results', Calendar, '/organizer/[id]/fixtures')}
             {nav('Settings', 'Details, registration, squads and match format', Settings, '/organizer/[id]/settings')}
           </Section>

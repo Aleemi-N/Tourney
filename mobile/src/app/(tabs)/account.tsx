@@ -2,6 +2,8 @@ import { Link, router } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Choice } from '@/components/form';
+import { useIsSuperAdmin } from '@/components/admin';
+import { useOwnerTeams } from '@/components/owner';
 import { PortalIntro, PortalShell, Section, portalCard } from '@/components/shell';
 import { Text } from '@/components/text';
 import { Button, Loading, StatusPill } from '@/components/ui';
@@ -24,6 +26,8 @@ export default function AccountScreen() {
   const t = useTheme();
   const themeChoice = useContext(ThemeChoiceContext);
   const setThemeChoice = useSetThemeChoice();
+  const { teams: ownedTeams } = useOwnerTeams();
+  const superAdmin = useIsSuperAdmin();
   const { tournaments: organized } = useOrganizerTournaments(session?.user.id);
   const [name, setName] = useState<string | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
@@ -71,11 +75,38 @@ export default function AccountScreen() {
       <PortalIntro eyebrow="Player portal" title={`Welcome, ${name ?? first}.`} text="Your registrations, tournament status, and team assignment stay authoritative on the server." />
       {!loaded ? <Loading /> : null}
 
+      {superAdmin ? (
+        <Section title="Platform">
+          <View style={portalCard(t)}>
+            <Text style={{ color: t.textSecondary, fontSize: 14 }}>Approve tournaments, manage organizers and review the audit log.</Text>
+            <Link href="/admin" asChild><Button title="Open super admin" onPress={() => {}} /></Link>
+          </View>
+        </Section>
+      ) : null}
+
+      {organized && organized.length === 0 ? (
+        <Section title="Organizer">
+          <View style={portalCard(t)}>
+            <Text style={{ color: t.textSecondary, fontSize: 14 }}>Run your own tournament: registration, fixtures, scoring and standings.</Text>
+            <Link href="/organizer/new" asChild><Button title="Create a tournament" onPress={() => {}} /></Link>
+          </View>
+        </Section>
+      ) : null}
+
       {organized && organized.length > 0 ? (
         <Section title="Organizer">
           <View style={portalCard(t)}>
             <Text style={{ color: t.textSecondary, fontSize: 14 }}>You organize {organized.length} tournament{organized.length === 1 ? '' : 's'}.</Text>
             <Link href="/organizer" asChild><Button title="Review registrations" onPress={() => {}} /></Link>
+          </View>
+        </Section>
+      ) : null}
+
+      {ownedTeams && ownedTeams.length > 0 ? (
+        <Section title="Team owner">
+          <View style={portalCard(t)}>
+            <Text style={{ color: t.textSecondary, fontSize: 14 }}>You own {ownedTeams.length} team{ownedTeams.length === 1 ? "" : "s"}.</Text>
+            <Link href="/owner" asChild><Button title="Open owner portal" onPress={() => {}} /></Link>
           </View>
         </Section>
       ) : null}
@@ -122,6 +153,7 @@ export default function AccountScreen() {
           <Text style={{ color: t.text, fontSize: 16, fontWeight: '700' }}>{name ?? session.user.email}</Text>
           <Text style={{ color: t.textSecondary, fontSize: 14 }}>{session.user.email}</Text>
         </View>
+        {name ? <Link href="/profile" asChild><Button tone="secondary" title="Edit player profile" onPress={() => {}} /></Link> : null}
         <Appearance value={themeChoice} onChange={setThemeChoice} />
       </Section>
       <Text style={{ color: t.textMuted, fontSize: 12 }}>Connected to {apiUrl}</Text>

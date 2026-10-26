@@ -25,10 +25,23 @@ function Navigation() {
         <Stack.Screen name="register" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="t/[slug]" options={{ headerShown: false }} />
         <Stack.Screen name="match/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="scorer/[id]" options={{ title: 'Scoring' }} />
+        <Stack.Screen name="match/tv/[id]" options={{ headerShown: false, presentation: "fullScreenModal" }} />
+        <Stack.Screen name="scorer/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="profile" options={{ headerShown: false }} />
         <Stack.Screen name="organizer/index" options={{ headerShown: false }} />
+        <Stack.Screen name="owner/index" options={{ headerShown: false }} />
+        <Stack.Screen name="owner/team/[teamId]/index" options={{ headerShown: false }} />
+        {["players", "squad", "auction", "fixtures", "results"].map((s) => <Stack.Screen key={s} name={`owner/team/[teamId]/${s}`} options={{ headerShown: false, animation: "none" }} />)}
+        <Stack.Screen name="admin/index" options={{ headerShown: false }} />
+        {["approvals", "tournaments", "organizers", "audit"].map((s) => <Stack.Screen key={s} name={`admin/${s}`} options={{ headerShown: false, animation: "none" }} />)}
+        <Stack.Screen name="organizer/new" options={{ headerShown: false }} />
         <Stack.Screen name="organizer/[id]/index" options={{ headerShown: false }} />
         <Stack.Screen name="organizer/[id]/participants" options={{ headerShown: false, animation: "none" }} />
+        <Stack.Screen name="organizer/[id]/teams" options={{ headerShown: false, animation: "none" }} />
+        <Stack.Screen name="organizer/[id]/standings" options={{ headerShown: false, animation: "none" }} />
+        <Stack.Screen name="organizer/[id]/lot" options={{ headerShown: false, animation: "none" }} />
+        <Stack.Screen name="organizer/[id]/auction" options={{ headerShown: false, animation: "none" }} />
+        <Stack.Screen name="organizer/[id]/staff" options={{ headerShown: false, animation: "none" }} />
         <Stack.Screen name="organizer/[id]/fixtures" options={{ headerShown: false, animation: "none" }} />
         <Stack.Screen name="organizer/[id]/settings" options={{ headerShown: false, animation: "none" }} />
         <Stack.Screen name="register/player/[slug]" options={{ title: 'Player registration' }} />

@@ -1,9 +1,11 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Clock, Undo2 } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { ScoreFix } from '@/components/score-fix';
+import { PortalShell } from '@/components/shell';
 import { Text } from '@/components/text';
-import { Body, Button, Card, ErrorText, Heading, Loading, Screen, StatusPill } from '@/components/ui';
+import { Body, Button, Card, ErrorText, Heading, Loading, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { deriveCourt } from '@/lib/court';
 import { useLiveMatch, type Team } from '@/lib/live';
@@ -31,8 +33,13 @@ export default function ScorerScreen() {
   const [tossLeft, setTossLeft] = useState<string | null>(null);
   const [tossServe, setTossServe] = useState<string | null>(null);
   const working = useRef(false);
+  const back = (
+    <Pressable accessibilityRole="link" onPress={() => (router.canGoBack() ? router.back() : router.replace('/matches'))} style={{ minHeight: 44, justifyContent: 'center' }}>
+      <Text style={{ color: t.textSecondary, fontSize: 14 }}>← My matches</Text>
+    </Pressable>
+  );
 
-  if (!state) return <Screen>{loadError ? <ErrorText>{loadError}</ErrorText> : <Loading />}</Screen>;
+  if (!state) return <PortalShell role="Scorer" home={false}>{back}{loadError ? <ErrorText>{loadError}</ErrorText> : <Loading />}</PortalShell>;
   const { home_team: home, away_team: away, sets, match } = state;
   const completed = match.status === 'COMPLETED';
   const active = completed
@@ -88,7 +95,7 @@ export default function ScorerScreen() {
   );
 
   return (
-    <Screen>
+    <PortalShell role="Scorer" home={false}>{back}
       {/* Header: match context and connection state */}
       <Card>
         <Text style={{ color: t.textMuted, fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 }}>
@@ -200,10 +207,11 @@ export default function ScorerScreen() {
         ))}
       </Card>
 
+      <ScoreFix matchId={match.id} sets={sets} homeName={home.name} awayName={away.name} disabled={busy || timeoutRunning} onChanged={refresh} />
       {!completed && !court.needsSetup && !editingToss ? (
         <Button tone="ghost" title="Sides & serve" onPress={() => { setTossLeft(court.leftId); setTossServe(court.servingId); setEditingToss(true); }} />
       ) : null}
       <Body muted>Teams are shown on the sides chosen at the toss.</Body>
-    </Screen>
+    </PortalShell>
   );
 }

@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { CalendarDays } from 'lucide-react-native';
+import { CalendarDays, Tv } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from '@/components/text';
@@ -52,7 +52,12 @@ export default function PublicMatchScreen() {
         <Pressable accessibilityRole="link" onPress={() => router.replace({ pathname: '/t/[slug]/fixtures', params: { slug } })} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 }}>
           <CalendarDays size={16} color={t.textSecondary} /><Text style={{ color: t.textSecondary, fontSize: 14, fontWeight: '600' }}>All fixtures</Text>
         </Pressable>
-        {!live && !completed ? <StatusPill tone="warning" label="Reconnecting" /> : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          {!live && !completed ? <StatusPill tone="warning" label="Reconnecting" /> : null}
+          <Pressable accessibilityRole="link" accessibilityLabel="TV scoreboard" onPress={() => router.push({ pathname: '/match/tv/[id]', params: { id } })} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44 }}>
+            <Tv size={16} color={t.textSecondary} /><Text style={{ color: t.textSecondary, fontSize: 14, fontWeight: '600' }}>TV</Text>
+          </Pressable>
+        </View>
       </View>
 
       <View style={{ borderRadius: radius['2xl'], borderWidth: 1, borderColor: t.border, backgroundColor: t.surface, padding: 16, gap: 16 }}>

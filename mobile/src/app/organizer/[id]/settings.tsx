@@ -74,6 +74,7 @@ export default function OrganizerSettings() {
         <>
           <DetailsForm id={id} initial={details} onSaved={load} />
           <RegistrationForm id={id} config={config} auction={details.format === 'LEAGUE' && details.league_mode === 'AUCTION'} onSaved={load} />
+          {details.format === 'LEAGUE' && details.league_mode === 'AUCTION' ? <PriceCategories id={id} /> : null}
           <Section title="Match Format">
             <FormatForm id={id} config={config} onSaved={load} />
           </Section>
@@ -276,6 +277,67 @@ function StageRemoval({ stages, onRemoved }: { stages: Stage[]; onRemoved: () =>
           ) : <Button tone="secondary" title="Close" onPress={() => setPlan(null)} />}
         </View>
       ) : null}
+    </Panel>
+  );
+}
+
+type Category = { category_code: string; display_name: string; base_price: number };
+
+/** The A, B and C price categories of an auction league. They are locked once the auction is prepared. */
+function PriceCategories({ id }: { id: string }) {
+  const t = useTheme();
+  const [loaded, setLoaded] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [form, setForm] = useState<Record<string, { name: string; price: string }>>({ A: { name: '', price: '' }, B: { name: '', price: '' }, C: { name: '', price: '' } });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [ok, setOk] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const [cats, auction] = await Promise.all([
+        api.from('tournament_auction_categories').select('category_code,display_name,base_price').eq('tournament_id', id).order('display_order'),
+        api.from('auctions').select('prepared_at').eq('tournament_id', id).maybeSingle(),
+      ]);
+      const next = { A: { name: '', price: '' }, B: { name: '', price: '' }, C: { name: '', price: '' } } as Record<string, { name: string; price: string }>;
+      for (const c of (cats.data ?? []) as Category[]) next[c.category_code] = { name: c.display_name, price: String(c.base_price) };
+      setForm(next);
+      setLocked(auction.data?.prepared_at != null);
+      setLoaded(true);
+    })();
+  }, [id]);
+
+  async function save() {
+    setError(null); setOk(null);
+    const a = Number(form.A.price); const b = Number(form.B.price); const c = Number(form.C.price);
+    if (![a, b, c].every((n) => Number.isFinite(n) && n > 0)) return setError('All prices are required.');
+    if (a < b || b < c) return setError('Category prices must satisfy A ≥ B ≥ C > 0.');
+    if (!form.A.name.trim() || !form.B.name.trim() || !form.C.name.trim()) return setError('Category display names are required (max 80 characters each).');
+    setBusy(true);
+    const { error: e } = await api.rpc('update_auction_price_categories', { p_tournament_id: id, p_a_name: form.A.name.trim(), p_a_price: a, p_b_name: form.B.name.trim(), p_b_price: b, p_c_name: form.C.name.trim(), p_c_price: c });
+    setBusy(false);
+    if (e) return setError(e.message.toLowerCase().includes('locked after preparation') ? 'Auction category configuration is locked after preparation.' : 'Unable to update auction price categories. Please try again.');
+    setOk('Price categories saved.');
+  }
+
+  if (!loaded) return null;
+  return (
+    <Panel title="Auction Price Categories" text={locked ? 'Locked: the auction has been prepared.' : 'Players are grouped into A, B and C with a base price each (A ≥ B ≥ C).'}>
+      {['A', 'B', 'C'].map((code) => locked ? (
+        <View key={code} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Text style={{ width: 28, color: t.primary, fontSize: 16, fontWeight: '800' }}>{code}</Text>
+          <Text style={{ flex: 1, color: t.text, fontSize: 15, fontWeight: '600' }}>{form[code].name || `Category ${code}`}</Text>
+          <Text style={{ color: t.text, fontSize: 15, fontWeight: '700' }}>₹{Number(form[code].price).toLocaleString('en-IN')}</Text>
+        </View>
+      ) : (
+        <View key={code} style={{ gap: 10, borderTopWidth: code === 'A' ? 0 : 1, borderTopColor: t.border, paddingTop: code === 'A' ? 0 : 12 }}>
+          <Text style={{ color: t.textSecondary, fontSize: 12, fontWeight: '700', letterSpacing: 1 }}>CATEGORY {code}</Text>
+          <Field label="Display name" value={form[code].name} onChangeText={(v) => setForm({ ...form, [code]: { ...form[code], name: v } })} maxLength={80} />
+          <Field label="Base price (₹)" value={form[code].price} onChangeText={(v) => setForm({ ...form, [code]: { ...form[code], price: v.replace(/[^0-9.]/g, '') } })} keyboardType="decimal-pad" />
+        </View>
+      ))}
+      <Message error={error} ok={ok} />
+      {!locked ? <Button title="Save Price Categories" loading={busy} onPress={() => void save()} /> : null}
     </Panel>
   );
 }

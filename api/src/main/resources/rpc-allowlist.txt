@@ -74,3 +74,4 @@ update_player_profile
 update_tournament_details
 update_tournament_draft
 update_tournament_settings
+initialize_organizer_onboarding

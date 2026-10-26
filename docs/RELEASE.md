@@ -29,7 +29,7 @@ This is the single list for taking v2 live. "Verified" means I ran it here; "You
 - The live-update socket tells any listener that a match changed (never its contents); public event tables are public by design.
 - Single server: no automatic failover. Restores come from the nightly backup.
 - Sign-in and sign-up limits are kept in the API's memory, so they reset when it restarts.
-- Mobile app: no push notifications, no tournament creation wizard (use the website), and no TV scoreboard.
+- Mobile app: no push notifications, no tournament logo upload, match reordering or league-progression tools (use the website). Everything else in the web portals is on mobile.
 - Google/OAuth sign-in is not supported (the app never used it).
 - The web app was not load-tested. A tournament weekend with a few hundred spectators is well within a small VPS; thousands on one live match are untested.
 

@@ -15,7 +15,9 @@ npx expo start --web     # browser build, handy for checking against the API
 - Screens: Tournaments (table, fixtures, results, live match), My matches (scorer), Account/sign-in, the scorer screen (toss, points, undo, timeouts) and registration.
 - `src/lib/court.ts` is a copy of `../src/lib/court.ts` (sides and serve rules); move both into a shared package when the app grows.
 - Registration: players and team owners can apply from a tournament that is open (photo/logo upload, colours, reuse of an existing team); the Account tab lists their applications.
-- Organizer: the Account tab links to the tournaments you organize, with an overview (registration open/close), participants (approve/reject players and team applications), fixtures (stage setup, generate, schedule, scorer, match format, walkover/draw, points rules) and settings (details, registration and squads, match format, stage removal).
+- Organizer: Overview (registration open/close, submit for approval), Players (approve/reject), Teams (squads, rename, colours, assign/remove), Fixtures (stage setup, generate, schedule, scorer, match format, walkover/draw, points rules), Lot Draw and Auction control (auction leagues), Standings, Staff, Settings (details, registration and squads, price categories, match format, stage removal), and a five-step tournament wizard with draft resume.
+- Team owner portal: dashboard, team overview, player pool, squad, live auction (realtime), fixtures and results.
+- Player profile (edit), scorer score correction and reset, TV scoreboard, and the super admin pages (overview, approvals, tournaments, organizers, audit log) from the Account tab.
 - Player portal (Account), scorer workspace (My matches) and the organizer dashboard and participant management follow the web portals.
-- Not built yet: owner team management, tournament creation wizard, push notifications, score correction/reset on mobile.
+- Not built: push notifications, logo upload for a tournament, match reordering and league-progression tools (use the website). Password reset opens the website on purpose, because the link belongs to the browser that asked for it.
 - Verified here only through the web build (`node` + Playwright against the API); no phone or emulator was available.

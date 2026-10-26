@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 import { Text } from '@/components/text';
 import { PortalShell, portalCard } from '@/components/shell';
 import { Empty } from '@/components/tournament';
-import { ErrorText, Loading, StatusPill } from '@/components/ui';
+import { Button, ErrorText, Loading, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useOrganizerTournaments } from '@/lib/organizer';
@@ -54,6 +54,7 @@ export default function OrganizerHome() {
         <Text accessibilityRole="header" style={{ color: t.primary, fontSize: 34, lineHeight: 40, fontWeight: '800', letterSpacing: -0.9 }}>Welcome back{name ? `, ${name}` : ''}</Text>
         <Text style={{ color: t.textSecondary, fontSize: 16 }}>Manage your tournaments and events.</Text>
       </View>
+      <Button title="Create Tournament" onPress={() => router.push('/organizer/new')} />
       <Text accessibilityRole="header" style={{ color: t.text, fontSize: 20, fontWeight: '700', marginTop: 8 }}>Your Tournaments</Text>
       {error ? <ErrorText>{error}</ErrorText> : null}
       {tournaments === null && !error ? <Loading /> : null}
@@ -61,7 +62,7 @@ export default function OrganizerHome() {
       {tournaments?.map((item) => {
         const c = counts[item.id];
         return (
-          <Pressable key={item.id} accessibilityRole="link" accessibilityLabel={`${item.name}, ${c?.applications ?? 0} applications`} onPress={() => router.push({ pathname: '/organizer/[id]', params: { id: item.id } })} style={[portalCard(t), { padding: 24, gap: 6 }]}>
+          <Pressable key={item.id} accessibilityRole="link" accessibilityLabel={`${item.name}, ${c?.applications ?? 0} applications`} onPress={() => (item.status === 'DRAFT' ? router.push({ pathname: '/organizer/new', params: { id: item.id } }) : router.push({ pathname: '/organizer/[id]', params: { id: item.id } }))} style={[portalCard(t), { padding: 24, gap: 6 }]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 8 }}>
               <Text style={{ flex: 1, color: t.text, fontSize: 19, lineHeight: 25, fontWeight: '700' }}>{item.name}</Text>
               <StatusPill status={item.status} tone={item.status === 'LIVE' ? 'primary' : 'primary'} />
