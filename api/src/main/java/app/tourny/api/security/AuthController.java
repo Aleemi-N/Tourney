@@ -37,8 +37,16 @@ class AuthController {
         };
     }
 
+    // Account creation is open, so cap it per address: 20 accounts per hour is far above any real use.
+    private final java.util.Map<String, java.util.List<java.time.Instant>> signups = new java.util.concurrent.ConcurrentHashMap<>();
+
     @PostMapping("/auth/v1/signup")
-    Map<String, Object> signUp(@RequestBody Map<String, Object> body) {
+    Map<String, Object> signUp(@RequestBody Map<String, Object> body, jakarta.servlet.http.HttpServletRequest request) {
+        var cutoff = java.time.Instant.now().minus(java.time.Duration.ofHours(1));
+        var recent = new java.util.ArrayList<>(signups.getOrDefault(request.getRemoteAddr(), java.util.List.of()).stream().filter(t -> t.isAfter(cutoff)).toList());
+        if (recent.size() >= 20) throw new AuthService.AuthException(429, "over_request_rate_limit", "Too many sign-ups from this address. Try again later.");
+        recent.add(java.time.Instant.now());
+        signups.put(request.getRemoteAddr(), recent);
         @SuppressWarnings("unchecked")
         Map<String, Object> data = (Map<String, Object>) body.get("data");
         return auth.signUp(text(body, "email"), text(body, "password"), data);

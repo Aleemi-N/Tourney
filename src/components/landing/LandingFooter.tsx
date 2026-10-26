@@ -45,7 +45,7 @@ export function LandingFooter() {
         </div>
 
         <div className="pt-8 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p>&copy; {new Date().getFullYear()} {APP_CONFIG.name}.</p>
+          <p>&copy; {new Date().getFullYear()} {APP_CONFIG.name}. <Link href="/privacy" className="ml-3 hover:text-text-primary">Privacy</Link> <Link href="/terms" className="ml-3 hover:text-text-primary">Terms</Link></p>
           {/* 
             Appfyniti URL intentionally omitted — add href when the official URL is confirmed.
             Example: <a href="https://appfyniti.com" ...>Appfyniti</a>

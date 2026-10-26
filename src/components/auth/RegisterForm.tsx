@@ -88,6 +88,10 @@ export function RegisterForm() {
         {pending ? 'Creating Account...' : 'Create Account'}
       </button>
 
+      <p className="text-center text-xs text-text-muted">
+        By creating an account you agree to the <Link href="/terms" className="underline hover:text-text-primary">Terms</Link> and <Link href="/privacy" className="underline hover:text-text-primary">Privacy Policy</Link>.
+      </p>
+
       <div className="mt-4 pt-4 border-t border-glass-border/50 text-sm text-center text-text-secondary flex flex-col gap-2">
         <span>
           Already have an account?{' '}

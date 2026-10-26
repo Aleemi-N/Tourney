@@ -1,8 +1,18 @@
+(secure) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+}
+
 {$APP_DOMAIN} {
+	import secure
+	encode zstd gzip
 	reverse_proxy web:3000
 }
 
 {$API_DOMAIN} {
+	import secure
 	# Websockets (realtime) and uploads pass through unchanged.
 	request_body {
 		max_size 4MB
