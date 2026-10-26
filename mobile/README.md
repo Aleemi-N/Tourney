@@ -19,5 +19,7 @@ npx expo start --web     # browser build, handy for checking against the API
 - Team owner portal: dashboard, team overview, player pool, squad, live auction (realtime), fixtures and results.
 - Player profile (edit), scorer score correction and reset, TV scoreboard, and the super admin pages (overview, approvals, tournaments, organizers, audit log) from the Account tab.
 - Player portal (Account), scorer workspace (My matches) and the organizer dashboard and participant management follow the web portals.
-- Not built: push notifications, logo upload for a tournament, match reordering and league-progression tools (use the website). Password reset opens the website on purpose, because the link belongs to the browser that asked for it.
+- Fixtures also has Auto-Spread Rest, Easy Reorder and Plan Days per round, and the league progression decision; Settings has the tournament logo upload.
+- Push notifications (Account tab switch): match started, player on the auction block, outbid, and lot draw turn. Database triggers queue messages, the API sends them to Expo (`api/.../push/PushDispatcher.java`). Needs an EAS project id and push credentials, and a development or store build (not Expo Go on Android). Taps open the match or the owner auction.
+- Not built: nothing from the web portals is missing. Password reset opens the website on purpose, because the link belongs to the browser that asked for it.
 - Verified here only through the web build (`node` + Playwright against the API); no phone or emulator was available.

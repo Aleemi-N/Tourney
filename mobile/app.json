@@ -47,6 +47,13 @@
           "microphonePermission": false
         }
       ],
+      [
+        "expo-notifications",
+        {
+          "color": "#4f46e5",
+          "defaultChannel": "default"
+        }
+      ],
       "expo-font"
     ],
     "experiments": {

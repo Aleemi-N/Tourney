@@ -47,6 +47,8 @@ services:
       TOURNY_SMTP_USER: ${SMTP_USER:-}
       TOURNY_SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       TOURNY_MAIL_FROM: ${MAIL_FROM:-no-reply@${APP_DOMAIN}}
+      # Push notifications go to Expo. A token is only needed if you enable enhanced push security in your Expo account.
+      TOURNY_EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
     volumes:
       - storage:/data/storage
 

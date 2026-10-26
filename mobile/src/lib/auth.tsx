@@ -1,5 +1,6 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { forgetPushToken } from '@/lib/push-token';
 import { api } from '@/lib/api';
 
 type AuthState = {
@@ -29,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await api.auth.signInWithPassword({ email: email.trim(), password });
       return error ? error.message : null;
     },
-    signOut: async () => { await api.auth.signOut(); },
+    signOut: async () => { await forgetPushToken().catch(() => {}); await api.auth.signOut(); },
   }), [session, ready]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

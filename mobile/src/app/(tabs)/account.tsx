@@ -2,11 +2,12 @@ import { Link, router } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Choice } from '@/components/form';
+import { usePush } from '@/lib/push';
 import { useIsSuperAdmin } from '@/components/admin';
 import { useOwnerTeams } from '@/components/owner';
 import { PortalIntro, PortalShell, Section, portalCard } from '@/components/shell';
 import { Text } from '@/components/text';
-import { Button, Loading, StatusPill } from '@/components/ui';
+import { Button, ErrorText, Loading, StatusPill } from '@/components/ui';
 import { api, apiUrl } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useOrganizerTournaments } from '@/lib/organizer';
@@ -28,6 +29,7 @@ export default function AccountScreen() {
   const setThemeChoice = useSetThemeChoice();
   const { teams: ownedTeams } = useOwnerTeams();
   const superAdmin = useIsSuperAdmin();
+  const push = usePush();
   const { tournaments: organized } = useOrganizerTournaments(session?.user.id);
   const [name, setName] = useState<string | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
@@ -144,6 +146,16 @@ export default function AccountScreen() {
             {assignments.map((a) => (
               <Text key={a.id} style={{ color: t.text, fontSize: 16, fontWeight: '700' }}>{a.teams?.name} <Text style={{ color: t.textSecondary, fontWeight: '500' }}>· {ACQUISITION[a.acquisition_type ?? ''] ?? a.acquisition_type ?? 'Registered'}</Text></Text>
             ))}
+          </View>
+        </Section>
+      ) : null}
+
+      {push.supported ? (
+        <Section title="Notifications">
+          <View style={portalCard(t)}>
+            <Text style={{ color: t.textSecondary, fontSize: 14 }}>Get told when your match starts, when a player goes on the auction block, when you are outbid, and when it is your turn in a lot draw.</Text>
+            {push.error ? <ErrorText>{push.error}</ErrorText> : null}
+            {push.enabled ? <Button tone="secondary" title="Turn off notifications" loading={push.busy} onPress={() => void push.disable()} /> : <Button title="Turn on notifications" loading={push.busy} onPress={() => void push.enable()} />}
           </View>
         </Section>
       ) : null}

@@ -2,6 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { Choice, Field } from '@/components/form';
+import { PhotoField } from '@/components/photo-field';
 import { OrganizerFrame, useTournamentName } from '@/components/organizer';
 import { portalCard, Section } from '@/components/shell';
 import { Text } from '@/components/text';
@@ -53,13 +54,16 @@ export default function OrganizerSettings() {
   const name = useTournamentName(id);
   const [details, setDetails] = useState<Details | null>(null);
   const [config, setConfig] = useState<Configuration | null>(null);
+  const [logo, setLogo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [d, c] = await Promise.all([
+    const [d, c, b] = await Promise.all([
       api.from('tournaments').select('name,venue,start_date,end_date,description,format,league_mode').eq('id', id).maybeSingle(),
       api.rpc('get_tournament_phase5a_configuration', { p_tournament_id: id }),
+      api.from('tournament_branding').select('logo_path').eq('tournament_id', id).maybeSingle(),
     ]);
+    setLogo((b.data?.logo_path as string | null | undefined) ?? null);
     if (d.error || c.error) return setError((d.error ?? c.error)!.message);
     setDetails(d.data as Details | null);
     setConfig(c.data as unknown as Configuration);
@@ -72,7 +76,7 @@ export default function OrganizerSettings() {
       {error ? <ErrorText>{error}</ErrorText> : null}
       {!details || !config ? (error ? null : <Loading />) : (
         <>
-          <DetailsForm id={id} initial={details} onSaved={load} />
+          <DetailsForm id={id} initial={details} initialLogo={logo} onSaved={load} />
           <RegistrationForm id={id} config={config} auction={details.format === 'LEAGUE' && details.league_mode === 'AUCTION'} onSaved={load} />
           {details.format === 'LEAGUE' && details.league_mode === 'AUCTION' ? <PriceCategories id={id} /> : null}
           <Section title="Match Format">
@@ -85,7 +89,8 @@ export default function OrganizerSettings() {
   );
 }
 
-function DetailsForm({ id, initial, onSaved }: { id: string; initial: Details; onSaved: () => Promise<void> }) {
+function DetailsForm({ id, initial, initialLogo, onSaved }: { id: string; initial: Details; initialLogo: string | null; onSaved: () => Promise<void> }) {
+  const [logo, setLogo] = useState<string | null>(initialLogo);
   const [form, setForm] = useState({ name: initial.name, venue: initial.venue ?? '', start: initial.start_date ?? '', end: initial.end_date ?? '', description: initial.description ?? '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,17 +105,19 @@ function DetailsForm({ id, initial, onSaved }: { id: string; initial: Details; o
     if (form.start && form.end && form.end < form.start) return setError('The end date cannot be before the start date.');
     setBusy(true);
     const { data, error: e } = await api.rpc('update_tournament_details', {
-      p_tournament_id: id, p_name: form.name.trim(), p_venue: form.venue || undefined, p_start_date: form.start || undefined, p_end_date: form.end || undefined, p_description: form.description || undefined,
+      p_tournament_id: id, p_name: form.name.trim(), p_venue: form.venue || undefined, p_start_date: form.start || undefined, p_end_date: form.end || undefined, p_description: form.description || undefined, p_logo_path: logo || undefined,
     });
     setBusy(false);
     const result = data as { ok?: boolean } | null;
     if (e || !result?.ok) return setError('Unable to save tournament details.');
+    if (initialLogo && logo && initialLogo !== logo) await api.storage.from('logos').remove([initialLogo]);
     setOk('Tournament details saved.');
     await onSaved();
   }
 
   return (
     <Panel title="Tournament Details" text="The name, venue and dates shown on the public pages.">
+      <PhotoField bucket="logos" userId={id} label="Tournament logo (JPG, PNG or WebP, 2 MB max)" path={logo} onChange={(p) => { setOk(null); setLogo(p); }} />
       <Field label="Tournament name" value={form.name} onChangeText={set('name')} />
       <Field label="Venue" value={form.venue} onChangeText={set('venue')} />
       <Field label="Start date (YYYY-MM-DD)" value={form.start} onChangeText={set('start')} autoCapitalize="none" placeholder="2026-11-01" />

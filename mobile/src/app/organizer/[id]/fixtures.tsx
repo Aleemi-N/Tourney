@@ -6,6 +6,8 @@ import { Choice, Field } from '@/components/form';
 import { OrganizerFrame, useTournamentName } from '@/components/organizer';
 import { portalCard, Section } from '@/components/shell';
 import { Text } from '@/components/text';
+import { Progression } from '@/components/progression';
+import { RoundTools } from '@/components/round-tools';
 import { Empty } from '@/components/tournament';
 import { Button, ErrorText, Loading, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -19,6 +21,7 @@ type Match = {
   format_override: boolean | null; result_type: string | null; scheduled_at: string | null; venue: string | null; court: string | null; home_team_id: string | null; away_team_id: string | null;
   home_team: { name: string } | null; away_team: { name: string } | null; match_scorers: { user_id: string }[] | null;
 };
+type Scope = { stage_id: string | null; round_number: number | null; revision: number };
 type Scorer = { user_id: string; display_name: string; roles: string[] };
 
 const STATUSES = ['SCHEDULED', 'POSTPONED', 'CANCELLED'] as const;
@@ -46,19 +49,27 @@ export default function OrganizerFixtures() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [dates, setDates] = useState<{ start: string | null; end: string | null }>({ start: null, end: null });
+  const [scopes, setScopes] = useState<Scope[]>([]);
+  const [planned, setPlanned] = useState<string[]>([]);
 
   const load = useCallback(async () => {
-    const [tn, st, m, staff, teams, rules] = await Promise.all([
-      api.from('tournaments').select('format').eq('id', id).maybeSingle(),
+    const [tn, st, m, staff, teams, rules, scopeRes, plans] = await Promise.all([
+      api.from('tournaments').select('format,start_date,end_date').eq('id', id).maybeSingle(),
       api.from('tournament_stages').select('id,name,stage_type,sequence,qualification_count,status,standings_rules(win_points,loss_points,draw_points,tie_break_rules)').eq('tournament_id', id).order('sequence'),
       api.from('matches').select('id,stage_id,match_number,program_order,round_number,status,sets_to_win,format_override,result_type,scheduled_at,venue,court,home_team_id,away_team_id,home_team:teams!matches_home_team_id_fkey(name),away_team:teams!matches_away_team_id_fkey(name),match_scorers(user_id)').eq('tournament_id', id).order('round_number').order('program_order'),
       api.rpc('get_tournament_staff', { p_tournament_id: id }),
       api.from('teams').select('id', { count: 'exact', head: true }).eq('tournament_id', id).eq('status', 'ACTIVE'),
       api.from('volleyball_rules').select('id').eq('tournament_id', id),
+      api.from('match_order_scopes').select('stage_id,round_number,revision').eq('tournament_id', id),
+      api.from('tournament_progression_plans').select('source_stage_id').eq('tournament_id', id),
     ]);
     const failure = st.error ?? m.error;
     if (failure) return setError(failure.message);
     setFormat((tn.data?.format as string | undefined) ?? null);
+    setDates({ start: (tn.data?.start_date as string | null | undefined) ?? null, end: (tn.data?.end_date as string | null | undefined) ?? null });
+    setScopes((scopeRes.data ?? []) as Scope[]);
+    setPlanned(((plans.data ?? []) as { source_stage_id: string }[]).map((x) => x.source_stage_id));
     setStages(st.data as unknown as Stage[]);
     setMatches(m.data as unknown as Match[]);
     setScorers(((staff.data ?? []) as unknown as Scorer[]).filter((s) => s.roles?.includes('SCORER')));
@@ -80,6 +91,14 @@ export default function OrganizerFixtures() {
     await load();
   }
 
+  const groups = stages
+    ? [...new Set(matches.map((m) => `${m.stage_id}|${m.round_number}`))].map((key) => {
+      const first = matches.find((m) => `${m.stage_id}|${m.round_number}` === key)!;
+      return { stage: stages.find((x) => x.id === first.stage_id) ?? null, round: first.round_number, items: matches.filter((m) => `${m.stage_id}|${m.round_number}` === key) };
+    })
+    : [];
+  const completeLeague = stages?.find((x) => x.stage_type === 'LEAGUE' && x.status === 'COMPLETED' && !planned.includes(x.id));
+
   return (
     <OrganizerFrame id={id} current="fixtures" title="Fixtures & Scorers" subtitle={name}>
       <Text style={{ color: t.textSecondary, fontSize: 15 }}>Set up the competition, generate authoritative fixtures, and manage saved schedules.</Text>
@@ -94,13 +113,19 @@ export default function OrganizerFixtures() {
             ))}
           </Section>
 
+          {completeLeague ? <Progression tournamentId={id} stageId={completeLeague.id} onDone={async (message) => { setNotice(message); await load(); }} /> : null}
+
           <Section title="Fixtures & Schedule">
             {matches.length === 0 ? <Empty text="No fixtures yet. Generate them from the stage above." /> : null}
-            {[...new Set(matches.map((m) => m.round_number))].map((round) => (
-              <View key={String(round)} style={{ gap: 12 }}>
-                <Text style={{ color: t.primary, fontSize: 13, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>{round != null ? `Round ${round}` : 'Fixtures'}</Text>
-                {matches.filter((m) => m.round_number === round).map((m) => (
-                  <MatchCard key={m.id} match={m} league={stages.find((s) => s.id === m.stage_id)?.stage_type === 'LEAGUE'} scorers={scorers} busy={busy} run={run} />
+            {groups.map(({ stage, round, items }) => (
+              <View key={`${stage?.id}-${round}`} style={{ gap: 12 }}>
+                <Text style={{ color: t.primary, fontSize: 13, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>{stages.length > 1 && stage ? `${stage.name} · ` : ''}{round != null ? `Round ${round}` : 'Fixtures'}</Text>
+                <RoundTools key={items.map((m) => `${m.id}${m.status}${m.scheduled_at}`).join()} tournamentId={id} stageId={stage?.id ?? null} stageName={stage?.name ?? 'Fixtures'} round={round} items={items}
+                  revision={scopes.find((x) => x.stage_id === (stage?.id ?? null) && x.round_number === round)?.revision ?? null}
+                  defaults={{ startDate: dates.start, endDate: dates.end, stageType: stage?.stage_type ?? format ?? 'LEAGUE', hasNextStage: stages.some((x) => x.sequence > (stage?.sequence ?? 0)) }}
+                  onDone={async (message) => { setError(null); setNotice(message || null); await load(); }} />
+                {items.map((m) => (
+                  <MatchCard key={m.id} match={m} league={stage?.stage_type === 'LEAGUE'} scorers={scorers} busy={busy} run={run} />
                 ))}
               </View>
             ))}

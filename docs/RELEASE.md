@@ -20,6 +20,7 @@ This is the single list for taking v2 live. "Verified" means I ran it here; "You
 7. **Mobile app stores** (only if you want store listings; Expo Go and the web app work without them):
    - Create the accounts: Google Play Console (one-time fee) and Apple Developer Program (yearly fee).
    - Provide a 1024x1024 app icon (the current one is the 512px web icon), screenshots for each store, a short and a long description, and a public privacy-policy URL (`https://app.<domain>/privacy`).
+   - Push notifications (match started, player on the block, outbid, lot draw turn) need an Expo project: sign in with `npx eas-cli@latest login`, run `eas init` in `mobile/` (it writes the project id into `app.json`), and add push credentials with `eas credentials` (a Firebase FCM v1 key for Android, an Apple push key for iOS, which comes with the Apple account). They do not work in Expo Go on Android; use a development or store build.
    - In `mobile/eas.json`, set the production API and site URLs, then `npx eas-cli@latest build --platform all --profile production` and `eas submit`.
 8. **Uptime monitoring:** point a free monitor (UptimeRobot, Better Stack) at `https://api.<domain>/actuator/health` and `https://app.<domain>/api/health`.
 9. **Backups:** schedule `deploy/backup.sh` nightly (cron line is in the script) and copy the results off the server.
@@ -29,7 +30,7 @@ This is the single list for taking v2 live. "Verified" means I ran it here; "You
 - The live-update socket tells any listener that a match changed (never its contents); public event tables are public by design.
 - Single server: no automatic failover. Restores come from the nightly backup.
 - Sign-in and sign-up limits are kept in the API's memory, so they reset when it restarts.
-- Mobile app: no push notifications, no tournament logo upload, match reordering or league-progression tools (use the website). Everything else in the web portals is on mobile.
+- Mobile app: everything in the web portals is on mobile, plus push notifications. Push needs the Expo project and credentials above, and the API must be able to reach exp.host.
 - Google/OAuth sign-in is not supported (the app never used it).
 - The web app was not load-tested. A tournament weekend with a few hundred spectators is well within a small VPS; thousands on one live match are untested.
 

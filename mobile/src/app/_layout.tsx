@@ -4,12 +4,16 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { AuthProvider } from '@/lib/auth';
+import { setupNotifications, useNotificationTaps } from '@/lib/push';
 import { ThemeChoiceProvider } from '@/lib/theme-choice';
 import { useIsDark, useTheme } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
+setupNotifications();
+
 function Navigation() {
+  useNotificationTaps();
   const t = useTheme();
   const dark = useIsDark();
   const base = dark ? DarkTheme : DefaultTheme;

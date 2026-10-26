@@ -75,3 +75,5 @@ update_tournament_details
 update_tournament_draft
 update_tournament_settings
 initialize_organizer_onboarding
+register_push_token
+unregister_push_token
