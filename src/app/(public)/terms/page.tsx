@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import { LegalPage, contactEmail } from '@/components/public/LegalPage';
 
+// Read the contact address at request time, so it follows the deployment's environment.
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Terms of Use',
   description: 'The rules for using Tourny as an organizer, team owner, player or spectator.',

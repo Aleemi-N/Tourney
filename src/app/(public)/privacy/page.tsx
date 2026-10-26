@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import { LegalPage, contactEmail } from '@/components/public/LegalPage';
 
+// Read the contact address at request time, so it follows the deployment's environment.
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description: 'What personal information Tourny collects, why, who can see it and how to ask for it to be changed or deleted.',

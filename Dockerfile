@@ -1,7 +1,7 @@
 FROM node:22-slim AS build
 RUN corepack enable
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 # NEXT_PUBLIC_* values are compiled into the browser bundle, so they are build arguments.

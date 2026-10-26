@@ -61,6 +61,8 @@ services:
     environment:
       # The server side reaches the API over the internal network.
       NEXT_PUBLIC_SUPABASE_URL: https://${API_DOMAIN}
+      NEXT_PUBLIC_SITE_URL: https://${APP_DOMAIN}
+      NEXT_PUBLIC_CONTACT_EMAIL: ${CONTACT_EMAIL:-support@example.com}
 
   caddy:
     image: caddy:2
