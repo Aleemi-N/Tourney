@@ -7,7 +7,7 @@ This is the single list for taking v2 live. "Verified" means I ran it here; "You
 - 175 script and database tests, 11 API integration tests (auth, data endpoints, uploads, websocket, password reset, hardening).
 - API and PostgREST on plain PostgreSQL 17 with the full schema (`deploy/rehearse.sh`).
 - Upgrade rehearsal on a fresh production dump: migrations 58 to 71 applied, 48 tables matched row for row, no integrity problems.
-- Mobile: typecheck, `expo-doctor` (20/20), Android and iOS production bundles export, and end-to-end flows in the browser build (sign-in, scoring, registration, organizer approvals).
+- Mobile: typecheck, `expo-doctor` (20/20), Android and iOS production bundles export, and end-to-end flows in the browser build (sign-in, scoring, registration, organizer approvals, fixtures and settings).
 - The unmodified web app runs against the API (register, approve, lot draw, auction, scoring, standings).
 
 ## Before going public (yours, in this order)
@@ -29,7 +29,7 @@ This is the single list for taking v2 live. "Verified" means I ran it here; "You
 - The live-update socket tells any listener that a match changed (never its contents); public event tables are public by design.
 - Single server: no automatic failover. Restores come from the nightly backup.
 - Sign-in and sign-up limits are kept in the API's memory, so they reset when it restarts.
-- Mobile app: no push notifications, no organizer fixtures/settings screens, no tournament creation wizard (use the website), and no TV scoreboard.
+- Mobile app: no push notifications, no tournament creation wizard (use the website), and no TV scoreboard.
 - Google/OAuth sign-in is not supported (the app never used it).
 - The web app was not load-tested. A tournament weekend with a few hundred spectators is well within a small VPS; thousands on one live match are untested.
 

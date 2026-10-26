@@ -1,8 +1,9 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Choice } from '@/components/form';
-import { PortalShell, portalCard } from '@/components/shell';
+import { OrganizerFrame } from '@/components/organizer';
+import { portalCard } from '@/components/shell';
 import { Text } from '@/components/text';
 import { Empty, positionLabel, positionTone } from '@/components/tournament';
 import { Button, ErrorText, Loading, StatusPill } from '@/components/ui';
@@ -70,14 +71,7 @@ export default function OrganizerTournamentScreen() {
   );
 
   return (
-    <PortalShell role="Organizer" home={false}>
-      <Pressable accessibilityRole="link" onPress={() => (router.canGoBack() ? router.back() : router.replace('/organizer'))} style={{ minHeight: 44, justifyContent: 'center' }}>
-        <Text style={{ color: t.textSecondary, fontSize: 14 }}>← Back to Dashboard</Text>
-      </Pressable>
-      <View style={{ gap: 4 }}>
-        <Text accessibilityRole="header" style={{ color: t.text, fontSize: 32, lineHeight: 38, fontWeight: '800', letterSpacing: -0.8 }}>Participant Management</Text>
-        {name ? <Text style={{ color: t.textMuted, fontSize: 14 }}>{name}</Text> : null}
-      </View>
+    <OrganizerFrame id={id} current="participants" title="Participant Management" subtitle={name}>
       {error ? <ErrorText>{error}</ErrorText> : null}
       {!players || !teams ? <Loading /> : (
         <>
@@ -140,6 +134,6 @@ export default function OrganizerTournamentScreen() {
           )) : null}
         </>
       )}
-    </PortalShell>
+    </OrganizerFrame>
   );
 }
