@@ -81,3 +81,14 @@ forget_push_device
 follow_target
 unfollow_target
 get_push_follows
+get_match_squads
+set_set_lineup
+record_substitution
+undo_last_substitution
+get_match_lineups
+set_match_mvp
+clear_match_mvp
+set_tournament_award
+remove_tournament_award
+get_tournament_awards
+get_player_awards

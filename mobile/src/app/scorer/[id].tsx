@@ -2,6 +2,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Clock, Undo2 } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { useScoreQueue } from '@/lib/score-queue';
+import { MvpPicker, ScorerLineups, useLineups } from '@/components/lineups';
 import { ScoreFix } from '@/components/score-fix';
 import { PortalShell } from '@/components/shell';
 import { Text } from '@/components/text';
@@ -33,6 +35,8 @@ export default function ScorerScreen() {
   const [tossLeft, setTossLeft] = useState<string | null>(null);
   const [tossServe, setTossServe] = useState<string | null>(null);
   const working = useRef(false);
+  const queue = useScoreQueue(id, async () => { await refresh(); });
+  const mvp = useLineups(id, state?.match.status ?? '');
   const back = (
     <Pressable accessibilityRole="link" onPress={() => (router.canGoBack() ? router.back() : router.replace('/matches'))} style={{ minHeight: 44, justifyContent: 'center' }}>
       <Text style={{ color: t.textSecondary, fontSize: 14 }}>← My matches</Text>
@@ -49,7 +53,7 @@ export default function ScorerScreen() {
   const left = court.leftId === away.id ? away : home;
   const right = left === home ? away : home;
   const colorOf = (team: Team) => (team.id === home.id ? HOME_COLOR : AWAY_COLOR);
-  const scoreOf = (team: Team) => (team.id === home.id ? active?.home_score : active?.away_score) ?? 0;
+  const scoreOf = (team: Team) => ((team.id === home.id ? active?.home_score : active?.away_score) ?? 0) + (queue.teamCounts[team.id] ?? 0);
   const won = (team: Team) => sets.filter((s) => s.winner_team_id === team.id).length;
   const timeoutsUsed = (team: Team) => (team.id === home.id ? state.timeouts?.home_used : state.timeouts?.away_used) ?? 0;
   const maxTimeouts = state.timeouts?.max_per_set ?? 2;
@@ -70,7 +74,7 @@ export default function ScorerScreen() {
     await refresh();
   }
 
-  const award = (team: Team) => run(() => api.rpc('award_point', { p_match_id: match.id, p_team_id: team.id, p_idempotency_key: `${Date.now()}-${Math.random().toString(36).slice(2)}` }));
+  const award = (team: Team) => queue.award(team.id);
   const saveToss = () => run(async () => {
     const result = await api.rpc('set_match_setup', { p_match_id: match.id, p_set_number: active.set_number, p_left_team_id: tossLeft ?? court.leftId ?? home.id, p_first_serve_team_id: tossServe ?? court.servingId ?? home.id });
     if (!result.error) setEditingToss(false);
@@ -108,6 +112,13 @@ export default function ScorerScreen() {
         </View>
       </Card>
       {error ? <ErrorText>{error}</ErrorText> : null}
+      {queue.dropped ? <ErrorText>{queue.dropped}</ErrorText> : null}
+      {queue.pending > 0 || !queue.online ? (
+        <View accessibilityRole="alert" style={{ backgroundColor: tint(t.warning, 0.12), borderRadius: radius.xl, padding: 12, gap: 2 }}>
+          <Text style={{ color: t.warning, fontWeight: '800' }}>{queue.online ? `Sending ${queue.pending} point${queue.pending === 1 ? '' : 's'}…` : `No connection: ${queue.pending} point${queue.pending === 1 ? '' : 's'} saved on this phone`}</Text>
+          <Text style={{ color: t.textSecondary, fontSize: 12 }}>Keep scoring. Points are sent in order when the connection returns, and are kept if the app closes. The score shown includes them.</Text>
+        </View>
+      ) : null}
 
       {!completed && (court.needsSetup || editingToss) && active ? (
         <Card style={{ gap: 14 }}>
@@ -187,9 +198,9 @@ export default function ScorerScreen() {
         })}
       </View>
       {timeoutRunning ? <Button title="End timeout" onPress={() => void run(() => api.rpc('end_match_timeout', { p_match_id: match.id }))} /> : null}
-      {startedPoints && !completed ? (
+      {(startedPoints || queue.pending > 0) && !completed ? (
         <Button tone="secondary" title="Undo last point" disabled={busy || timeoutRunning} icon={<Undo2 size={18} color={t.text} />}
-          onPress={() => void run(() => api.rpc('undo_last_score_event', { p_match_id: match.id }))} />
+          onPress={() => { if (!queue.undoPending()) void run(() => api.rpc('undo_last_score_event', { p_match_id: match.id })); }} />
       ) : null}
 
       {/* Sets history */}
@@ -207,6 +218,11 @@ export default function ScorerScreen() {
         ))}
       </Card>
 
+      {active ? (
+        <ScorerLineups matchId={match.id} setNumber={active.set_number} teams={[home, away]} colors={{ [home.id]: HOME_COLOR, [away.id]: AWAY_COLOR }} servingId={court.servingId}
+          started={active.home_score + active.away_score > 0} disabled={busy || completed || timeoutRunning} refreshKey={sets.map((x) => `${x.home_score}-${x.away_score}-${x.status}`).join('|')} onChanged={refresh} />
+      ) : null}
+      {completed ? <MvpPicker matchId={match.id} mvp={mvp.data?.mvp ?? null} onChanged={mvp.reload} /> : null}
       <ScoreFix matchId={match.id} sets={sets} homeName={home.name} awayName={away.name} disabled={busy || timeoutRunning} onChanged={refresh} />
       {!completed && !court.needsSetup && !editingToss ? (
         <Button tone="ghost" title="Sides & serve" onPress={() => { setTossLeft(court.leftId); setTossServe(court.servingId); setEditingToss(true); }} />

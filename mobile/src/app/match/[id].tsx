@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { CalendarDays, Tv } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { PublicLineups } from '@/components/public-lineups';
 import { MatchShare } from '@/components/match-share';
 import { Text } from '@/components/text';
 import { Loading, shortOf, TournamentFrame, useTournament } from '@/components/tournament';
@@ -104,6 +105,8 @@ export default function PublicMatchScreen() {
           </View>
         </View>
       ) : null}
+
+      <PublicLineups matchId={id} state={state} colors={Object.fromEntries(teams.map((x) => [x.id, x.primary_color ?? '']).filter(([, c]) => c))} />
 
       {tournament ? <MatchShare state={state} slug={slug} tournament={{ id: tournament.id, name: tournament.name, venue: tournament.venue }} /> : null}
     </TournamentFrame>

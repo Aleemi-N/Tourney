@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
+import { PlayerAwards } from '@/components/awards';
 import { StatsPanel, type Stats } from '@/components/stats';
 import { Text } from '@/components/text';
 import { Loading, positionLabel, positionTone, TournamentFrame } from '@/components/tournament';
@@ -32,6 +33,7 @@ export default function PlayerStatsScreen() {
             </View>
           </View>
           <Text style={{ color: t.textSecondary, fontSize: 14 }}>Results of the teams this player has been on the squad of. Individual points are not recorded.</Text>
+          <PlayerAwards playerId={playerId} />
           <StatsPanel stats={data.stats} />
         </>
       )}
