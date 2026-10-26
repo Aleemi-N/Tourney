@@ -6,7 +6,7 @@ import { portalCard } from '@/components/shell';
 import { Text } from '@/components/text';
 import { Button, ErrorText } from '@/components/ui';
 import { api } from '@/lib/api';
-import { initialPlan, interleaveMatchesForMaxRest, LOCKED, nextDate, split, timeAt, ymd, type Day, type PlanDefaults, type PlanMatch } from '@/lib/schedule';
+import { initialPlan, interleaveMatchesForMaxRest, layoutDay, LOCKED, nextDate, split, timeAt, ymd, type Day, type PlanDefaults, type PlanMatch } from '@/lib/schedule';
 import { radius, useTheme } from '@/theme';
 
 type Item = PlanMatch & { match_number: number | null };
@@ -22,6 +22,9 @@ export function RoundTools({ tournamentId, stageId, stageName, round, items, rev
   const [order, setOrder] = useState<Item[]>(items);
   const [plan, setPlan] = useState(() => initialPlan(items, defaults));
   const [progress, setProgress] = useState<string | null>(null);
+  const [courtsText, setCourtsText] = useState('');
+  const courtNames = courtsText.split(',').map((c) => c.trim()).filter(Boolean);
+  const courtCount = Math.max(1, courtNames.length);
 
   async function saveOrder(next: Item[]) {
     if (revision === null) return setError('Ordering scope unavailable. Refresh and try again.');
@@ -44,9 +47,13 @@ export function RoundTools({ tournamentId, stageId, stageName, round, items, rev
     setOrder(next);
   }
 
-  const slots: { match: Item; at: Date }[] = [];
+  const slots: { match: Item; at: Date; court: string | null }[] = [];
   let k = 0;
-  plan.days.forEach((day) => { for (let i = 0; i < day.count && k < items.length; i++) slots.push({ match: items[k++], at: timeAt(day, i, plan.minutes) }); });
+  plan.days.forEach((day) => {
+    const dayMatches = items.slice(k, k + day.count);
+    k += dayMatches.length;
+    for (const placed of layoutDay(dayMatches, courtCount)) slots.push({ match: placed.match, at: timeAt(day, placed.slot, plan.minutes), court: courtNames[placed.court] ?? null });
+  });
   const assigned = plan.days.reduce((sum, d) => sum + d.count, 0);
   const dateOk = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
   const timeOk = (s: string) => /^\d{2}:\d{2}$/.test(s);
@@ -71,7 +78,7 @@ export function RoundTools({ tournamentId, stageId, stageName, round, items, rev
     const todo = slots.filter((s) => !LOCKED.includes(s.match.status));
     for (const [i, s] of todo.entries()) {
       setProgress(`Saving ${i + 1} of ${todo.length}…`);
-      const { error: e } = await api.rpc('update_match_schedule', { p_match_id: s.match.id, p_scheduled_at: s.at.toISOString(), p_venue: s.match.venue ?? undefined, p_court: s.match.court ?? undefined, p_status: undefined as unknown as string });
+      const { error: e } = await api.rpc('update_match_schedule', { p_match_id: s.match.id, p_scheduled_at: s.at.toISOString(), p_venue: s.match.venue ?? undefined, p_court: s.court ?? s.match.court ?? undefined, p_status: undefined as unknown as string });
       if (e) { setProgress(null); return setError(`Stopped at ${s.match.home_team?.name ?? 'TBD'} vs ${s.match.away_team?.name ?? 'TBD'}: ${e.message}`); }
     }
     setProgress(null);
@@ -119,6 +126,8 @@ export function RoundTools({ tournamentId, stageId, stageName, round, items, rev
           <Text style={{ color: t.text, fontSize: 16, fontWeight: '700' }}>Plan days · {stageName}</Text>
           <Text style={{ color: t.textSecondary, fontSize: 13 }}>Spread {items.length} matches over the days below. Matches already played or live are not changed.</Text>
           <Field label="Number of days" value={String(plan.days.length)} onChangeText={(v) => setDayCount(Number(v) || 1)} keyboardType="number-pad" />
+          <Field label="Courts (comma separated, optional)" value={courtsText} onChangeText={setCourtsText} placeholder="Court 1, Court 2" />
+          {courtNames.length > 1 ? <Text style={{ color: t.textMuted, fontSize: 12 }}>Matches share time slots across {courtNames.length} courts. A team never plays two matches in the same slot.</Text> : null}
           <Field label="Minutes per match" value={String(plan.minutes)} onChangeText={(v) => setPlan({ ...plan, minutes: Math.max(0, Number(v) || 0) })} keyboardType="number-pad" />
           {plan.days.map((d, i) => (
             <View key={i} style={{ gap: 8, borderTopWidth: 1, borderTopColor: t.border, paddingTop: 10 }}>

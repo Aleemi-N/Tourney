@@ -6,6 +6,7 @@ import { Choice, Field } from '@/components/form';
 import { OrganizerFrame, useTournamentName } from '@/components/organizer';
 import { portalCard, Section } from '@/components/shell';
 import { Text } from '@/components/text';
+import { CheckInStrip } from '@/components/checkin';
 import { FixturesPoster, PosterShare, useLogoUrl } from '@/components/poster';
 import { Progression } from '@/components/progression';
 import { QrCard } from '@/components/qr';
@@ -281,6 +282,10 @@ function MatchCard({ match, slug, league, scorers, busy, run }: { match: Match; 
       </Pressable>
       {open ? (
         <View style={{ gap: 14 }}>
+          {match.status === 'SCHEDULED' && match.home_team_id && match.away_team_id ? (
+            <CheckInStrip matchId={match.id} teams={[{ id: match.home_team_id, name: home }, { id: match.away_team_id, name: away }]} canAct={[match.home_team_id, match.away_team_id]} scheduledAt={match.scheduled_at}
+              onWalkover={(winnerId, absentName) => { setResult(winnerId === match.home_team_id ? 'WALKOVER_HOME' : 'WALKOVER_AWAY'); setReason(`${absentName} did not check in`); }} />
+          ) : null}
           {slug ? <QrCard title={`${home} vs ${away}`} subtitle="Scan for the live score" value={`${siteUrl}/t/${slug}/match/${match.id}`} fileName={`match-qr-${match.match_number ?? match.id}.png`} /> : null}
           <Field label="Date and time (YYYY-MM-DD HH:MM)" value={when} onChangeText={setWhen} placeholder="2026-11-01 18:30" autoCapitalize="none" />
           <Field label="Venue" value={venue} onChangeText={setVenue} />

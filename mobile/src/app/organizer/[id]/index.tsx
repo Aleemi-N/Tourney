@@ -3,6 +3,8 @@ import { Calendar, ClipboardList, Gavel, Settings, Users } from 'lucide-react-na
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { OrganizerFrame } from '@/components/organizer';
+import { ExportPanel } from '@/components/exports';
+import { TemplatePanel } from '@/components/template-panel';
 import { QrCard } from '@/components/qr';
 import { portalCard, Section } from '@/components/shell';
 import { Text } from '@/components/text';
@@ -131,6 +133,8 @@ export default function OrganizerOverview() {
             {nav('Fixtures & Scorers', 'Stages, schedule, scorers and results', Calendar, '/organizer/[id]/fixtures')}
             {nav('Settings', 'Details, registration, squads and match format', Settings, '/organizer/[id]/settings')}
           </Section>
+          <Section title="Export"><ExportPanel tournamentId={id} slug={info.slug} /></Section>
+          <Section title="Next tournament"><TemplatePanel sourceId={id} sourceName={info.name} /></Section>
           <Section title="QR codes for posters">
             <QrCard title={info.name} subtitle="Scan to follow the tournament" value={`${siteUrl}/t/${info.slug}`} fileName="tournament-qr.png" />
             {open ? <QrCard title="Register as a player" subtitle={info.name} value={`${siteUrl}/t/${info.slug}/register/player`} fileName="player-registration-qr.png" /> : null}

@@ -4,6 +4,7 @@ import { Pressable, ScrollView, View, type DimensionValue } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/text';
 import { Body, Button, Card, StatusPill } from '@/components/ui';
+import { AnnouncementsCard } from '@/components/announcements';
 import { TournamentAwards } from '@/components/awards';
 import { FollowButton } from '@/components/follow-button';
 import { Empty, Loading, shortOf, Tile, useTournament } from '@/components/tournament';
@@ -83,6 +84,8 @@ export default function TournamentOverview() {
             <Link href={{ pathname: '/register/team/[slug]', params: { slug } }} asChild><Button tone="secondary" title="Apply with a team" onPress={() => {}} /></Link>
           </View>
         ) : null}
+
+        <AnnouncementsCard tournamentId={tournament.id} />
 
         <TournamentAwards tournamentId={tournament.id} slug={slug} />
 

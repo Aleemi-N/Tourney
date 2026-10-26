@@ -92,3 +92,10 @@ set_tournament_award
 remove_tournament_award
 get_tournament_awards
 get_player_awards
+post_announcement
+delete_announcement
+get_announcements
+check_in_team
+undo_check_in
+get_match_checkins
+duplicate_tournament

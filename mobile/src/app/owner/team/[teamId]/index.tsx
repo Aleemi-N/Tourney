@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
+import { AnnouncementsCard } from '@/components/announcements';
+import { CheckInStrip } from '@/components/checkin';
 import { OwnerPage, type OwnerTeam } from '@/components/owner';
 import { Section, portalCard } from '@/components/shell';
 import { Text } from '@/components/text';
@@ -8,7 +10,7 @@ import { api } from '@/lib/api';
 import { useTheme } from '@/theme';
 
 type Wallet = { starting_balance: number; spent_amount: number; remaining_balance: number };
-type Match = { id: string; scheduled_at: string | null; court: string | null; home_team: { name: string } | null; away_team: { name: string } | null };
+type Match = { id: string; status: string; home_team_id: string | null; away_team_id: string | null; scheduled_at: string | null; court: string | null; home_team: { name: string } | null; away_team: { name: string } | null };
 const money = (n: number | null | undefined) => `₹${Math.max(0, Number(n ?? 0)).toLocaleString('en-IN')}`;
 
 /** Team overview: purse, squad size and upcoming matches. */
@@ -29,7 +31,7 @@ function Overview({ team }: { team: OwnerTeam }) {
         api.from('auction_team_wallets').select('starting_balance,spent_amount,remaining_balance').eq('team_id', team.id).maybeSingle(),
         api.from('team_players').select('id', { count: 'exact', head: true }).eq('team_id', team.id).eq('status', 'ACTIVE'),
         api.from('tournament_settings').select('max_squad_size').eq('tournament_id', team.tournament_id).maybeSingle(),
-        api.from('matches').select('id,scheduled_at,court,home_team:teams!matches_home_team_id_fkey(name),away_team:teams!matches_away_team_id_fkey(name)').or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`).in('status', ['SCHEDULED', 'LIVE']).order('scheduled_at', { nullsFirst: false }).limit(3),
+        api.from('matches').select('id,status,home_team_id,away_team_id,scheduled_at,court,home_team:teams!matches_home_team_id_fkey(name),away_team:teams!matches_away_team_id_fkey(name)').or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`).in('status', ['SCHEDULED', 'LIVE']).order('scheduled_at', { nullsFirst: false }).limit(3),
       ]);
       setWallet(w.data as Wallet | null);
       setSquad(s.count ?? 0);
@@ -59,10 +61,12 @@ function Overview({ team }: { team: OwnerTeam }) {
         {wallet ? stat('Purse left', money(wallet.remaining_balance)) : null}
         {wallet ? stat('Spent', money(wallet.spent_amount)) : null}
       </View>
+      <AnnouncementsCard tournamentId={team.tournament_id} />
       <Section title="Next matches">
         {next.length === 0 ? <Empty text="No upcoming matches yet." /> : next.map((m) => (
           <View key={m.id} style={portalCard(t)}>
             <Text style={{ color: t.text, fontSize: 16, fontWeight: '700' }}>{m.home_team?.name ?? 'TBD'} <Text style={{ color: t.textMuted, fontWeight: '500' }}>vs</Text> {m.away_team?.name ?? 'TBD'}</Text>
+            {m.status === 'SCHEDULED' && m.home_team_id && m.away_team_id ? <CheckInStrip matchId={m.id} teams={[{ id: m.home_team_id, name: m.home_team?.name ?? 'Home' }, { id: m.away_team_id, name: m.away_team?.name ?? 'Away' }]} canAct={[team.id]} scheduledAt={m.scheduled_at} /> : null}
             <Text style={{ color: t.textSecondary, fontSize: 13 }}>{m.scheduled_at ? new Date(m.scheduled_at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : 'Time to be announced'}{m.court ? ` · Court ${m.court}` : ''}</Text>
           </View>
         ))}

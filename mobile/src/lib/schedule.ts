@@ -87,3 +87,28 @@ export function timeAt(day: Day, index: number, minutes: number) {
   at.setMinutes(at.getMinutes() + index * minutes);
   return at;
 }
+
+/**
+ * Lays a day's matches out over several courts: matches in the same time slot never share a team, so nobody is asked to
+ * play two matches at once, and each slot fills every court before the next slot starts.
+ */
+export function layoutDay<M extends PlanMatch>(matches: M[], courts: number): { match: M; slot: number; court: number }[] {
+  const out: { match: M; slot: number; court: number }[] = [];
+  const remaining = [...matches];
+  let slot = 0;
+  while (remaining.length > 0) {
+    const busy = new Set<string>();
+    let court = 0;
+    for (let i = 0; i < remaining.length && court < courts; ) {
+      const m = remaining[i];
+      const home = m.home_team_id ?? `h-${m.id}`;
+      const away = m.away_team_id ?? `a-${m.id}`;
+      if (busy.has(home) || busy.has(away)) { i++; continue; }
+      busy.add(home); busy.add(away);
+      out.push({ match: m, slot, court: court++ });
+      remaining.splice(i, 1);
+    }
+    slot++;
+  }
+  return out;
+}

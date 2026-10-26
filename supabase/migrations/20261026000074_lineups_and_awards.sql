@@ -17,6 +17,7 @@ CREATE TABLE public.match_lineups (
 
 CREATE TABLE public.match_substitutions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  seq bigint GENERATED ALWAYS AS IDENTITY, -- the order substitutions were made in (timestamps can tie)
   match_id uuid NOT NULL REFERENCES public.matches(id) ON DELETE CASCADE,
   set_number integer NOT NULL,
   team_id uuid NOT NULL REFERENCES public.teams(id),
@@ -28,7 +29,7 @@ CREATE TABLE public.match_substitutions (
   created_by uuid REFERENCES public.profiles(id),
   created_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX match_substitutions_match_idx ON public.match_substitutions (match_id, set_number, created_at);
+CREATE INDEX match_substitutions_match_idx ON public.match_substitutions (match_id, set_number, seq);
 
 CREATE TABLE public.match_awards (
   match_id uuid PRIMARY KEY REFERENCES public.matches(id) ON DELETE CASCADE,
@@ -82,7 +83,7 @@ BEGIN
   SELECT slots INTO v_court FROM public.match_lineups WHERE match_id = p_match_id AND set_number = p_set_number AND team_id = p_team_id;
   IF v_court IS NULL THEN RETURN NULL; END IF;
   FOR v_sub IN SELECT out_player_id, in_player_id FROM public.match_substitutions
-               WHERE match_id = p_match_id AND set_number = p_set_number AND team_id = p_team_id ORDER BY created_at, id LOOP
+               WHERE match_id = p_match_id AND set_number = p_set_number AND team_id = p_team_id ORDER BY seq LOOP
     v_court := array_replace(v_court, v_sub.out_player_id, v_sub.in_player_id);
   END LOOP;
   RETURN v_court;
@@ -198,7 +199,7 @@ AS $$
 BEGIN
   IF NOT public.can_run_match(p_match_id) THEN RAISE EXCEPTION 'Unauthorized to score this match'; END IF;
   DELETE FROM public.match_substitutions WHERE id = (
-    SELECT id FROM public.match_substitutions WHERE match_id = p_match_id AND set_number = p_set_number AND team_id = p_team_id ORDER BY created_at DESC, id DESC LIMIT 1);
+    SELECT id FROM public.match_substitutions WHERE match_id = p_match_id AND set_number = p_set_number AND team_id = p_team_id ORDER BY seq DESC LIMIT 1);
 END;
 $$;
 
@@ -226,7 +227,7 @@ BEGIN
         ORDER BY l.set_number, l.team_id) FROM public.match_lineups l WHERE l.match_id = p_match_id), '[]'::jsonb),
     'substitutions', COALESCE((SELECT jsonb_agg(jsonb_build_object('set_number', x.set_number, 'team_id', x.team_id, 'kind', x.kind,
         'out_id', x.out_player_id, 'out_name', po.display_name, 'in_id', x.in_player_id, 'in_name', pi.display_name,
-        'home_score', x.home_score, 'away_score', x.away_score) ORDER BY x.created_at, x.id)
+        'home_score', x.home_score, 'away_score', x.away_score) ORDER BY x.seq)
         FROM public.match_substitutions x JOIN public.player_profiles po ON po.id = x.out_player_id JOIN public.player_profiles pi ON pi.id = x.in_player_id WHERE x.match_id = p_match_id), '[]'::jsonb),
     'rotations', COALESCE((SELECT jsonb_agg(jsonb_build_object('set_number', r.set_number, 'team_id', r.team_id, 'count', r.n)) FROM (
         SELECT ms.set_number, e.team_id, count(*) AS n FROM (

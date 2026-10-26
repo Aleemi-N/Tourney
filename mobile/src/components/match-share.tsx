@@ -1,6 +1,7 @@
 import { CalendarPlus } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
+import { CheckInStrip } from '@/components/checkin';
 import { FollowButton } from '@/components/follow-button';
 import { QrCard } from '@/components/qr';
 import { PosterShare, ResultPoster, useLogoUrl } from '@/components/poster';
@@ -29,6 +30,7 @@ export function MatchShare({ state, slug, tournament }: { state: MatchState; slu
 
   return (
     <View style={{ gap: 14 }}>
+      {match.status === 'SCHEDULED' ? <CheckInStrip matchId={match.id} teams={[home, away]} canAct={[]} scheduledAt={when} /> : null}
       {!completed ? <FollowButton kind="MATCH" targetId={match.id} name="this match" /> : null}
       <PosterShare label={completed ? 'Share result poster' : 'Share score poster'} fileName={`match-${match.match_number ?? match.id}.png`} shareTitle={`${home.name} vs ${away.name}`}>
         <ResultPoster tournament={tournament} logoUrl={logo} home={home.name} away={away.name} homeSets={won(home.id)} awaySets={won(away.id)} sets={played} status={completed ? 'FINAL' : match.status} winner={winner} />

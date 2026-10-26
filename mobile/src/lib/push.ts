@@ -23,14 +23,16 @@ export function setupNotifications() {
   });
 }
 
-type PushData = { kind?: string; matchId?: string; teamId?: string };
+type PushData = { kind?: string; matchId?: string; teamId?: string; tournamentId?: string };
 
 /** Open the screen a notification is about. */
 export function openFromNotification(data: PushData | undefined) {
   if (!data?.kind) return;
   if ((data.kind === 'MATCH_LIVE' || data.kind === 'MATCH_FINAL' || data.kind === 'MATCH_SCHEDULE') && data.matchId) router.push({ pathname: '/match/[id]', params: { id: data.matchId } });
   else if ((data.kind === 'AUCTION_PLAYER_LIVE' || data.kind === 'AUCTION_OUTBID') && data.teamId) router.push({ pathname: '/owner/team/[teamId]/auction', params: { teamId: data.teamId } });
-  else if (data.kind === 'LOT_TURN' && data.teamId) router.push({ pathname: '/owner/team/[teamId]', params: { teamId: data.teamId } });
+  else if (data.kind === 'ANNOUNCEMENT' && data.tournamentId) {
+    api.from('public_tournament_view').select('slug').eq('id', data.tournamentId).maybeSingle().then(({ data: row }) => { if (row?.slug) router.push({ pathname: '/t/[slug]', params: { slug: row.slug as string } }); });
+  } else if (data.kind === 'LOT_TURN' && data.teamId) router.push({ pathname: '/owner/team/[teamId]', params: { teamId: data.teamId } });
 }
 
 /** Routes taps on notifications, including the one that launched the app. Mount once under the router. */
