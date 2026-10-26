@@ -16,5 +16,6 @@ npx expo start --web     # browser build, handy for checking against the API
 - `src/lib/court.ts` is a copy of `../src/lib/court.ts` (sides and serve rules); move both into a shared package when the app grows.
 - Registration: players and team owners can apply from a tournament that is open (photo/logo upload, colours, reuse of an existing team); the Account tab lists their applications.
 - Organizer: the Account tab links to the tournaments you organize, with approve/reject for player registrations (route and price category) and team applications.
+- Player portal (Account), scorer workspace (My matches) and the organizer dashboard and participant management follow the web portals.
 - Not built yet: organizer fixtures and settings screens, owner team management, push notifications, score correction/reset and walkover/draw on mobile.
 - Verified here only through the web build (`node` + Playwright against the API); no phone or emulator was available.

@@ -26,8 +26,8 @@ function Navigation() {
         <Stack.Screen name="t/[slug]" options={{ headerShown: false }} />
         <Stack.Screen name="match/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="scorer/[id]" options={{ title: 'Scoring' }} />
-        <Stack.Screen name="organizer/index" options={{ title: 'Organizer' }} />
-        <Stack.Screen name="organizer/[id]" options={{ title: 'Review' }} />
+        <Stack.Screen name="organizer/index" options={{ headerShown: false }} />
+        <Stack.Screen name="organizer/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="register/player/[slug]" options={{ title: 'Player registration' }} />
         <Stack.Screen name="register/team/[slug]" options={{ title: 'Team application' }} />
       </Stack>

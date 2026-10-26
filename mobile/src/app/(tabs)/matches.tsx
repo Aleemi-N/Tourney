@@ -1,14 +1,19 @@
 import { Link } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { Body, Button, Card, ErrorText, Heading, Loading, Screen, StatusPill } from '@/components/ui';
+import { Text } from '@/components/text';
+import { PortalIntro, PortalShell, portalCard } from '@/components/shell';
+import { Button, ErrorText, Loading, StatusPill } from '@/components/ui';
+import { Empty } from '@/components/tournament';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import type { MatchState } from '@/lib/live';
+import { useTheme } from '@/theme';
 
-/** Matches assigned to the signed-in scorer. */
+/** The scorer workspace: matches assigned to the signed-in user. */
 export default function MyMatchesScreen() {
   const { session, ready } = useAuth();
+  const t = useTheme();
   const [matches, setMatches] = useState<MatchState[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,36 +30,31 @@ export default function MyMatchesScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
-  if (!ready) return <Screen><Loading /></Screen>;
+  if (!ready) return <PortalShell role="Scorer"><Loading /></PortalShell>;
   if (!session) {
     return (
-      <Screen>
-        <Heading>My matches</Heading>
-        <Body muted>Sign in to see the matches assigned to you.</Body>
-        <Link href="/login" asChild><Button title="Sign in" onPress={() => {}} /></Link>
-      </Screen>
+      <PortalShell role="Scorer" signOut={false}>
+        <PortalIntro eyebrow="Scorer workspace" title="Assigned matches" text="Sign in to see the matches assigned to you." />
+        <Link href="/login" asChild><Button title="Sign In" onPress={() => {}} /></Link>
+      </PortalShell>
     );
   }
   return (
-    <Screen>
-      <Heading>Assigned matches</Heading>
+    <PortalShell role="Scorer">
+      <PortalIntro eyebrow="Scorer workspace" title="Assigned matches" text="Only matches assigned to your account appear here. Point actions remain authorized by the scoring RPC." />
       {error ? <ErrorText>{error}</ErrorText> : null}
       {matches === null && !error ? <Loading /> : null}
-      {matches?.length === 0 ? <Body muted>No matches are assigned to you.</Body> : null}
+      {matches?.length === 0 ? <Empty text="No matches are assigned to you." /> : null}
       {matches?.map((m) => (
         <Link key={m.match.id} href={{ pathname: '/scorer/[id]', params: { id: m.match.id } }} asChild>
-          <Pressable accessibilityRole="link" accessibilityLabel={`${m.home_team.name} versus ${m.away_team.name}`}>
-            <Card>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Body muted>Match {m.match.match_number ?? '—'}</Body>
-                <StatusPill status={m.match.status} />
-              </View>
-              <Heading small>{m.home_team.name} vs {m.away_team.name}</Heading>
-              {m.match.venue ? <Body muted>{m.match.venue}{m.match.court ? ` · Court ${m.match.court}` : ''}</Body> : null}
-            </Card>
+          <Pressable accessibilityRole="link" accessibilityLabel={`${m.home_team.name} versus ${m.away_team.name}`} style={{ ...portalCard(t), gap: 6 }}>
+            <Text style={{ color: t.primary, fontSize: 12, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase' }}>Match {m.match.match_number ?? '—'}</Text>
+            <Text style={{ color: t.text, fontSize: 22, lineHeight: 28, fontWeight: '800' }}>{m.home_team.name} <Text style={{ color: t.textMuted, fontWeight: '500' }}>vs</Text> {m.away_team.name}</Text>
+            {m.match.venue ? <Text style={{ color: t.textSecondary, fontSize: 14, fontWeight: '500' }}>{m.match.venue}{m.match.court ? ` · Court ${m.match.court}` : ''}</Text> : null}
+            <View style={{ marginTop: 6 }}><StatusPill status={m.match.status} /></View>
           </Pressable>
         </Link>
       ))}
-    </Screen>
+    </PortalShell>
   );
 }

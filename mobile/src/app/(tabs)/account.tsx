@@ -1,80 +1,139 @@
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
-import { View } from 'react-native';
-import { Body, Button, Card, Heading, Loading, Screen, StatusPill } from '@/components/ui';
-import { api, apiUrl } from '@/lib/api';
+import { Pressable, View } from 'react-native';
 import { Choice } from '@/components/form';
+import { PortalIntro, PortalShell, Section, portalCard } from '@/components/shell';
+import { Text } from '@/components/text';
+import { Button, Loading, StatusPill } from '@/components/ui';
+import { api, apiUrl } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { useSetThemeChoice } from '@/lib/theme-choice';
-import { ThemeChoiceContext } from '@/theme';
 import { useOrganizerTournaments } from '@/lib/organizer';
+import { useSetThemeChoice } from '@/lib/theme-choice';
+import { radius, ThemeChoiceContext, useTheme } from '@/theme';
 
+type Registration = { id: string; status: string; auction_category: string | null; tournaments: { name: string; slug: string; format: string | null } | null };
+type Assignment = { id: string; acquisition_type: string | null; teams: { name: string } | null };
+type Application = { id: string; status: string; proposed_team_name: string; tournaments: { name: string } | null };
+
+const ROUTE_LABEL: Record<string, string> = { MAIN_AUCTION: 'Main auction', ICON_LOT: 'Icon lot', SETTER_LOT: 'Setter lot' };
+const ACQUISITION: Record<string, string> = { AUCTION: 'Auction', ICON_LOT: 'Icon lot', SETTER_LOT: 'Setter lot', MANUAL: 'Manual', MANUAL_ASSIGNMENT: 'Manual', REGISTERED: 'Registered' };
+
+/** The player portal: the signed-in user's registrations, team assignments and applications. */
 export default function AccountScreen() {
-  const { session, ready, signOut } = useAuth();
+  const { session, ready } = useAuth();
+  const t = useTheme();
   const themeChoice = useContext(ThemeChoiceContext);
   const setThemeChoice = useSetThemeChoice();
-  const [name, setName] = useState<string | null>(null);
   const { tournaments: organized } = useOrganizerTournaments(session?.user.id);
-  const [applications, setApplications] = useState<{ key: string; title: string; status: string }[]>([]);
+  const [name, setName] = useState<string | null>(null);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (!session) return setName(null);
-    api.from('profiles').select('full_name').eq('id', session.user.id).maybeSingle().then(({ data }) => setName((data?.full_name as string | undefined) ?? null));
-  }, [session]);
-
-  // Registrations and team applications the user has submitted, with their review status.
-  useEffect(() => {
-    if (!session) return setApplications([]);
+    if (!session) { setLoaded(false); return; }
     (async () => {
-      const [players, teams] = await Promise.all([
-        api.from('player_tournament_registrations').select('id,status,tournaments(name)').eq('player_id', session.user.id),
+      const [profile, player, apps] = await Promise.all([
+        api.from('profiles').select('full_name').eq('id', session.user.id).maybeSingle(),
+        api.from('player_profiles').select('id,display_name').eq('user_id', session.user.id).maybeSingle(),
         api.from('team_owner_applications').select('id,status,proposed_team_name,tournaments(name)').eq('user_id', session.user.id),
       ]);
-      const label = (t: unknown) => (t as { name?: string } | null)?.name ?? 'Tournament';
-      setApplications([
-        ...((players.data ?? []) as { id: string; status: string; tournaments: unknown }[]).map((r) => ({ key: r.id, title: `Player · ${label(r.tournaments)}`, status: r.status })),
-        ...((teams.data ?? []) as { id: string; status: string; proposed_team_name: string; tournaments: unknown }[]).map((r) => ({ key: r.id, title: `${r.proposed_team_name} · ${label(r.tournaments)}`, status: r.status })),
-      ]);
+      setName(((player.data?.display_name ?? profile.data?.full_name) as string | undefined) ?? null);
+      setApplications((apps.data as unknown as Application[]) ?? []);
+      if (player.data) {
+        const [regs, teams] = await Promise.all([
+          api.from('player_tournament_registrations').select('id,status,auction_category,tournaments(name,slug,format)').eq('player_id', player.data.id as string),
+          api.from('team_players').select('id,acquisition_type,teams(name)').eq('player_id', player.data.id as string).eq('status', 'ACTIVE'),
+        ]);
+        setRegistrations((regs.data as unknown as Registration[]) ?? []);
+        setAssignments((teams.data as unknown as Assignment[]) ?? []);
+      }
+      setLoaded(true);
     })();
   }, [session]);
 
-  if (!ready) return <Screen><Loading /></Screen>;
+  if (!ready) return <PortalShell role="Player"><Loading /></PortalShell>;
+  if (!session) {
+    return (
+      <PortalShell role="Player" signOut={false}>
+        <PortalIntro eyebrow="Player portal" title="Welcome to Tourny." text="Sign in to see your registrations, tournament status and team assignment." />
+        <Link href="/login" asChild><Button title="Sign In" onPress={() => {}} /></Link>
+        <Link href="/register" asChild><Button tone="secondary" title="Create Account" onPress={() => {}} /></Link>
+        <Appearance value={themeChoice} onChange={setThemeChoice} />
+      </PortalShell>
+    );
+  }
+
+  const first = (name ?? session.user.email ?? '').split(' ')[0];
   return (
-    <Screen>
-      <Heading eyebrow="You">Account</Heading>
-      {session ? (
-        <Card>
-          <Body>{name ?? session.user.email}</Body>
-          <Body muted>{session.user.email}</Body>
-          <Button tone="secondary" title="Sign out" onPress={() => void signOut()} />
-        </Card>
-      ) : (
-        <Card>
-          <Body muted>Sign in to score matches and see your registrations.</Body>
-          <Link href="/login" asChild><Button title="Sign in" onPress={() => {}} /></Link>
-        </Card>
-      )}
+    <PortalShell role="Player">
+      <PortalIntro eyebrow="Player portal" title={`Welcome, ${name ?? first}.`} text="Your registrations, tournament status, and team assignment stay authoritative on the server." />
+      {!loaded ? <Loading /> : null}
+
       {organized && organized.length > 0 ? (
-        <Card>
-          <Heading>Organizer</Heading>
-          <Link href="/organizer" asChild><Button title="Review registrations" onPress={() => {}} /></Link>
-        </Card>
+        <Section title="Organizer">
+          <View style={portalCard(t)}>
+            <Text style={{ color: t.textSecondary, fontSize: 14 }}>You organize {organized.length} tournament{organized.length === 1 ? '' : 's'}.</Text>
+            <Link href="/organizer" asChild><Button title="Review registrations" onPress={() => {}} /></Link>
+          </View>
+        </Section>
       ) : null}
-      {applications.length > 0 ? (
-        <Card>
-          <Heading>My registrations</Heading>
+
+      {loaded ? (
+        <Section title="My tournaments">
+          {registrations.length === 0 && applications.length === 0 ? (
+            <View style={portalCard(t)}><Text style={{ color: t.textSecondary }}>You have not registered for a tournament yet. Open a tournament that is accepting registrations.</Text></View>
+          ) : null}
+          {registrations.map((r) => (
+            <Pressable key={r.id} accessibilityRole="link" accessibilityLabel={r.tournaments?.name ?? 'Tournament'} onPress={() => r.tournaments && router.push({ pathname: '/t/[slug]', params: { slug: r.tournaments.slug } })} style={portalCard(t)}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                <Text style={{ flex: 1, color: t.text, fontSize: 20, lineHeight: 26, fontWeight: '800' }}>{r.tournaments?.name}</Text>
+                <StatusPill status={r.status} />
+              </View>
+              <Text style={{ color: t.textMuted, fontSize: 14 }}>{[r.tournaments?.format ? r.tournaments.format[0] + r.tournaments.format.slice(1).toLowerCase() : null, 'Registered team'].filter(Boolean).join(' · ')}</Text>
+              {r.auction_category ? <Text style={{ color: t.primary, fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' }}>{ROUTE_LABEL[r.auction_category] ?? r.auction_category}</Text> : null}
+            </Pressable>
+          ))}
           {applications.map((a) => (
-            <View key={a.key} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-              <Body>{a.title}</Body>
-              <StatusPill status={a.status} />
+            <View key={a.id} style={portalCard(t)}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                <Text style={{ flex: 1, color: t.text, fontSize: 20, lineHeight: 26, fontWeight: '800' }}>{a.proposed_team_name}</Text>
+                <StatusPill status={a.status} />
+              </View>
+              <Text style={{ color: t.textMuted, fontSize: 14 }}>Team application · {a.tournaments?.name}</Text>
             </View>
           ))}
-        </Card>
+        </Section>
       ) : null}
-      <Card>
-        <Choice label="Appearance" value={themeChoice} options={[{ value: 'system', label: 'System' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} onChange={setThemeChoice} />
-      </Card>
-      <Body muted>Connected to {apiUrl}</Body>
-    </Screen>
+
+      {assignments.length > 0 ? (
+        <Section title="Team assignment">
+          <View style={[portalCard(t), { gap: 4 }]}>
+            {assignments.map((a) => (
+              <Text key={a.id} style={{ color: t.text, fontSize: 16, fontWeight: '700' }}>{a.teams?.name} <Text style={{ color: t.textSecondary, fontWeight: '500' }}>· {ACQUISITION[a.acquisition_type ?? ''] ?? a.acquisition_type ?? 'Registered'}</Text></Text>
+            ))}
+          </View>
+        </Section>
+      ) : null}
+
+      <Section title="Account">
+        <View style={portalCard(t)}>
+          <Text style={{ color: t.text, fontSize: 16, fontWeight: '700' }}>{name ?? session.user.email}</Text>
+          <Text style={{ color: t.textSecondary, fontSize: 14 }}>{session.user.email}</Text>
+        </View>
+        <Appearance value={themeChoice} onChange={setThemeChoice} />
+      </Section>
+      <Text style={{ color: t.textMuted, fontSize: 12 }}>Connected to {apiUrl}</Text>
+    </PortalShell>
+  );
+}
+
+function Appearance({ value, onChange }: { value: 'system' | 'light' | 'dark'; onChange: (v: 'system' | 'light' | 'dark') => void }) {
+  const t = useTheme();
+  return (
+    <View style={{ borderRadius: radius['2xl'], borderWidth: 1, borderColor: t.border, backgroundColor: t.surface, padding: 16 }}>
+      <Choice label="Appearance" value={value} options={[{ value: 'system', label: 'System' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} onChange={onChange} />
+    </View>
   );
 }
