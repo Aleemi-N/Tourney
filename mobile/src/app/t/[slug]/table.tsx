@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
+import { PosterShare, StandingsPoster, useLogoUrl } from '@/components/poster';
 import { Text } from '@/components/text';
 import { Empty, Loading, PageTitle, shortOf, Tile, TournamentFrame, useTournament } from '@/components/tournament';
 import { api } from '@/lib/api';
@@ -18,6 +19,7 @@ export default function TableScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const t = useTheme();
   const { tournament, teams } = useTournament(slug);
+  const logo = useLogoUrl(tournament?.id);
   const [rows, setRows] = useState<Row[] | null>(null);
   useEffect(() => {
     if (!tournament) return;
@@ -29,6 +31,11 @@ export default function TableScreen() {
   return (
     <TournamentFrame slug={slug} active="table">
       <PageTitle eyebrow="League table" title="Standings" />
+      {tournament && rows && rows.length > 0 ? (
+        <PosterShare label="Share standings poster" fileName="standings.png" shareTitle={`${tournament.name} standings`}>
+          <StandingsPoster tournament={tournament} logoUrl={logo} stageName="League" rows={rows} />
+        </PosterShare>
+      ) : null}
       {rows === null ? <Loading /> : null}
       {rows && rows.length === 0 ? <Empty text="The table fills in once matches are played." /> : null}
       {rows && rows.length > 0 ? (

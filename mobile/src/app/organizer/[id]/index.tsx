@@ -3,10 +3,11 @@ import { Calendar, ClipboardList, Gavel, Settings, Users } from 'lucide-react-na
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { OrganizerFrame } from '@/components/organizer';
+import { QrCard } from '@/components/qr';
 import { portalCard, Section } from '@/components/shell';
 import { Text } from '@/components/text';
 import { Button, ErrorText, Loading, StatusPill } from '@/components/ui';
-import { api } from '@/lib/api';
+import { api, siteUrl } from '@/lib/api';
 import { useTheme } from '@/theme';
 
 type Info = { name: string; slug: string; status: string; format: string | null; league_mode: string | null; description: string | null; approval_status: string | null; approval_submitted_at: string | null; approval_rejection_reason: string | null };
@@ -129,6 +130,11 @@ export default function OrganizerOverview() {
             {info.format === 'LEAGUE' && info.league_mode === 'AUCTION' ? nav('Auction Control', 'Prepare and run the live player auction', Gavel, '/organizer/[id]/auction') : null}
             {nav('Fixtures & Scorers', 'Stages, schedule, scorers and results', Calendar, '/organizer/[id]/fixtures')}
             {nav('Settings', 'Details, registration, squads and match format', Settings, '/organizer/[id]/settings')}
+          </Section>
+          <Section title="QR codes for posters">
+            <QrCard title={info.name} subtitle="Scan to follow the tournament" value={`${siteUrl}/t/${info.slug}`} fileName="tournament-qr.png" />
+            {open ? <QrCard title="Register as a player" subtitle={info.name} value={`${siteUrl}/t/${info.slug}/register/player`} fileName="player-registration-qr.png" /> : null}
+            {open ? <QrCard title="Register your team" subtitle={info.name} value={`${siteUrl}/t/${info.slug}/register/team`} fileName="team-registration-qr.png" /> : null}
           </Section>
           <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: '/t/[slug]', params: { slug: info.slug } })} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 }}>
             <ClipboardList size={16} color={t.primary} />

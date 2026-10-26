@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
-import { Calendar, ExternalLink, MapPin } from 'lucide-react-native';
+import { Calendar, CalendarPlus, ExternalLink, MapPin } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from '@/components/text';
 import { StatusPill } from '@/components/ui';
 import { shortOf, Tile, type TeamInfo } from '@/components/tournament';
 import { api } from '@/lib/api';
+import { addToCalendar } from '@/lib/calendar';
 import { radius, tint, useTheme } from '@/theme';
 
 export type Fixture = {
@@ -52,7 +53,12 @@ export function FixtureCard({ fixture, teams }: { fixture: Fixture; teams: Recor
         {side(away, true)}
       </View>
       {fixture.venue ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><MapPin size={14} color={t.textMuted} /><Text style={{ color: t.textSecondary, fontSize: 13 }}>{fixture.venue}{fixture.court ? ` · ${fixture.court}` : ''}</Text></View> : null}
-      <View style={{ borderTopWidth: 1, borderTopColor: t.border, paddingTop: 10 }}>
+      <View style={{ borderTopWidth: 1, borderTopColor: t.border, paddingTop: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
+        {fixture.scheduled_at && fixture.status !== 'COMPLETED' ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Add to calendar" onPress={() => void addToCalendar({ title: `${home?.name ?? 'TBD'} vs ${away?.name ?? 'TBD'}`, start: new Date(fixture.scheduled_at!), location: [fixture.venue, fixture.court ? `Court ${fixture.court}` : null].filter(Boolean).join(', ') || null }).catch(() => {})} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44 }}>
+            <CalendarPlus size={16} color={t.text} /><Text style={{ color: t.text, fontSize: 14, fontWeight: '600' }}>Add to calendar</Text>
+          </Pressable>
+        ) : null}
         <Pressable accessibilityRole="link" accessibilityLabel="Match view" onPress={() => router.push({ pathname: '/match/[id]', params: { id: fixture.id } })} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44 }}>
           <ExternalLink size={16} color={t.text} /><Text style={{ color: t.text, fontSize: 14, fontWeight: '600' }}>Match view</Text>
         </Pressable>

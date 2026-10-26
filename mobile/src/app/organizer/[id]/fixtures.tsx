@@ -6,11 +6,13 @@ import { Choice, Field } from '@/components/form';
 import { OrganizerFrame, useTournamentName } from '@/components/organizer';
 import { portalCard, Section } from '@/components/shell';
 import { Text } from '@/components/text';
+import { FixturesPoster, PosterShare, useLogoUrl } from '@/components/poster';
 import { Progression } from '@/components/progression';
+import { QrCard } from '@/components/qr';
 import { RoundTools } from '@/components/round-tools';
 import { Empty } from '@/components/tournament';
 import { Button, ErrorText, Loading, StatusPill } from '@/components/ui';
-import { api } from '@/lib/api';
+import { api, siteUrl } from '@/lib/api';
 import { PRESET_OPTIONS, presetRuleArgs, type PresetKey } from '@/lib/rules';
 import { useTheme } from '@/theme';
 
@@ -40,6 +42,8 @@ export default function OrganizerFixtures() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useTheme();
   const name = useTournamentName(id);
+  const logo = useLogoUrl(id);
+  const [slug, setSlug] = useState<string | null>(null);
   const [format, setFormat] = useState<string | null>(null);
   const [teamCount, setTeamCount] = useState(0);
   const [stages, setStages] = useState<Stage[] | null>(null);
@@ -55,7 +59,7 @@ export default function OrganizerFixtures() {
 
   const load = useCallback(async () => {
     const [tn, st, m, staff, teams, rules, scopeRes, plans] = await Promise.all([
-      api.from('tournaments').select('format,start_date,end_date').eq('id', id).maybeSingle(),
+      api.from('tournaments').select('format,start_date,end_date,slug').eq('id', id).maybeSingle(),
       api.from('tournament_stages').select('id,name,stage_type,sequence,qualification_count,status,standings_rules(win_points,loss_points,draw_points,tie_break_rules)').eq('tournament_id', id).order('sequence'),
       api.from('matches').select('id,stage_id,match_number,program_order,round_number,status,sets_to_win,format_override,result_type,scheduled_at,venue,court,home_team_id,away_team_id,home_team:teams!matches_home_team_id_fkey(name),away_team:teams!matches_away_team_id_fkey(name),match_scorers(user_id)').eq('tournament_id', id).order('round_number').order('program_order'),
       api.rpc('get_tournament_staff', { p_tournament_id: id }),
@@ -67,6 +71,7 @@ export default function OrganizerFixtures() {
     const failure = st.error ?? m.error;
     if (failure) return setError(failure.message);
     setFormat((tn.data?.format as string | undefined) ?? null);
+    setSlug((tn.data?.slug as string | undefined) ?? null);
     setDates({ start: (tn.data?.start_date as string | null | undefined) ?? null, end: (tn.data?.end_date as string | null | undefined) ?? null });
     setScopes((scopeRes.data ?? []) as Scope[]);
     setPlanned(((plans.data ?? []) as { source_stage_id: string }[]).map((x) => x.source_stage_id));
@@ -117,6 +122,11 @@ export default function OrganizerFixtures() {
 
           <Section title="Fixtures & Schedule">
             {matches.length === 0 ? <Empty text="No fixtures yet. Generate them from the stage above." /> : null}
+            {matches.length > 0 ? (
+              <PosterShare label="Share fixtures poster" fileName="fixtures.png" shareTitle={`${name} fixtures`}>
+                <FixturesPoster tournament={{ id, name, venue: null }} logoUrl={logo} matches={matches.filter((m) => m.status !== 'COMPLETED').slice(0, 8).map((m) => ({ id: m.id, label: `ROUND ${m.round_number ?? 1} · MATCH ${m.match_number ?? '—'}`, home: m.home_team?.name ?? 'TBD', away: m.away_team?.name ?? 'TBD', when: m.scheduled_at ? new Date(m.scheduled_at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : null, court: m.court }))} />
+              </PosterShare>
+            ) : null}
             {groups.map(({ stage, round, items }) => (
               <View key={`${stage?.id}-${round}`} style={{ gap: 12 }}>
                 <Text style={{ color: t.primary, fontSize: 13, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>{stages.length > 1 && stage ? `${stage.name} · ` : ''}{round != null ? `Round ${round}` : 'Fixtures'}</Text>
@@ -125,7 +135,7 @@ export default function OrganizerFixtures() {
                   defaults={{ startDate: dates.start, endDate: dates.end, stageType: stage?.stage_type ?? format ?? 'LEAGUE', hasNextStage: stages.some((x) => x.sequence > (stage?.sequence ?? 0)) }}
                   onDone={async (message) => { setError(null); setNotice(message || null); await load(); }} />
                 {items.map((m) => (
-                  <MatchCard key={m.id} match={m} league={stage?.stage_type === 'LEAGUE'} scorers={scorers} busy={busy} run={run} />
+                  <MatchCard key={m.id} slug={slug} match={m} league={stage?.stage_type === 'LEAGUE'} scorers={scorers} busy={busy} run={run} />
                 ))}
               </View>
             ))}
@@ -210,7 +220,7 @@ function StageCard({ stage, count, canGenerate, busy, run }: { stage: Stage; cou
   );
 }
 
-function MatchCard({ match, league, scorers, busy, run }: { match: Match; league: boolean; scorers: Scorer[]; busy: string | null; run: Run }) {
+function MatchCard({ match, slug, league, scorers, busy, run }: { match: Match; slug: string | null; league: boolean; scorers: Scorer[]; busy: string | null; run: Run }) {
   const t = useTheme();
   const [open, setOpen] = useState(false);
   const home = match.home_team?.name ?? 'TBD';
@@ -271,6 +281,7 @@ function MatchCard({ match, league, scorers, busy, run }: { match: Match; league
       </Pressable>
       {open ? (
         <View style={{ gap: 14 }}>
+          {slug ? <QrCard title={`${home} vs ${away}`} subtitle="Scan for the live score" value={`${siteUrl}/t/${slug}/match/${match.id}`} fileName={`match-qr-${match.match_number ?? match.id}.png`} /> : null}
           <Field label="Date and time (YYYY-MM-DD HH:MM)" value={when} onChangeText={setWhen} placeholder="2026-11-01 18:30" autoCapitalize="none" />
           <Field label="Venue" value={venue} onChangeText={setVenue} />
           <Field label="Court" value={court} onChangeText={setCourt} />

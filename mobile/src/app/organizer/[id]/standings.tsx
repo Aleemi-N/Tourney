@@ -2,6 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { OrganizerFrame, useTournamentName } from '@/components/organizer';
+import { PosterShare, StandingsPoster, useLogoUrl } from '@/components/poster';
 import { portalCard } from '@/components/shell';
 import { Text } from '@/components/text';
 import { Empty } from '@/components/tournament';
@@ -19,6 +20,8 @@ export default function OrganizerStandings() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useTheme();
   const name = useTournamentName(id);
+  const logo = useLogoUrl(id);
+  const info = name ? { id, name, venue: null } : null;
   const [stages, setStages] = useState<Stage[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,6 +51,11 @@ export default function OrganizerStandings() {
               <Text style={{ color: t.text, fontSize: 20, fontWeight: '800' }}>{stage.name}</Text>
               <Text style={{ color: t.textMuted, fontSize: 13 }}>{stage.status}{q ? ` · Top ${q} qualify` : ''}</Text>
             </View>
+            {stage.rows.length > 0 && info ? (
+              <PosterShare label="Share standings poster" fileName={`standings-${stage.name}.png`} shareTitle={`${info.name} standings`}>
+                <StandingsPoster tournament={info} logoUrl={logo} stageName={stage.name} qualify={stage.qualification_count} rows={stage.rows} />
+              </PosterShare>
+            ) : null}
             {stage.rows.length === 0 ? <Empty text="Standings will appear after league matches begin." /> : (
               <View style={[portalCard(t), { padding: 0, overflow: 'hidden' }]}>
                 {stage.rows.map((row, index) => {

@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { CalendarDays, Tv } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { MatchShare } from '@/components/match-share';
 import { Text } from '@/components/text';
 import { Loading, shortOf, TournamentFrame, useTournament } from '@/components/tournament';
 import { ErrorText, StatusPill } from '@/components/ui';
@@ -20,7 +21,7 @@ export default function PublicMatchScreen() {
     const tournamentId = state?.match.tournament_id;
     if (tournamentId) api.from('public_tournament_view').select('slug').eq('id', tournamentId).maybeSingle().then(({ data }) => setSlug((data?.slug as string | undefined) ?? null));
   }, [state?.match.tournament_id]);
-  const { teams } = useTournament(slug ?? '');
+  const { teams, tournament } = useTournament(slug ?? '');
 
   if (!state || !slug) {
     return <TournamentFrame slug={slug ?? ''} active="fixtures">{error ? <ErrorText>{error}</ErrorText> : <Loading />}</TournamentFrame>;
@@ -103,6 +104,8 @@ export default function PublicMatchScreen() {
           </View>
         </View>
       ) : null}
+
+      {tournament ? <MatchShare state={state} slug={slug} tournament={{ id: tournament.id, name: tournament.name, venue: tournament.venue }} /> : null}
     </TournamentFrame>
   );
 }
