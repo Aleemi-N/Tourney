@@ -112,7 +112,7 @@ const pagePatterns = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatM
   return entry.name === 'page.tsx' ? ['/' + path.relative('src/app', dir).split(path.sep).filter((s) => s && !s.startsWith('(')).join('/')] : [];
 });
 const covered = new Set(ROUTES.map(([pattern]) => pattern));
-const uncovered = pagePatterns('src/app').filter((p) => !covered.has(p) && p !== '/test-cards');
+const uncovered = pagePatterns('src/app').filter((p) => !covered.has(p));
 if (uncovered.length) console.warn(`Not captured (add to ROUTES): ${uncovered.join(', ')}`);
 
 const fileName = (role, url, width, scheme) =>
