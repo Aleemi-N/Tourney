@@ -8,18 +8,22 @@
     "scheme": "tourny",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
-      "bundleIdentifier": "app.tourny.mobile"
+      "bundleIdentifier": "app.tourny.mobile",
+      "supportsTablet": true,
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
+      "package": "app.tourny.mobile",
+      "versionCode": 1,
       "predictiveBackGestureEnabled": false,
-      "package": "app.tourny.mobile"
+      "adaptiveIcon": {
+        "backgroundColor": "#3730a3",
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
+      },
+      "permissions": []
     },
     "web": {
       "output": "single",
@@ -30,16 +34,25 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#0b1020",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 140
         }
       ],
-      "expo-secure-store"
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Tourny uses your photos so you can choose a player photo or team logo.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "description": "Run and follow volleyball tournaments: registrations, live scoring, fixtures, results and standings."
   }
 }
