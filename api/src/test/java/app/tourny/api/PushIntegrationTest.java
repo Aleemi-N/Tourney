@@ -113,4 +113,46 @@ class PushIntegrationTest {
             }
         }
     }
+
+    @Test
+    void anonymousFollowersGetScheduleStartAndFinalAlerts() throws Exception {
+        try (Connection c = DriverManager.getConnection(DB_URL, "postgres", "postgres")) {
+            Object match = one(c, "SELECT id FROM public.matches WHERE status = 'SCHEDULED' AND home_team_id IS NOT NULL AND away_team_id IS NOT NULL AND scheduled_at IS NOT NULL LIMIT 1");
+            assumeTrue(match != null, "seed has no scheduled match with a time");
+            Object originalTime = one(c, "SELECT scheduled_at FROM public.matches WHERE id = ?", match);
+            String token = "ExponentPushToken[follow-" + UUID.randomUUID() + "]";
+            reply = "{\"data\":[{\"status\":\"ok\",\"id\":\"1\"}]}";
+            // A signed-out device registers and follows through the public functions only.
+            try (var st = c.createStatement()) {
+                st.execute("SET ROLE anon");
+                try (var ps = c.prepareStatement("SELECT public.register_push_token(?, 'android')")) { ps.setString(1, token); ps.execute(); }
+                try (var ps = c.prepareStatement("SELECT public.follow_target(?, 'MATCH', ?)")) { ps.setString(1, token); ps.setObject(2, match); ps.execute(); }
+                st.execute("RESET ROLE");
+            }
+            try (var st = c.prepareStatement("UPDATE public.matches SET scheduled_at = scheduled_at + interval '1 hour' WHERE id = ?")) { st.setObject(1, match); st.executeUpdate(); }
+            assertTrue(waitFor(token, "Match rescheduled"), "schedule change alert");
+            try (var st = c.prepareStatement("UPDATE public.matches SET status = 'LIVE' WHERE id = ?")) { st.setObject(1, match); st.executeUpdate(); }
+            assertTrue(waitFor(token, "Match started"), "start alert");
+            try (var st = c.prepareStatement("UPDATE public.matches SET status = 'COMPLETED' WHERE id = ?")) { st.setObject(1, match); st.executeUpdate(); }
+            assertTrue(waitFor(token, "Final result"), "final alert");
+            // Someone who does not follow it hears nothing, and the device can forget everything.
+            try (var st = c.prepareStatement("UPDATE public.matches SET status = 'SCHEDULED', scheduled_at = ? WHERE id = ?")) { st.setObject(1, originalTime); st.setObject(2, match); st.executeUpdate(); }
+            try (var st = c.createStatement()) {
+                st.execute("SET ROLE anon");
+                try (var ps = c.prepareStatement("SELECT public.forget_push_device(?)")) { ps.setString(1, token); ps.execute(); }
+                st.execute("RESET ROLE");
+            }
+            assertEquals(null, one(c, "SELECT 1 FROM public.push_tokens WHERE token = ?", token));
+            assertEquals(null, one(c, "SELECT 1 FROM public.push_follows WHERE token = ?", token));
+        }
+    }
+
+    private static boolean waitFor(String token, String text) throws Exception {
+        long deadline = System.currentTimeMillis() + 15_000;
+        while (System.currentTimeMillis() < deadline) {
+            if (received.stream().anyMatch(m -> m.contains(token) && m.contains(text))) return true;
+            Thread.sleep(200);
+        }
+        return false;
+    }
 }

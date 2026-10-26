@@ -4,6 +4,7 @@ import { Pressable, ScrollView, View, type DimensionValue } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/text';
 import { Body, Button, Card, StatusPill } from '@/components/ui';
+import { FollowButton } from '@/components/follow-button';
 import { Empty, Loading, shortOf, Tile, useTournament } from '@/components/tournament';
 import { radius, tint, useTheme } from '@/theme';
 
@@ -43,6 +44,7 @@ export default function TournamentOverview() {
             <Text style={{ color: t.textMuted, fontSize: 12, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>{tournament.sport ?? 'Volleyball'}</Text>
           </View>
           <Text accessibilityRole="header" style={{ color: t.text, fontSize: 34, lineHeight: 40, fontWeight: '800', letterSpacing: -1 }}>{tournament.name}</Text>
+          <FollowButton kind="TOURNAMENT" targetId={tournament.id} name="tournament" />
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
             <StatusPill status={tournament.status} />
             {tournament.format ? <StatusPill tone="neutral" label={`${tournament.format[0] + tournament.format.slice(1).toLowerCase()} — Registered Teams`} /> : null}

@@ -8,6 +8,8 @@ import { useOwnerTeams } from '@/components/owner';
 import { PortalIntro, PortalShell, Section, portalCard } from '@/components/shell';
 import { Text } from '@/components/text';
 import { Button, ErrorText, Loading, StatusPill } from '@/components/ui';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { PUSH_KEY } from '@/lib/push-token';
 import { api, apiUrl } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useOrganizerTournaments } from '@/lib/organizer';
@@ -160,6 +162,8 @@ export default function AccountScreen() {
         </Section>
       ) : null}
 
+      {push.supported && push.enabled ? <Following /> : null}
+
       <Section title="Account">
         <View style={portalCard(t)}>
           <Text style={{ color: t.text, fontSize: 16, fontWeight: '700' }}>{name ?? session.user.email}</Text>
@@ -170,6 +174,36 @@ export default function AccountScreen() {
       </Section>
       <Text style={{ color: t.textMuted, fontSize: 12 }}>Connected to {apiUrl}</Text>
     </PortalShell>
+  );
+}
+
+/** What this device follows, with a way to stop. */
+function Following() {
+  const t = useTheme();
+  const [items, setItems] = useState<{ kind: string; target_id: string; name: string | null }[] | null>(null);
+  const load = async () => {
+    const token = await AsyncStorage.getItem(PUSH_KEY).catch(() => null);
+    if (!token) return setItems([]);
+    const { data } = await api.rpc('get_push_follows', { p_token: token });
+    setItems((data ?? []) as { kind: string; target_id: string; name: string | null }[]);
+  };
+  useEffect(() => { void load(); }, []);
+  return (
+    <Section title="Following">
+      <View style={portalCard(t)}>
+        {items === null ? <Loading /> : items.length === 0 ? <Text style={{ color: t.textSecondary, fontSize: 14 }}>You are not following anything yet. Open a team, match or tournament and tap Follow.</Text> : items.map((f) => (
+          <View key={`${f.kind}${f.target_id}`} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: t.text, fontSize: 15, fontWeight: '600' }}>{f.name ?? 'Removed'}</Text>
+              <Text style={{ color: t.textMuted, fontSize: 12, textTransform: 'capitalize' }}>{f.kind.toLowerCase()}</Text>
+            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Unfollow ${f.name}`} onPress={async () => { const token = await AsyncStorage.getItem(PUSH_KEY); if (token) await api.rpc('unfollow_target', { p_token: token, p_kind: f.kind, p_target_id: f.target_id }); await load(); }} style={{ minHeight: 44, paddingHorizontal: 10, justifyContent: 'center' }}>
+              <Text style={{ color: t.danger, fontSize: 13, fontWeight: '600' }}>Unfollow</Text>
+            </Pressable>
+          </View>
+        ))}
+      </View>
+    </Section>
   );
 }
 

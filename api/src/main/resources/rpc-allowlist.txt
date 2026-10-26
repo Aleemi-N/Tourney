@@ -77,3 +77,7 @@ update_tournament_settings
 initialize_organizer_onboarding
 register_push_token
 unregister_push_token
+forget_push_device
+follow_target
+unfollow_target
+get_push_follows

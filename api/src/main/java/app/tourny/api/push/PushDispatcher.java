@@ -70,7 +70,7 @@ class PushDispatcher {
     /** Claims and sends one queued message; false when the queue is empty. */
     private boolean sendOne() {
         var rows = jdbc.sql("""
-                SELECT id, title, body, data::text AS data, attempts, user_ids::text AS users
+                SELECT id, title, body, data::text AS data, attempts
                 FROM public.push_outbox WHERE sent_at IS NULL AND attempts < ?
                 ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED""").param(MAX_ATTEMPTS).query().listOfRows();
         if (rows.isEmpty()) return false;
@@ -80,8 +80,9 @@ class PushDispatcher {
     private boolean deliver(Map<String, Object> row) {
         long id = ((Number) row.get("id")).longValue();
         try {
-            List<String> tokens = jdbc.sql("SELECT token FROM public.push_tokens WHERE user_id = ANY (?::uuid[])")
-                    .param(row.get("users")).query(String.class).list();
+            // People (by account) and followers (by device token), each device once.
+            List<String> tokens = jdbc.sql("SELECT DISTINCT pt.token FROM public.push_tokens pt JOIN public.push_outbox o ON o.id = ? WHERE pt.user_id = ANY (o.user_ids) OR pt.token = ANY (o.tokens)")
+                    .param(id).query(String.class).list();
             JsonNode data = mapper.readTree((String) row.get("data"));
             for (int from = 0; from < tokens.size(); from += EXPO_BATCH) {
                 var batch = tokens.subList(from, Math.min(tokens.size(), from + EXPO_BATCH));
