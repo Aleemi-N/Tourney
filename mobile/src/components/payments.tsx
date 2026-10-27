@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import * as ImageManipulator from 'expo-image-manipulator';
+import * as ImagePicker from 'expo-image-picker';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking, View } from 'react-native';
 import { portalCard } from '@/components/shell';
 import { Text } from '@/components/text';
 import { Button, ErrorText, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { Field } from '@/components/form';
-import { paymentsFetch, rupees, upiLink, type PaymentDue } from '@/lib/payments';
+import { paymentsFetch, rupees, upiLink, type PaymentDue, type PaymentReceipt, type ReceiptListItem } from '@/lib/payments';
+import { shareView, type ViewHandle } from '@/lib/share';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/theme';
 
@@ -36,6 +39,7 @@ function DueCard({ due, reload }: { due: PaymentDue; reload: () => Promise<void>
   const [opened, setOpened] = useState(false);
   const [utr, setUtr] = useState('');
   const [editingUtr, setEditingUtr] = useState(false);
+  const [proof, setProof] = useState<string | null>(null);
 
   async function openUpi() {
     if (!due.upi_id) return;
@@ -44,12 +48,23 @@ function DueCard({ due, reload }: { due: PaymentDue; reload: () => Promise<void>
     catch { setError(`No UPI app opened. Pay ${rupees(due.amount)} to ${due.upi_id} in your UPI app, then enter the reference number below.`); }
   }
 
+  /** A screenshot of the payment is optional. It is shrunk first so it stays small to send. */
+  async function attachProof() {
+    setError(null);
+    const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
+    if (picked.canceled) return;
+    try {
+      const out = await ImageManipulator.manipulateAsync(picked.assets[0].uri, [{ resize: { width: 1000 } }], { compress: 0.6, format: ImageManipulator.SaveFormat.JPEG, base64: true });
+      setProof(out.base64 ?? null);
+    } catch { setError('That image could not be used. Try another screenshot.'); }
+  }
+
   async function submitUtr() {
     setBusy(true); setError(null);
-    const { error: e } = await api.rpc('submit_upi_payment', { p_kind: due.kind, p_registration_id: due.registration_id, p_utr: utr });
+    const { error: e } = await api.rpc('submit_upi_payment', { p_kind: due.kind, p_registration_id: due.registration_id, p_utr: utr, p_proof: proof ?? undefined });
     setBusy(false);
     if (e) return setError(e.message);
-    setUtr(''); setEditingUtr(false);
+    setUtr(''); setProof(null); setEditingUtr(false);
     await reload();
   }
 
@@ -101,7 +116,7 @@ function DueCard({ due, reload }: { due: PaymentDue; reload: () => Promise<void>
           {due.online ? <Text style={{ color: t.textMuted, fontSize: 13 }}>Or pay by UPI</Text> : null}
           {due.status === 'SUBMITTED' && !editingUtr ? (
             <>
-              <Text style={{ color: t.textSecondary, fontSize: 14 }}>You said you paid, reference {due.utr}. The organizer will check and confirm. Your registration can be approved after that.</Text>
+              <Text style={{ color: t.textSecondary, fontSize: 14 }}>You said you paid, reference {due.utr}{due.has_proof ? ' (screenshot attached)' : ''}. The organizer will check and confirm. Your registration can be approved after that.</Text>
               <Button tone="secondary" title="Change the reference number" onPress={() => { setUtr(due.utr ?? ''); setEditingUtr(true); }} />
             </>
           ) : (
@@ -109,11 +124,86 @@ function DueCard({ due, reload }: { due: PaymentDue; reload: () => Promise<void>
               <Button tone={due.online ? 'secondary' : 'primary'} title={`Pay ${rupees(due.amount)} by UPI`} accessibilityLabel={`Pay ${rupees(due.amount)} by UPI to ${due.upi_payee ?? due.upi_id}`} disabled={busy} onPress={() => void openUpi()} />
               <Text selectable style={{ color: t.textSecondary, fontSize: 13 }}>UPI ID: {due.upi_id}{due.upi_payee ? ` (${due.upi_payee})` : ''}. The money goes straight to the organizer.</Text>
               <Field label="UPI reference number (12 digits, shown in your UPI app after paying)" value={utr} onChangeText={(v) => setUtr(v.replace(/[^0-9 ]/g, ''))} keyboardType="number-pad" maxLength={14} placeholder="4021 0000 0001" />
+              {proof ? (
+                <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+                  <Text style={{ color: t.success, fontSize: 14, fontWeight: '600', flex: 1 }}>Screenshot attached</Text>
+                  <Button tone="secondary" title="Remove" onPress={() => setProof(null)} />
+                </View>
+              ) : <Button tone="secondary" title="Attach a screenshot (optional)" accessibilityLabel="Attach a screenshot of the payment" disabled={busy} onPress={() => void attachProof()} />}
               <Button title="I have paid" loading={busy} disabled={busy || utr.replace(/\s/g, '').length !== 12} onPress={() => void submitUtr()} />
             </>
           )}
         </View>
       ) : null}
+    </View>
+  );
+}
+
+/** A receipt for one confirmed payment, with a button that shares it as a picture (WhatsApp and the rest). */
+export function ReceiptCard({ paymentId }: { paymentId: string }) {
+  const t = useTheme();
+  const [receipt, setReceipt] = useState<PaymentReceipt | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const card = useRef<ViewHandle>(null);
+  useEffect(() => {
+    api.rpc('get_payment_receipt', { p_payment_id: paymentId }).then(({ data, error: e }) => {
+      if (e) setError(e.message); else setReceipt(data as unknown as PaymentReceipt);
+    });
+  }, [paymentId]);
+  if (error) return <ErrorText>{error}</ErrorText>;
+  if (!receipt) return null;
+  const row = (label: string, value: string | null | undefined) => value ? (
+    <View key={label} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+      <Text style={{ color: t.textMuted, fontSize: 13 }}>{label}</Text>
+      <Text style={{ color: t.text, fontSize: 14, fontWeight: '600', flexShrink: 1, textAlign: 'right' }}>{value}</Text>
+    </View>
+  ) : null;
+  return (
+    <View style={{ gap: 10 }}>
+      <View ref={card} collapsable={false} style={[portalCard(t), { gap: 8, backgroundColor: t.surface }]}>
+        <Text style={{ color: t.textMuted, fontSize: 12, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' }}>Registration fee receipt</Text>
+        <Text style={{ color: t.text, fontSize: 26, fontWeight: '800' }}>{rupees(receipt.amount)}</Text>
+        {row('Receipt no.', receipt.receipt_no)}
+        {row('Tournament', receipt.tournament)}
+        {row(receipt.kind === 'TEAM' ? 'Team' : 'Player', receipt.name)}
+        {row('Paid by', receipt.method)}
+        {row('Reference', receipt.reference)}
+        {row('Paid to', receipt.paid_to)}
+        {row('Date', receipt.paid_at ? new Date(receipt.paid_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : null)}
+        {receipt.refunded_amount > 0 ? row('Refunded', rupees(receipt.refunded_amount)) : null}
+      </View>
+      <Button tone="secondary" title="Share receipt" onPress={() => void shareView(card.current, `receipt-${receipt.receipt_no}.png`, 'Registration fee receipt').catch((e) => setError(e instanceof Error ? e.message : 'Could not share.'))} />
+    </View>
+  );
+}
+
+/** Receipts for the fees the signed-in user has paid. Renders nothing when there are none. */
+export function PaymentReceipts() {
+  const t = useTheme();
+  const { session } = useAuth();
+  const [items, setItems] = useState<ReceiptListItem[] | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
+  useEffect(() => {
+    if (!session) return;
+    api.rpc('my_payment_receipts').then(({ data }) => setItems(((data ?? []) as unknown as ReceiptListItem[]).map((r) => ({ ...r, amount: Number(r.amount), refunded_amount: Number(r.refunded_amount) }))));
+  }, [session]);
+  if (!items || items.length === 0) return null;
+  return (
+    <View style={{ gap: 10 }}>
+      <Text accessibilityRole="header" style={{ color: t.text, fontSize: 18, fontWeight: '700' }}>Receipts</Text>
+      {items.map((r) => (
+        <View key={r.payment_id} style={[portalCard(t), { gap: 10 }]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: t.text, fontSize: 15, fontWeight: '700' }}>{r.label ?? 'Registration'}</Text>
+              <Text style={{ color: t.textMuted, fontSize: 13 }}>{r.tournament_name}{r.paid_at ? ` · ${new Date(r.paid_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ''}</Text>
+            </View>
+            <Text style={{ color: t.text, fontSize: 17, fontWeight: '800' }}>{rupees(r.amount)}</Text>
+          </View>
+          <Button tone="secondary" title={open === r.payment_id ? 'Hide receipt' : 'View receipt'} accessibilityLabel={`${open === r.payment_id ? 'Hide' : 'View'} receipt for ${r.label ?? 'registration'}`} onPress={() => setOpen(open === r.payment_id ? null : r.payment_id)} />
+          {open === r.payment_id ? <ReceiptCard paymentId={r.payment_id} /> : null}
+        </View>
+      ))}
     </View>
   );
 }

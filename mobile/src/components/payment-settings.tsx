@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import { Field } from '@/components/form';
+import { ReceiptCard } from '@/components/payments';
 import { portalCard } from '@/components/shell';
 import { Text } from '@/components/text';
 import { Button, ErrorText, Loading, Pill } from '@/components/ui';
@@ -130,6 +131,8 @@ export function PaymentLine({ kind, registrationId, fee, payment, onChanged }: {
   const [error, setError] = useState<string | null>(null);
   const [refunding, setRefunding] = useState(false);
   const [refundAmount, setRefundAmount] = useState('');
+  const [proofUri, setProofUri] = useState<string | null>(null);
+  const [receiptOpen, setReceiptOpen] = useState(false);
   if (fee <= 0) return null;
   const status = payment?.status ?? 'DUE';
   const settled = ['PAID', 'WAIVED', 'PARTIALLY_REFUNDED'].includes(status);
@@ -140,6 +143,17 @@ export function PaymentLine({ kind, registrationId, fee, payment, onChanged }: {
     setBusy(null);
     if (e) return setError(e.message);
     await onChanged();
+  }
+
+  /** The payer's screenshot, shown only to the organizer (and the payer). */
+  async function toggleProof() {
+    if (!payment) return;
+    if (proofUri) return setProofUri(null);
+    setBusy('proof'); setError(null);
+    const { data, error: e } = await api.rpc('get_payment_proof', { p_payment_id: payment.payment_id });
+    setBusy(null);
+    if (e) return setError(e.message);
+    setProofUri(typeof data === 'string' ? data : null);
   }
 
   async function review(accept: boolean) {
@@ -182,6 +196,18 @@ export function PaymentLine({ kind, registrationId, fee, payment, onChanged }: {
             <View style={{ flex: 1 }}><Button title="Confirm received" accessibilityLabel="Confirm the payment was received" loading={busy === 'accept'} disabled={busy !== null} onPress={() => void review(true)} /></View>
             <View style={{ flex: 1 }}><Button tone="danger-outline" title="Not received" loading={busy === 'reject'} disabled={busy !== null} onPress={() => void review(false)} /></View>
           </View>
+        </>
+      ) : null}
+      {payment?.has_proof ? (
+        <>
+          <Button tone="secondary" title={proofUri ? 'Hide screenshot' : 'View screenshot'} accessibilityLabel="View the payer's screenshot" loading={busy === 'proof'} disabled={busy !== null} onPress={() => void toggleProof()} />
+          {proofUri ? <Image accessibilityLabel="Screenshot of the payment" source={{ uri: proofUri }} style={{ width: '100%', height: 360, borderRadius: 12, backgroundColor: t.surface }} resizeMode="contain" /> : null}
+        </>
+      ) : null}
+      {payment && ['PAID', 'PARTIALLY_REFUNDED', 'REFUNDED'].includes(status) ? (
+        <>
+          <Button tone="secondary" title={receiptOpen ? 'Hide receipt' : 'View receipt'} accessibilityLabel="View the receipt" onPress={() => setReceiptOpen(!receiptOpen)} />
+          {receiptOpen ? <ReceiptCard paymentId={payment.payment_id} /> : null}
         </>
       ) : null}
       {!settled && status !== 'SUBMITTED' ? (

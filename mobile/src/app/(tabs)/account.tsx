@@ -2,7 +2,7 @@ import { Link, router } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Choice } from '@/components/form';
-import { PaymentsDue } from '@/components/payments';
+import { PaymentReceipts, PaymentsDue } from '@/components/payments';
 import { usePush } from '@/lib/push';
 import { useIsSuperAdmin } from '@/components/admin';
 import { useOwnerTeams } from '@/components/owner';
@@ -119,6 +119,7 @@ export default function AccountScreen() {
       ) : null}
 
       <PaymentsDue />
+      <PaymentReceipts />
 
       {loaded ? (
         <Section title="My tournaments">

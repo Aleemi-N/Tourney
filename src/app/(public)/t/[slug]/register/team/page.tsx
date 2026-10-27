@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { TeamOwnerRegistrationForm } from '@/app/(public)/t/[slug]/register/team/TeamOwnerRegistrationForm';
+import { FeeNotice } from '@/components/payments/FeeNotice';
+import { PaymentsDue } from '@/components/payments/PaymentsDue';
 import { RegistrationShell, registrationCardClass, registrationStatusClass } from '../RegistrationShell';
 import type { Metadata } from 'next';
 import { buildTournamentMetadata } from '@/lib/public-tournament-metadata';
@@ -75,6 +77,8 @@ export default async function TeamOwnerRegistrationPage({ params }: { params: Pr
 
   return (
     <RegistrationShell slug={slug} tournamentName={tournament.name} title="Team Owner Registration">
+      <FeeNotice tournamentId={tournament.id} kind="TEAM" />
+      <PaymentsDue title="Pay your registration fee" />
       {application ? (
         <div className={registrationCardClass}>
           <h2 className="mb-4 text-lg font-semibold text-text-primary">Application Status</h2>

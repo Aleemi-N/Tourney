@@ -110,3 +110,6 @@ set_upi_details
 submit_upi_payment
 review_upi_payment
 record_manual_refund
+get_payment_proof
+get_payment_receipt
+my_payment_receipts

@@ -1,16 +1,18 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { callRpc } from '@/lib/web-push';
 import { paymentsFetch, rupees, STATUS_LABEL } from '@/lib/payments-client';
 
-type Row = { kind: 'PLAYER' | 'TEAM'; registration_id: string; payment_id: string; status: string; amount: number; provider: string; refunded_amount: number; paid_at: string | null; note: string | null; label: string | null; utr: string | null };
+type Row = { kind: 'PLAYER' | 'TEAM'; registration_id: string; payment_id: string; status: string; amount: number; provider: string; refunded_amount: number; paid_at: string | null; note: string | null; label: string | null; utr: string | null; has_proof: boolean };
 
 /** Every registration payment of the tournament, with refunds for online payments and a manual way to settle. */
 export function PaymentsManager({ tournamentId }: { tournamentId: string }) {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [proofs, setProofs] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     const { data, error: e } = await callRpc('list_registration_payments', { p_tournament_id: tournamentId });
@@ -22,6 +24,13 @@ export function PaymentsManager({ tournamentId }: { tournamentId: string }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- loads from the server on mount
     void load();
   }, [load]);
+
+  async function toggleProof(row: Row) {
+    if (proofs[row.payment_id]) return setProofs((p) => Object.fromEntries(Object.entries(p).filter(([id]) => id !== row.payment_id)));
+    const { data, error: e } = await callRpc('get_payment_proof', { p_payment_id: row.payment_id });
+    if (e) return setError(e.message);
+    if (typeof data === 'string') setProofs((p) => ({ ...p, [row.payment_id]: data }));
+  }
 
   async function review(row: Row, accept: boolean) {
     setBusy(row.payment_id);
@@ -81,6 +90,14 @@ export function PaymentsManager({ tournamentId }: { tournamentId: string }) {
                   <td className="px-4 py-3">{STATUS_LABEL[r.status] ?? r.status}{r.provider === 'MANUAL' && r.status === 'PAID' ? ' (offline)' : ''}{r.provider === 'UPI' && r.utr ? ` · UPI ref ${r.utr}` : ''}{r.refunded_amount > 0 ? ` · refunded ${rupees(r.refunded_amount)}` : ''}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{rupees(r.amount)}</td>
                   <td className="px-4 py-3 text-right">
+                    <div className="mb-2 flex justify-end gap-3 text-sm font-semibold">
+                      {r.has_proof ? <button type="button" onClick={() => void toggleProof(r)} aria-label={`${proofs[r.payment_id] ? 'Hide' : 'View'} the screenshot from ${r.label ?? 'the payer'}`} className="min-h-9 text-primary hover:underline">{proofs[r.payment_id] ? 'Hide screenshot' : 'View screenshot'}</button> : null}
+                      {['PAID', 'PARTIALLY_REFUNDED', 'REFUNDED'].includes(r.status) ? <Link href={`/pay/receipt/${r.payment_id}`} aria-label={`Receipt for ${r.label ?? 'payment'}`} className="inline-flex min-h-9 items-center text-primary hover:underline">Receipt</Link> : null}
+                    </div>
+                    {proofs[r.payment_id] ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- a private data URL from the database
+                      <img src={proofs[r.payment_id]} alt="Screenshot of the payment" className="mb-2 ml-auto max-h-80 rounded-xl border border-border" />
+                    ) : null}
                     {r.status === 'SUBMITTED' ? (
                       <div className="flex justify-end gap-2">
                         <button type="button" onClick={() => void review(r, true)} disabled={busy === r.payment_id} aria-label={`Confirm ${r.label ?? 'payment'} was received`} className="min-h-9 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground hover:bg-primary-hover disabled:opacity-50">Confirm received</button>

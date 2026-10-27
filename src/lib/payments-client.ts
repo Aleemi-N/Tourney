@@ -9,6 +9,18 @@ export const STATUS_LABEL: Record<string, string> = {
   REFUNDED: 'Refunded', PARTIALLY_REFUNDED: 'Partly refunded', SUBMITTED: 'Waiting for organizer to confirm', REJECTED: 'Not received',
 };
 
+/** Shrinks a screenshot in the browser to at most 1000 px wide and returns it as base64 JPEG (without the data: prefix). */
+export async function shrinkImage(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1000 / bitmap.width);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return canvas.toDataURL('image/jpeg', 0.6).split(',')[1] ?? '';
+}
+
 /** The link that opens a UPI app (GPay, PhonePe, Paytm...) with the payee, amount and a note filled in; also what the QR code holds. */
 export const upiLink = (upiId: string, payee: string | null, amount: number, note: string) =>
   `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payee || 'Organizer')}&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(note.slice(0, 40))}`;

@@ -12,8 +12,13 @@ export async function GET(request: Request) {
   const matchId = url.searchParams.get('matchId') ?? '';
   const teamId = url.searchParams.get('teamId') ?? '';
   const tournamentId = url.searchParams.get('tournamentId') ?? '';
+  const kind = url.searchParams.get('kind') ?? '';
   const supabase = await createClient();
   const to = (path: string) => NextResponse.redirect(new URL(path, url.origin));
+
+  // Payment alerts: the organizer goes to the Payments page, the payer to their account.
+  if ((kind === 'PAYMENT_SUBMITTED' || kind === 'PAYMENT_RECEIVED') && ID.test(tournamentId)) return to(`/organizer/tournaments/${tournamentId}/payments`);
+  if (kind === 'PAYMENT_CONFIRMED' || kind === 'PAYMENT_REJECTED' || kind === 'PAYMENT_DUE') return to('/player');
 
   if (ID.test(matchId)) {
     const { data } = await supabase.from('public_fixture_view').select('tournament_id').eq('id', matchId).maybeSingle();

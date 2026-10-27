@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { callRpc } from '@/lib/web-push';
-import { paymentsFetch, rupees, upiLink } from '@/lib/payments-client';
+import Link from 'next/link';
+import { paymentsFetch, rupees, shrinkImage, upiLink } from '@/lib/payments-client';
 
-type Due = { kind: 'PLAYER' | 'TEAM'; registration_id: string; tournament_id: string; tournament_name: string; label: string; amount: number; online: boolean; status: string; upi_id: string | null; upi_payee: string | null; utr: string | null; note: string | null };
+type Due = { kind: 'PLAYER' | 'TEAM'; registration_id: string; tournament_id: string; tournament_name: string; label: string; amount: number; online: boolean; status: string; upi_id: string | null; upi_payee: string | null; utr: string | null; note: string | null; payment_id: string | null; has_proof: boolean };
 
 const field = 'mt-1.5 min-h-11 w-full rounded-xl border border-border bg-background px-3 text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40';
 
@@ -25,17 +26,29 @@ function DueCard({ due, reload }: { due: Due; reload: () => Promise<void> }) {
   const [error, setError] = useState<string | null>(null);
   const [utr, setUtr] = useState('');
   const [editingUtr, setEditingUtr] = useState(false);
+  const [proof, setProof] = useState<{ name: string; data: string } | null>(null);
 
   async function submitUtr(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
     setError(null);
-    const { error: e } = await callRpc('submit_upi_payment', { p_kind: due.kind, p_registration_id: due.registration_id, p_utr: utr });
+    const { error: e } = await callRpc('submit_upi_payment', { p_kind: due.kind, p_registration_id: due.registration_id, p_utr: utr, p_proof: proof?.data ?? null });
     setBusy(false);
     if (e) return setError(e.message);
     setUtr('');
+    setProof(null);
     setEditingUtr(false);
     await reload();
+  }
+
+  async function attach(file: File | undefined) {
+    if (!file) return;
+    setError(null);
+    try {
+      setProof({ name: file.name, data: await shrinkImage(file) });
+    } catch {
+      setError('That image could not be used. Try another screenshot.');
+    }
   }
 
   const check = useCallback(async (quiet: boolean) => {
@@ -94,7 +107,7 @@ function DueCard({ due, reload }: { due: Due; reload: () => Promise<void> }) {
           {due.online ? <p className="text-sm font-semibold text-text-secondary">Or pay by UPI</p> : null}
           {due.status === 'SUBMITTED' && !editingUtr ? (
             <>
-              <p className="rounded-xl bg-warning/10 px-3 py-2 text-sm font-medium text-text-primary" role="status">Waiting for the organizer to confirm. You said you paid, reference <span className="font-mono">{due.utr}</span>. Your registration can be approved after that.</p>
+              <p className="rounded-xl bg-warning/10 px-3 py-2 text-sm font-medium text-text-primary" role="status">Waiting for the organizer to confirm. You said you paid, reference <span className="font-mono">{due.utr}</span>{due.has_proof ? ' (screenshot attached)' : ''}. Your registration can be approved after that.</p>
               <button type="button" onClick={() => { setUtr(due.utr ?? ''); setEditingUtr(true); }} className="min-h-11 rounded-xl border border-border-strong px-4 font-semibold text-text-secondary hover:bg-surface-muted">Change the reference number</button>
             </>
           ) : (
@@ -107,6 +120,13 @@ function DueCard({ due, reload }: { due: Due; reload: () => Promise<void> }) {
                   <label className="block text-sm font-medium text-text-primary">UPI reference number (12 digits, shown in your UPI app after paying)
                     <input inputMode="numeric" value={utr} onChange={(e) => setUtr(e.target.value.replace(/[^0-9 ]/g, ''))} maxLength={14} placeholder="4021 0000 0001" className={field} />
                   </label>
+                  <div>
+                    <label className="inline-flex min-h-11 cursor-pointer items-center rounded-xl border border-border-strong px-4 text-sm font-semibold text-text-secondary hover:bg-surface-muted focus-within:ring-2 focus-within:ring-primary/40">
+                      {proof ? `Screenshot: ${proof.name}` : 'Attach a screenshot (optional)'}
+                      <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" aria-label="Attach a screenshot of the payment" onChange={(e) => void attach(e.target.files?.[0])} />
+                    </label>
+                    {proof ? <button type="button" onClick={() => setProof(null)} className="ml-2 min-h-11 px-2 text-sm font-semibold text-danger">Remove</button> : null}
+                  </div>
                   <button disabled={busy || utr.replace(/\s/g, '').length !== 12} className="min-h-11 rounded-xl bg-primary px-5 font-semibold text-primary-foreground hover:bg-primary-hover disabled:opacity-50">I have paid</button>
                 </form>
               </div>
@@ -115,6 +135,36 @@ function DueCard({ due, reload }: { due: Due; reload: () => Promise<void> }) {
         </div>
       ) : null}
     </article>
+  );
+}
+
+type ReceiptItem = { payment_id: string; tournament_name: string; label: string | null; amount: number; refunded_amount: number; status: string; paid_at: string | null };
+
+/** Receipts for the fees the signed-in user has paid. Renders nothing when there are none. */
+export function PaymentReceipts() {
+  const [items, setItems] = useState<ReceiptItem[] | null>(null);
+  useEffect(() => {
+    void callRpc('my_payment_receipts', {}).then(({ data }) => setItems(((data ?? []) as ReceiptItem[]).map((r) => ({ ...r, amount: Number(r.amount) }))));
+  }, []);
+  if (!items || items.length === 0) return null;
+  return (
+    <section className="mt-10">
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-text-muted">Receipts</p>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {items.map((r) => (
+          <article key={r.payment_id} className="flex items-center justify-between gap-3 rounded-3xl border border-border bg-surface p-5">
+            <div>
+              <h3 className="font-black">{r.label ?? 'Registration'}</h3>
+              <p className="text-sm text-text-muted">{r.tournament_name}{r.paid_at ? ` · ${new Date(r.paid_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ''}</p>
+            </div>
+            <div className="text-right">
+              <p className="font-black">{rupees(r.amount)}</p>
+              <Link href={`/pay/receipt/${r.payment_id}`} aria-label={`Receipt for ${r.label ?? 'registration'}`} className="text-sm font-semibold text-primary hover:underline">Receipt</Link>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 

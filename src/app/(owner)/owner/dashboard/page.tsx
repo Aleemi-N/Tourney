@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { PaymentsDue } from '@/components/payments/PaymentsDue';
+import { PaymentReceipts, PaymentsDue } from '@/components/payments/PaymentsDue';
 import { createClient } from '@/lib/supabase/server';
 import { getOwnerTeams } from '@/lib/owner/owner-team';
 import { OwnerPortalShell } from '@/components/owner/OwnerPortalShell';
@@ -123,6 +123,7 @@ export default async function OwnerDashboardPage() {
                             </section>
 
                             <PaymentsDue />
+                            <PaymentReceipts />
 
                             {/* PENDING APPLICATIONS */}
                             {applicationsResult.data && applicationsResult.data.length > 0 && (

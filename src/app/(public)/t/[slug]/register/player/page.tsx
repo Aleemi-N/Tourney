@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { PlayerRegistrationForm } from './PlayerRegistrationForm';
+import { FeeNotice } from '@/components/payments/FeeNotice';
+import { PaymentsDue } from '@/components/payments/PaymentsDue';
 import { RegistrationShell, registrationCardClass, registrationStatusClass } from '../RegistrationShell';
 import type { Metadata } from 'next';
 import { buildTournamentMetadata } from '@/lib/public-tournament-metadata';
@@ -113,6 +115,8 @@ export default async function PlayerRegistrationPage({ params }: { params: Promi
 
   return (
     <RegistrationShell slug={slug} tournamentName={tournament.name} title="Player Registration">
+      <FeeNotice tournamentId={tournament.id} kind="PLAYER" />
+      <PaymentsDue title="Pay your registration fee" />
       {existingRegistration ? (
         <div className={registrationCardClass}>
           <h2 className="mb-4 text-lg font-semibold text-text-primary">Registration Status</h2>

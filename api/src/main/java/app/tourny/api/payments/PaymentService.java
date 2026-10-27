@@ -260,4 +260,15 @@ class PaymentService {
             log.warn("payment reconcile failed: {}", e.toString());
         }
     }
+
+    /** Queues the reminders for unpaid fees and for UPI payments waiting on an organizer (the database decides who is due). */
+    @Scheduled(fixedDelayString = "${tourny.payments.reminders-ms:1800000}", initialDelayString = "${tourny.payments.reminders-ms:1800000}")
+    void sendReminders() {
+        try {
+            int queued = jdbc.sql("SELECT public.send_payment_reminders()").query(Integer.class).single();
+            if (queued > 0) log.info("queued {} payment reminders", queued);
+        } catch (RuntimeException e) {
+            log.warn("payment reminders failed: {}", e.toString());
+        }
+    }
 }

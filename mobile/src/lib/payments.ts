@@ -1,7 +1,9 @@
 import { api, apiUrl } from '@/lib/api';
 
-export type PaymentDue = { kind: 'PLAYER' | 'TEAM'; registration_id: string; tournament_id: string; tournament_name: string; label: string; amount: number; online: boolean; status: string; upi_id: string | null; upi_payee: string | null; utr: string | null; note: string | null };
-export type RegistrationPayment = { kind: 'PLAYER' | 'TEAM'; registration_id: string; payment_id: string; status: string; amount: number; provider: string; refunded_amount: number; paid_at: string | null; note: string | null; label?: string | null; utr?: string | null };
+export type PaymentDue = { kind: 'PLAYER' | 'TEAM'; registration_id: string; tournament_id: string; tournament_name: string; label: string; amount: number; online: boolean; status: string; upi_id: string | null; upi_payee: string | null; utr: string | null; note: string | null; payment_id: string | null; has_proof: boolean };
+export type RegistrationPayment = { kind: 'PLAYER' | 'TEAM'; registration_id: string; payment_id: string; status: string; amount: number; provider: string; refunded_amount: number; paid_at: string | null; note: string | null; label?: string | null; utr?: string | null; has_proof?: boolean };
+export type PaymentReceipt = { receipt_no: string; tournament: string; name: string | null; kind: 'PLAYER' | 'TEAM'; amount: number; refunded_amount: number; status: string; currency: string; method: string; reference: string | null; paid_at: string | null; paid_to: string | null };
+export type ReceiptListItem = { payment_id: string; tournament_name: string; label: string | null; kind: 'PLAYER' | 'TEAM'; amount: number; refunded_amount: number; status: string; paid_at: string | null; method: string };
 export type Fees = { player_fee: number; team_fee: number; currency: string; online: boolean; upi: boolean; upi_id?: string | null; upi_payee?: string | null };
 
 /** The link that opens the payer's UPI app (GPay, PhonePe, Paytm...) with the payee, amount and a note filled in. */
