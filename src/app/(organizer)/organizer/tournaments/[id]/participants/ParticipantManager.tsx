@@ -549,7 +549,7 @@ export function ParticipantManager({
                           p.status === 'PENDING' ? 'bg-warning/15 text-warning border-warning/30' :
                           'bg-warning/15 text-warning border-warning/30'
                         }`}>
-                        {p.status === 'CHANGES_REQUESTED' ? 'CHANGES' : p.status}
+                        {p.status === 'CHANGES_REQUESTED' ? 'CHANGES' : p.waitlist_position ? `WAITLIST #${p.waitlist_position}` : p.status}
                       </span>
                     </div>
 

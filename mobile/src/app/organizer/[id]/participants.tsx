@@ -12,7 +12,7 @@ import { Button, ErrorText, Loading, StatusPill } from '@/components/ui';
 import { api } from '@/lib/api';
 import { radius, tint, useTheme } from '@/theme';
 
-type PlayerReg = { id: string; status: string; player_profiles: { display_name: string; primary_position: string | null; place: string | null } | null };
+type PlayerReg = { id: string; status: string; waitlist_position: number | null; player_profiles: { display_name: string; primary_position: string | null; place: string | null } | null };
 type TeamApp = { id: string; proposed_team_name: string; team_short_name: string | null; place: string | null; primary_color: string | null; secondary_color: string | null; status: string };
 type Category = { id: string; category_code: string; display_name: string; base_price: number };
 
@@ -37,7 +37,7 @@ export default function OrganizerTournamentScreen() {
 
   const load = useCallback(async () => {
     const [p, tm, c, info, feeRes, payRes] = await Promise.all([
-      api.from('player_tournament_registrations').select('id,status,player_profiles(display_name,primary_position,place)').eq('tournament_id', id).in('status', ['PENDING', 'CHANGES_REQUESTED']).order('created_at'),
+      api.from('player_tournament_registrations').select('id,status,waitlist_position,player_profiles(display_name,primary_position,place)').eq('tournament_id', id).in('status', ['PENDING', 'CHANGES_REQUESTED']).order('created_at'),
       api.from('team_owner_applications').select('id,proposed_team_name,team_short_name,place,primary_color,secondary_color,status').eq('tournament_id', id).in('status', ['PENDING', 'CHANGES_REQUESTED']).order('created_at'),
       api.from('tournament_auction_categories').select('id,category_code,display_name,base_price').eq('tournament_id', id).order('display_order'),
       api.from('tournaments').select('name').eq('id', id).maybeSingle(),
@@ -113,7 +113,7 @@ export default function OrganizerTournamentScreen() {
                     {position ? <Text style={{ color: tone, fontSize: 12, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' }}>{positionLabel(position)}</Text> : null}
                     {r.player_profiles?.place ? <Text style={{ color: t.textMuted, fontSize: 13 }}>{r.player_profiles.place}</Text> : null}
                   </View>
-                  <StatusPill status={r.status} />
+                  {r.waitlist_position ? <StatusPill tone="warning" label={`Waitlist #${r.waitlist_position}`} /> : <StatusPill status={r.status} />}
                 </View>
                 <PaymentLine kind="PLAYER" registrationId={r.id} fee={fees.player} payment={paymentOf('PLAYER', r.id)} onChanged={load} />
                 <Choice label="Allocation route" value={chosen ?? ''} options={[...ROUTES]} onChange={(v) => setRoute({ ...route, [r.id]: v })} />

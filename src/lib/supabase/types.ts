@@ -1425,6 +1425,7 @@ export type Database = {
           status: string
           tournament_id: string
           updated_at: string
+          waitlist_position: number | null
         }
         Insert: {
           auction_category?: string | null
@@ -1439,6 +1440,7 @@ export type Database = {
           status?: string
           tournament_id: string
           updated_at?: string
+          waitlist_position?: number | null
         }
         Update: {
           auction_category?: string | null
@@ -1453,6 +1455,7 @@ export type Database = {
           status?: string
           tournament_id?: string
           updated_at?: string
+          waitlist_position?: number | null
         }
         Relationships: [
           {

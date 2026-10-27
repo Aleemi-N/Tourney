@@ -119,3 +119,5 @@ void_finance_entry
 get_finance_attachment
 get_finance_ledger
 get_finance_summary
+set_registration_limits
+get_registration_status

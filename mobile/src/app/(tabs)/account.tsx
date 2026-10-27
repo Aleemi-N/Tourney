@@ -19,7 +19,7 @@ import { useOrganizerTournaments } from '@/lib/organizer';
 import { useSetThemeChoice } from '@/lib/theme-choice';
 import { radius, ThemeChoiceContext, useTheme } from '@/theme';
 
-type Registration = { id: string; status: string; auction_category: string | null; tournaments: { name: string; slug: string; format: string | null } | null };
+type Registration = { id: string; status: string; waitlist_position: number | null; auction_category: string | null; tournaments: { name: string; slug: string; format: string | null } | null };
 type Assignment = { id: string; acquisition_type: string | null; teams: { name: string } | null };
 type Application = { id: string; status: string; proposed_team_name: string; tournaments: { name: string } | null };
 
@@ -54,7 +54,7 @@ export default function AccountScreen() {
       setApplications((apps.data as unknown as Application[]) ?? []);
       if (player.data) {
         const [regs, teams] = await Promise.all([
-          api.from('player_tournament_registrations').select('id,status,auction_category,tournaments(name,slug,format)').eq('player_id', player.data.id as string),
+          api.from('player_tournament_registrations').select('id,status,waitlist_position,auction_category,tournaments(name,slug,format)').eq('player_id', player.data.id as string),
           api.from('team_players').select('id,acquisition_type,teams(name)').eq('player_id', player.data.id as string).eq('status', 'ACTIVE'),
         ]);
         setRegistrations((regs.data as unknown as Registration[]) ?? []);
@@ -131,7 +131,7 @@ export default function AccountScreen() {
             <Pressable key={r.id} accessibilityRole="link" accessibilityLabel={r.tournaments?.name ?? 'Tournament'} onPress={() => r.tournaments && router.push({ pathname: '/t/[slug]', params: { slug: r.tournaments.slug } })} style={portalCard(t)}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                 <Text style={{ flex: 1, color: t.text, fontSize: 20, lineHeight: 26, fontWeight: '800' }}>{r.tournaments?.name}</Text>
-                <StatusPill status={r.status} />
+                {r.waitlist_position ? <StatusPill tone="warning" label={`Waitlist #${r.waitlist_position}`} /> : <StatusPill status={r.status} />}
               </View>
               <Text style={{ color: t.textMuted, fontSize: 14 }}>{[r.tournaments?.format ? r.tournaments.format[0] + r.tournaments.format.slice(1).toLowerCase() : null, 'Registered team'].filter(Boolean).join(' · ')}</Text>
               {r.auction_category ? <Text style={{ color: t.primary, fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' }}>{ROUTE_LABEL[r.auction_category] ?? r.auction_category}</Text> : null}

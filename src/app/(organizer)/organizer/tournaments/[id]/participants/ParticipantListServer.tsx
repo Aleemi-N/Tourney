@@ -24,6 +24,7 @@ export async function ParticipantListServer({
       .select(`
         id,
         status,
+        waitlist_position,
         auction_category,
         auction_price_category_id,
         player_profiles (

@@ -2,6 +2,7 @@ import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Choice, Field } from '@/components/form';
 import { FeeNotice, PaymentsDue } from '@/components/payments';
+import { RegistrationNotice } from '@/components/registration-limits';
 import { PhotoField } from '@/components/photo-field';
 import { Body, Button, Card, ErrorText, Heading, Loading, Screen } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -58,6 +59,7 @@ export default function PlayerRegistrationScreen() {
   return (
     <Screen>
       <Heading>Register for {tournament.name}</Heading>
+      <RegistrationNotice tournamentId={tournament.id} kind="PLAYER" />
       <FeeNotice tournamentId={tournament.id} kind="PLAYER" />
       {error ? <ErrorText>{error}</ErrorText> : null}
       <PhotoField bucket="avatars" userId={session.user.id} label="Photo" path={photo} onChange={setPhoto} />

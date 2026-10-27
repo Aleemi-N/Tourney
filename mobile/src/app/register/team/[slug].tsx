@@ -2,6 +2,7 @@ import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Choice, Field } from '@/components/form';
 import { FeeNotice, PaymentsDue } from '@/components/payments';
+import { RegistrationNotice } from '@/components/registration-limits';
 import { PhotoField } from '@/components/photo-field';
 import { Body, Button, Card, ErrorText, Heading, Loading, Screen } from '@/components/ui';
 import { SECOND, SWATCHES } from '@/lib/colors';
@@ -67,6 +68,7 @@ export default function TeamRegistrationScreen() {
   return (
     <Screen>
       <Heading>Apply to {tournament.name}</Heading>
+      <RegistrationNotice tournamentId={tournament.id} kind="TEAM" />
       <FeeNotice tournamentId={tournament.id} kind="TEAM" />
       {error ? <ErrorText>{error}</ErrorText> : null}
       {profiles.length > 0 ? (

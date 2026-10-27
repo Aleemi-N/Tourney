@@ -2,6 +2,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { PaymentSettingsForm } from './PaymentSettingsForm';
+import { RegistrationLimitsForm } from './RegistrationLimitsForm';
 import { SettingsForm } from './SettingsForm';
 import { TournamentDetailsForm } from './TournamentDetailsForm';
 import { RulesAndStages } from './RulesAndStages';
@@ -67,6 +68,7 @@ export async function SettingsServer({ tournament }: { tournament: any }) {
   return (
     <div className="space-y-8">
       <TournamentDetailsForm tournament={tournament} initialLogoPath={logoPath} initialLogoUrl={logoUrl} />
+      <RegistrationLimitsForm tournamentId={tournament.id} />
       <PaymentSettingsForm tournamentId={tournament.id} />
       <SettingsForm tournament={tournament} configuration={phase5Configuration as unknown as Phase5Configuration} />
       {isAuctionLeague && (
