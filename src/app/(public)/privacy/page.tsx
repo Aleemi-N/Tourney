@@ -36,7 +36,7 @@ export default function PrivacyPage() {
 
       <h2>Keeping and deleting it</h2>
       <p>We keep your information while your account exists and while tournaments you took part in remain on the platform. You can ask us to correct it, export it, or delete your account and registrations. Results of completed matches may be kept in anonymised form so that standings stay correct.</p>
-      <p>To make a request, write to <a href={`mailto:${email}`}>{email}</a>. We will reply within 30 days.</p>
+      <p>You can download your data or delete your account yourself, any time, at <a href="/account">your account page</a> (and in the Account tab of the mobile app). For anything else, write to <a href={`mailto:${email}`}>{email}</a>. We will reply within 30 days.</p>
 
       <h2>Children</h2>
       <p>If a player is under 18, a parent, guardian or the team organizer should register them and agree to this policy on their behalf.</p>

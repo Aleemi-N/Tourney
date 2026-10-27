@@ -2,6 +2,7 @@ import { Link, router } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Choice } from '@/components/form';
+import { AccountData } from '@/components/account-data';
 import { PaymentReceipts, PaymentsDue } from '@/components/payments';
 import { usePush } from '@/lib/push';
 import { useIsSuperAdmin } from '@/components/admin';
@@ -178,6 +179,7 @@ export default function AccountScreen() {
         {name ? <Link href="/profile" asChild><Button tone="secondary" title="Edit player profile" onPress={() => {}} /></Link> : null}
         <Appearance value={themeChoice} onChange={setThemeChoice} />
         <LanguageChoice />
+        <AccountData />
       </Section>
       <Text style={{ color: t.textMuted, fontSize: 12 }}>Connected to {apiUrl}</Text>
     </PortalShell>
