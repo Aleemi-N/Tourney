@@ -35,6 +35,15 @@ This is the single list for taking v2 live. "Verified" means I ran it here; "You
 - Google/OAuth sign-in is not supported (the app never used it).
 - The web app was not load-tested. A tournament weekend with a few hundred spectators is well within a small VPS; thousands on one live match are untested.
 
+## Added after the first release pass (all tested here, none tried on a phone or with real push)
+- Mobile and web: follow a team, match or tournament without an account, with push alerts for match start, final result, schedule changes and organizer announcements; web push needs the VAPID keys (step 4a).
+- Scorer: offline scoring queue, lineups with rotation, substitutions and libero swaps, player of the match; organizer awards.
+- Organizer: announcements, check-in with a no-show walkover shortcut, CSV exports, tournament templates, multi-court scheduling, insights.
+- Public: posters and QR codes to share, add-to-calendar, searchable directory (`/tournaments`), embeddable widgets (`/embed/t/<slug>/table|fixtures|live/<match id>`).
+- Languages: Hindi and Malayalam on the mobile app (draft translations; get them reviewed). The website is English only.
+- Not built: registration fees and payments (a product decision: which provider, whose account, refunds and tax).
+- Real push delivery to phones and browsers could not be tried here: browsers were tested with a stubbed subscription and phones against a fake Expo server.
+
 ## After launch
 - Keep the old Supabase project read-only for a week, then delete it.
 - Never run `supabase db push` against it.

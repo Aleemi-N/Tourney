@@ -4,6 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { AuthProvider } from '@/lib/auth';
+import { LanguageProvider } from '@/lib/i18n';
 import { setupNotifications, useNotificationTaps } from '@/lib/push';
 import { ThemeChoiceProvider } from '@/lib/theme-choice';
 import { useIsDark, useTheme } from '@/theme';
@@ -63,10 +64,12 @@ export default function RootLayout() {
   useEffect(() => { if (loaded) void SplashScreen.hideAsync(); }, [loaded]);
   if (!loaded) return null;
   return (
-    <ThemeChoiceProvider>
-      <AuthProvider>
-        <Navigation />
-      </AuthProvider>
-    </ThemeChoiceProvider>
+    <LanguageProvider>
+      <ThemeChoiceProvider>
+        <AuthProvider>
+          <Navigation />
+        </AuthProvider>
+      </ThemeChoiceProvider>
+    </LanguageProvider>
   );
 }

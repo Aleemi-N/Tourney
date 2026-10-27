@@ -5,6 +5,7 @@ import { Choice } from '@/components/form';
 import { usePush } from '@/lib/push';
 import { useIsSuperAdmin } from '@/components/admin';
 import { useOwnerTeams } from '@/components/owner';
+import { LANGUAGES, useLanguage } from '@/lib/i18n';
 import { PortalIntro, PortalShell, Section, portalCard } from '@/components/shell';
 import { Text } from '@/components/text';
 import { Button, ErrorText, Loading, StatusPill } from '@/components/ui';
@@ -69,6 +70,7 @@ export default function AccountScreen() {
         <Link href="/login" asChild><Button title="Sign In" onPress={() => {}} /></Link>
         <Link href="/register" asChild><Button tone="secondary" title="Create Account" onPress={() => {}} /></Link>
         <Appearance value={themeChoice} onChange={setThemeChoice} />
+        <LanguageChoice />
       </PortalShell>
     );
   }
@@ -171,6 +173,7 @@ export default function AccountScreen() {
         </View>
         {name ? <Link href="/profile" asChild><Button tone="secondary" title="Edit player profile" onPress={() => {}} /></Link> : null}
         <Appearance value={themeChoice} onChange={setThemeChoice} />
+        <LanguageChoice />
       </Section>
       <Text style={{ color: t.textMuted, fontSize: 12 }}>Connected to {apiUrl}</Text>
     </PortalShell>
@@ -204,6 +207,17 @@ function Following() {
         ))}
       </View>
     </Section>
+  );
+}
+
+/** Which language the app speaks. Text without a translation stays English. */
+function LanguageChoice() {
+  const t = useTheme();
+  const { lang, setLang } = useLanguage();
+  return (
+    <View style={{ borderRadius: radius['2xl'], borderWidth: 1, borderColor: t.border, backgroundColor: t.surface, padding: 16 }}>
+      <Choice label="Language" value={lang} options={LANGUAGES} onChange={setLang} />
+    </View>
   );
 }
 
