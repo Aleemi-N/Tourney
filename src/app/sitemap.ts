@@ -19,6 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   );
   return [
     { url: origin, changeFrequency: 'weekly' as const },
+    { url: `${origin}/tournaments`, changeFrequency: 'daily' as const },
     { url: `${origin}/privacy`, changeFrequency: 'yearly' as const },
     { url: `${origin}/terms`, changeFrequency: 'yearly' as const },
     ...tournaments,

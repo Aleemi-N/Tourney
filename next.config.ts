@@ -54,15 +54,17 @@ const nextConfig: NextConfig = {
 
   // Baseline security headers on every response (HSTS is set by the reverse proxy, which knows it serves HTTPS).
   async headers() {
-    return [{
-      source: '/:path*',
-      headers: [
-        { key: 'X-Content-Type-Options', value: 'nosniff' },
-        { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-        { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
-      ],
-    }];
+    const common = [
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+    ];
+    return [
+      // Everything except the embeddable widgets may only be framed by this site.
+      { source: '/:path((?!embed(?:/|$)).*)', headers: [...common, { key: 'X-Frame-Options', value: 'SAMEORIGIN' }] },
+      // /embed/* is read-only public data meant to be placed on other websites.
+      { source: '/embed/:path*', headers: [...common, { key: 'Content-Security-Policy', value: 'frame-ancestors *' }] },
+    ];
   },
 
   // Experimental — placeholder for future flags (e.g. partial prerendering).

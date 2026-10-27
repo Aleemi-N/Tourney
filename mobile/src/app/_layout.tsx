@@ -47,6 +47,7 @@ function Navigation() {
         <Stack.Screen name="organizer/[id]/auction" options={{ headerShown: false, animation: "none" }} />
         <Stack.Screen name="organizer/[id]/announce" options={{ headerShown: false, animation: "none" }} />
         <Stack.Screen name="organizer/[id]/awards" options={{ headerShown: false, animation: "none" }} />
+        <Stack.Screen name="organizer/[id]/insights" options={{ headerShown: false, animation: "none" }} />
         <Stack.Screen name="organizer/[id]/staff" options={{ headerShown: false, animation: "none" }} />
         <Stack.Screen name="organizer/[id]/fixtures" options={{ headerShown: false, animation: "none" }} />
         <Stack.Screen name="organizer/[id]/settings" options={{ headerShown: false, animation: "none" }} />

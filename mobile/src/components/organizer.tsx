@@ -12,11 +12,12 @@ const TABS = [
   { key: 'announce', label: 'Announce', path: '/organizer/[id]/announce' },
   { key: 'awards', label: 'Awards', path: '/organizer/[id]/awards' },
   { key: 'standings', label: 'Standings', path: '/organizer/[id]/standings' },
+  { key: 'insights', label: 'Insights', path: '/organizer/[id]/insights' },
   { key: 'staff', label: 'Staff', path: '/organizer/[id]/staff' },
   { key: 'settings', label: 'Settings', path: '/organizer/[id]/settings' },
 ] as readonly { key: string; label: string; path: string; auctionOnly?: boolean }[];
 
-export type OrganizerTab = 'index' | 'participants' | 'teams' | 'fixtures' | 'lot' | 'auction' | 'announce' | 'awards' | 'standings' | 'staff' | 'settings';
+export type OrganizerTab = 'index' | 'participants' | 'teams' | 'fixtures' | 'lot' | 'auction' | 'announce' | 'awards' | 'standings' | 'insights' | 'staff' | 'settings';
 
 /** The tournament name for the page header. */
 export function useTournamentName(id: string) {

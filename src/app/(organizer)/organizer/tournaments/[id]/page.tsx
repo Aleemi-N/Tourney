@@ -6,6 +6,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Suspense } from 'react';
 
 import { RegistrationLinks } from './RegistrationLinks';
+import { EmbedCodes } from '@/components/organizer/EmbedCodes';
 import { RegistrationStatusControl } from './RegistrationStatusControl';
 import { TournamentStatsServer } from './TournamentStatsServer';
 import { OrganizerLinkPending } from '@/components/organizer/OrganizerLinkPending';
@@ -96,6 +97,8 @@ async function TournamentOverviewContent({
         isLeague={tournament.format === 'LEAGUE'}
         status={tournament.status as string}
       />
+
+      <EmbedCodes slug={tournament.slug as string} />
 
       <RegistrationStatusControl
         tournamentId={id}

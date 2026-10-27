@@ -99,3 +99,4 @@ check_in_team
 undo_check_in
 get_match_checkins
 duplicate_tournament
+get_tournament_analytics

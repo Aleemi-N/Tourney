@@ -37,6 +37,7 @@ export async function TournamentDiscoverySection() {
           <div>
             <h2 className="text-3xl font-extrabold text-text-primary tracking-tight">Live & Upcoming Tournaments</h2>
             <p className="text-text-secondary mt-2 text-lg">Find your next competition or spectate live action.</p>
+            <Link href="/tournaments" className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 font-semibold text-text-primary hover:bg-surface-muted">Search all tournaments &rarr;</Link>
           </div>
         </div>
 

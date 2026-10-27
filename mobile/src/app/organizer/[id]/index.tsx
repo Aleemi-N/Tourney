@@ -3,6 +3,7 @@ import { Calendar, ClipboardList, Gavel, Settings, Users } from 'lucide-react-na
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { OrganizerFrame } from '@/components/organizer';
+import { EmbedPanel } from '@/components/embed-panel';
 import { ExportPanel } from '@/components/exports';
 import { TemplatePanel } from '@/components/template-panel';
 import { QrCard } from '@/components/qr';
@@ -20,6 +21,7 @@ export default function OrganizerOverview() {
   const t = useTheme();
   const [info, setInfo] = useState<Info | null>(null);
   const [counts, setCounts] = useState<{ players: number; pending: number; teams: number; fixtures: number } | null>(null);
+  const [liveMatch, setLiveMatch] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +39,8 @@ export default function OrganizerOverview() {
     ]);
     if (i.error) return setError(i.error.message);
     setInfo(i.data as Info | null);
+    const lm = await api.from('matches').select('id').eq('tournament_id', id).in('status', ['LIVE', 'SCHEDULED']).order('status').order('program_order').limit(1).maybeSingle();
+    setLiveMatch((lm.data?.id as string | undefined) ?? null);
     setCounts({ players: players.count ?? 0, pending: pending.count ?? 0, teams: teams.count ?? 0, fixtures: fixtures.count ?? 0 });
   }, [id]);
 
@@ -133,6 +137,7 @@ export default function OrganizerOverview() {
             {nav('Fixtures & Scorers', 'Stages, schedule, scorers and results', Calendar, '/organizer/[id]/fixtures')}
             {nav('Settings', 'Details, registration, squads and match format', Settings, '/organizer/[id]/settings')}
           </Section>
+          <Section title="Embed on your website"><EmbedPanel slug={info.slug} firstMatchId={liveMatch} /></Section>
           <Section title="Export"><ExportPanel tournamentId={id} slug={info.slug} /></Section>
           <Section title="Next tournament"><TemplatePanel sourceId={id} sourceName={info.name} /></Section>
           <Section title="QR codes for posters">
