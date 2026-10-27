@@ -9,6 +9,7 @@ const TABS = [
   { key: 'fixtures', label: 'Fixtures', path: '/organizer/[id]/fixtures' },
   { key: 'lot', label: 'Lot Draw', path: '/organizer/[id]/lot', auctionOnly: true },
   { key: 'auction', label: 'Auction', path: '/organizer/[id]/auction', auctionOnly: true },
+  { key: 'payments', label: 'Payments', path: '/organizer/[id]/payments' },
   { key: 'announce', label: 'Announce', path: '/organizer/[id]/announce' },
   { key: 'awards', label: 'Awards', path: '/organizer/[id]/awards' },
   { key: 'standings', label: 'Standings', path: '/organizer/[id]/standings' },
@@ -17,7 +18,7 @@ const TABS = [
   { key: 'settings', label: 'Settings', path: '/organizer/[id]/settings' },
 ] as readonly { key: string; label: string; path: string; auctionOnly?: boolean }[];
 
-export type OrganizerTab = 'index' | 'participants' | 'teams' | 'fixtures' | 'lot' | 'auction' | 'announce' | 'awards' | 'standings' | 'insights' | 'staff' | 'settings';
+export type OrganizerTab = 'index' | 'participants' | 'teams' | 'fixtures' | 'lot' | 'auction' | 'payments' | 'announce' | 'awards' | 'standings' | 'insights' | 'staff' | 'settings';
 
 /** The tournament name for the page header. */
 export function useTournamentName(id: string) {

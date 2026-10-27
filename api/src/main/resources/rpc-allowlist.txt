@@ -101,3 +101,12 @@ get_match_checkins
 duplicate_tournament
 get_tournament_analytics
 register_web_push
+set_registration_fees
+get_registration_fees
+my_payments_due
+list_registration_payments
+mark_registration_paid
+set_upi_details
+submit_upi_payment
+review_upi_payment
+record_manual_refund

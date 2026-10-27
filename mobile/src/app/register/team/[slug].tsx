@@ -1,6 +1,7 @@
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Choice, Field } from '@/components/form';
+import { FeeNotice, PaymentsDue } from '@/components/payments';
 import { PhotoField } from '@/components/photo-field';
 import { Body, Button, Card, ErrorText, Heading, Loading, Screen } from '@/components/ui';
 import { SECOND, SWATCHES } from '@/lib/colors';
@@ -48,7 +49,7 @@ export default function TeamRegistrationScreen() {
   if (!session) {
     return <Screen><Heading>Apply with a team</Heading><Body muted>Sign in first to apply to {tournament.name}.</Body><Link href="/login" asChild><Button title="Sign in" onPress={() => {}} /></Link></Screen>;
   }
-  if (done) return <Screen><Card><Heading>Application submitted</Heading><Body muted>The organizer will review it.</Body></Card><Button title="Back" onPress={() => router.back()} /></Screen>;
+  if (done) return <Screen><Card><Heading>Application submitted</Heading><Body muted>The organizer will review it.</Body></Card><PaymentsDue tournamentId={tournament.id} title="Registration fee" /><Button title="Back" onPress={() => router.back()} /></Screen>;
   if (tournament.status !== 'REGISTRATION') return <Screen><Body muted>{tournament.name} is not open for team applications.</Body></Screen>;
 
   async function submit() {
@@ -66,6 +67,7 @@ export default function TeamRegistrationScreen() {
   return (
     <Screen>
       <Heading>Apply to {tournament.name}</Heading>
+      <FeeNotice tournamentId={tournament.id} kind="TEAM" />
       {error ? <ErrorText>{error}</ErrorText> : null}
       {profiles.length > 0 ? (
         <Choice label="Use one of your teams" value={profileId} options={[{ value: '', label: 'New team' }, ...profiles.map((p) => ({ value: p.id, label: p.name }))]} onChange={chooseProfile} />

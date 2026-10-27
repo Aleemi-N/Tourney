@@ -57,6 +57,14 @@ export function ExportPanel({ tournamentId, slug }: { tournamentId: string; slug
     return out;
   };
 
+  const payments = async (): Promise<Cell[][]> => {
+    const { data, error: e } = await api.rpc('list_registration_payments', { p_tournament_id: tournamentId });
+    fail(e);
+    type R = { kind: string; label: string | null; status: string; amount: number; provider: string; refunded_amount: number; paid_at: string | null; note: string | null; utr: string | null };
+    return [['Name', 'Type', 'Status', 'Amount', 'Refunded', 'How', 'UPI reference', 'Paid at', 'Note'],
+      ...((data ?? []) as unknown as R[]).map((r) => [r.label, r.kind, r.status, r.amount, r.refunded_amount, r.provider === 'MANUAL' ? 'Offline' : r.provider === 'UPI' ? 'UPI' : 'Razorpay', r.utr, stamp(r.paid_at), r.note])];
+  };
+
   const item = (key: string, label: string, build: () => Promise<Cell[][]>) => (
     <Button key={key} tone="secondary" title={label} accessibilityLabel={`Export ${label}`} icon={<Download size={16} color={t.text} />} loading={busy === key} disabled={busy !== null} onPress={() => void run(key, build)} />
   );
@@ -68,6 +76,7 @@ export function ExportPanel({ tournamentId, slug }: { tournamentId: string; slug
       {item('squads', 'Teams and squads', squads)}
       {item('fixtures', 'Fixtures and results', fixtures)}
       {item('standings', 'Standings', standings)}
+      {item('payments', 'Payments', payments)}
     </View>
   );
 }

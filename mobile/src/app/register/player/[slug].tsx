@@ -1,6 +1,7 @@
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Choice, Field } from '@/components/form';
+import { FeeNotice, PaymentsDue } from '@/components/payments';
 import { PhotoField } from '@/components/photo-field';
 import { Body, Button, Card, ErrorText, Heading, Loading, Screen } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -37,7 +38,7 @@ export default function PlayerRegistrationScreen() {
     return <Screen><Heading>Register as a player</Heading><Body muted>Sign in first to register for {tournament.name}.</Body><Link href="/login" asChild><Button title="Sign in" onPress={() => {}} /></Link></Screen>;
   }
   if (done) {
-    return <Screen><Card><Heading>Registration submitted</Heading><Body muted>The organizer will review it. You will see the result in your account.</Body></Card><Button title="Back" onPress={() => router.back()} /></Screen>;
+    return <Screen><Card><Heading>Registration submitted</Heading><Body muted>The organizer will review it. You will see the result in your account.</Body></Card><PaymentsDue tournamentId={tournament.id} title="Registration fee" /><Button title="Back" onPress={() => router.back()} /></Screen>;
   }
   if (tournament.status !== 'REGISTRATION') return <Screen><Body muted>{tournament.name} is not open for registration.</Body></Screen>;
 
@@ -57,6 +58,7 @@ export default function PlayerRegistrationScreen() {
   return (
     <Screen>
       <Heading>Register for {tournament.name}</Heading>
+      <FeeNotice tournamentId={tournament.id} kind="PLAYER" />
       {error ? <ErrorText>{error}</ErrorText> : null}
       <PhotoField bucket="avatars" userId={session.user.id} label="Photo" path={photo} onChange={setPhoto} />
       <Field label="Full name" value={name} onChangeText={setName} autoComplete="name" />

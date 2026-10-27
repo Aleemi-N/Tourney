@@ -2,6 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { Choice, Field } from '@/components/form';
+import { PaymentSettings } from '@/components/payment-settings';
 import { PhotoField } from '@/components/photo-field';
 import { OrganizerFrame, useTournamentName } from '@/components/organizer';
 import { portalCard, Section } from '@/components/shell';
@@ -78,6 +79,7 @@ export default function OrganizerSettings() {
         <>
           <DetailsForm id={id} initial={details} initialLogo={logo} onSaved={load} />
           <RegistrationForm id={id} config={config} auction={details.format === 'LEAGUE' && details.league_mode === 'AUCTION'} onSaved={load} />
+          <Section title="Fees & Payments"><PaymentSettings tournamentId={id} /></Section>
           {details.format === 'LEAGUE' && details.league_mode === 'AUCTION' ? <PriceCategories id={id} /> : null}
           <Section title="Match Format">
             <FormatForm id={id} config={config} onSaved={load} />
