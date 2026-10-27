@@ -49,6 +49,10 @@ services:
       TOURNY_MAIL_FROM: ${MAIL_FROM:-no-reply@${APP_DOMAIN}}
       # Push notifications go to Expo. A token is only needed if you enable enhanced push security in your Expo account.
       TOURNY_EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
+      # Browser push: the key pair from `node deploy/make-vapid-keys.mjs`. Leave empty to run without browser push.
+      TOURNY_VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      TOURNY_VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      TOURNY_VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:support@example.com}
     volumes:
       - storage:/data/storage
 
@@ -59,6 +63,7 @@ services:
         NEXT_PUBLIC_SUPABASE_URL: https://${API_DOMAIN}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
         NEXT_PUBLIC_SITE_URL: https://${APP_DOMAIN}
+        NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
     restart: unless-stopped
     environment:
       # The server side reaches the API over the internal network.

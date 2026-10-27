@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { cn } from '@/lib/utils';
+import { WebFollowButton } from './WebFollowButton';
 
 const TABS = [
   { label: 'Live', path: 'live' },
@@ -32,6 +33,9 @@ interface Props {
 
 export function PublicTournamentFrame({ slug, name, logoUrl, status, children }: Props) {
   const pathname = usePathname();
+  // Pages of one match or one team also offer to follow just that.
+  const matchId = /^\/t\/[^/]+\/match\/([0-9a-f-]{36})(?:\/|$)/i.exec(pathname)?.[1];
+  const teamId = /^\/t\/[^/]+\/teams\/([0-9a-f-]{36})(?:\/|$)/i.exec(pathname)?.[1];
 
   return (
     <div className="min-h-screen bg-background text-text-primary">
@@ -52,6 +56,9 @@ export function PublicTournamentFrame({ slug, name, logoUrl, status, children }:
             </Link>
             <div className="flex shrink-0 items-center gap-1">
               {status === 'LIVE' ? <StatusPill status="LIVE" /> : null}
+              {matchId ? <WebFollowButton kind="MATCH" targetId={matchId} label="this match" /> : null}
+              {teamId ? <WebFollowButton kind="TEAM" targetId={teamId} label="this team" /> : null}
+              <WebFollowButton kind="TOURNAMENT" slug={slug} label={name} />
               <ThemeToggle />
             </div>
           </div>

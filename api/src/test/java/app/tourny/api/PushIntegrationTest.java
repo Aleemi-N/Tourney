@@ -5,6 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.sun.net.httpserver.HttpServer;
+import java.math.BigInteger;
+import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECGenParameterSpec;
+import java.util.Base64;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -33,6 +42,31 @@ class PushIntegrationTest {
     private static final List<String> received = new CopyOnWriteArrayList<>();
     private static volatile String reply = "{\"data\":[{\"status\":\"ok\",\"id\":\"1\"}]}";
     private static HttpServer expo;
+    private static final Map<String, String> webRequests = new ConcurrentHashMap<>();
+    private static String subscriptionP256dh;
+    private static String subscriptionAuth;
+
+    private static String b64(byte[] bytes) { return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes); }
+
+    /** An uncompressed P-256 public point (65 bytes) and the matching 32-byte private scalar, base64url like browsers and VAPID tools use. */
+    private static String[] ecKeys() throws Exception {
+        var generator = KeyPairGenerator.getInstance("EC");
+        generator.initialize(new ECGenParameterSpec("secp256r1"));
+        var pair = generator.generateKeyPair();
+        var pub = (ECPublicKey) pair.getPublic();
+        byte[] point = new byte[65];
+        point[0] = 4;
+        System.arraycopy(fixed(pub.getW().getAffineX()), 0, point, 1, 32);
+        System.arraycopy(fixed(pub.getW().getAffineY()), 0, point, 33, 32);
+        return new String[] { b64(point), b64(fixed(((ECPrivateKey) pair.getPrivate()).getS())) };
+    }
+
+    private static byte[] fixed(BigInteger n) {
+        byte[] raw = n.toByteArray();
+        byte[] out = new byte[32];
+        System.arraycopy(raw, Math.max(0, raw.length - 32), out, Math.max(0, 32 - raw.length), Math.min(raw.length, 32));
+        return out;
+    }
 
     @DynamicPropertySource
     static void config(DynamicPropertyRegistry registry) throws Exception {
@@ -45,7 +79,21 @@ class PushIntegrationTest {
             exchange.getResponseBody().write(out);
             exchange.close();
         });
+        // A fake browser push service: records what it was sent, and answers 410 Gone for one subscription.
+        expo.createContext("/webpush", exchange -> {
+            webRequests.put(exchange.getRequestURI().getPath(), exchange.getRequestHeaders().getFirst("Authorization") + "|" + exchange.getRequestHeaders().getFirst("Content-Encoding") + "|" + exchange.getRequestBody().readAllBytes().length);
+            exchange.sendResponseHeaders(exchange.getRequestURI().getPath().endsWith("/gone") ? 410 : 201, -1);
+            exchange.close();
+        });
         expo.start();
+        var vapid = ecKeys();
+        registry.add("tourny.push.vapid.public-key", () -> vapid[0]);
+        registry.add("tourny.push.vapid.private-key", () -> vapid[1]);
+        var browser = ecKeys();
+        subscriptionP256dh = browser[0];
+        var authBytes = new byte[16];
+        new SecureRandom().nextBytes(authBytes);
+        subscriptionAuth = b64(authBytes);
         registry.add("tourny.push.url", () -> "http://127.0.0.1:" + expo.getAddress().getPort() + "/push");
         registry.add("tourny.jwt.secret", () -> "super-secret-jwt-token-with-at-least-32-characters-long");
         var env = Pattern.compile("NEXT_PUBLIC_SUPABASE_ANON_KEY=\"?([^\"\\s]+)").matcher(Files.readString(Path.of("../.env.local")));
@@ -144,6 +192,39 @@ class PushIntegrationTest {
             }
             assertEquals(null, one(c, "SELECT 1 FROM public.push_tokens WHERE token = ?", token));
             assertEquals(null, one(c, "SELECT 1 FROM public.push_follows WHERE token = ?", token));
+        }
+    }
+
+    @Test
+    void browsersGetEncryptedWebPushAndGoneSubscriptionsAreForgotten() throws Exception {
+        try (Connection c = DriverManager.getConnection(DB_URL, "postgres", "postgres")) {
+            Object match = one(c, "SELECT id FROM public.matches WHERE status = 'SCHEDULED' AND home_team_id IS NOT NULL AND away_team_id IS NOT NULL LIMIT 1");
+            assumeTrue(match != null, "seed has no scheduled match");
+            String base = "http://127.0.0.1:" + expo.getAddress().getPort() + "/webpush/";
+            String live = base + "live-" + UUID.randomUUID();
+            String gone = base + "gone";
+            reply = "{\"data\":[]}";
+            for (String endpoint : new String[] { live, gone }) {
+                try (var st = c.prepareStatement("INSERT INTO public.push_tokens (token, user_id, platform, p256dh, auth_secret) VALUES (?, NULL, 'web', ?, ?)")) {
+                    st.setString(1, endpoint); st.setString(2, subscriptionP256dh); st.setString(3, subscriptionAuth); st.executeUpdate();
+                }
+                try (var st = c.prepareStatement("INSERT INTO public.push_follows (token, kind, target_id) VALUES (?, 'MATCH', ?)")) {
+                    st.setString(1, endpoint); st.setObject(2, match); st.executeUpdate();
+                }
+            }
+            try (var st = c.prepareStatement("UPDATE public.matches SET status = 'LIVE' WHERE id = ?")) { st.setObject(1, match); st.executeUpdate(); }
+            String livePath = java.net.URI.create(live).getPath();
+            long deadline = System.currentTimeMillis() + 15_000;
+            while (System.currentTimeMillis() < deadline && !webRequests.containsKey(livePath)) Thread.sleep(200);
+            String seen = webRequests.get(livePath);
+            assertTrue(seen != null && seen.startsWith("vapid "), "VAPID-signed request, got " + seen);
+            assertTrue(seen.contains("aes128gcm"), "payload is encrypted, got " + seen);
+            deadline = System.currentTimeMillis() + 10_000;
+            while (System.currentTimeMillis() < deadline && one(c, "SELECT 1 FROM public.push_tokens WHERE token = ?", gone) != null) Thread.sleep(200);
+            assertEquals(null, one(c, "SELECT 1 FROM public.push_tokens WHERE token = ?", gone), "a 410 Gone subscription is forgotten");
+            assertTrue(one(c, "SELECT 1 FROM public.push_tokens WHERE token = ?", live) != null);
+            try (var st = c.prepareStatement("UPDATE public.matches SET status = 'SCHEDULED' WHERE id = ?")) { st.setObject(1, match); st.executeUpdate(); }
+            try (var st = c.prepareStatement("DELETE FROM public.push_tokens WHERE token = ?")) { st.setString(1, live); st.executeUpdate(); }
         }
     }
 

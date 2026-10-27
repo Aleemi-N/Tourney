@@ -37,8 +37,9 @@ class PushDispatcher {
     private final boolean enabled;
     private final String url;
     private final String accessToken;
+    private final WebPushSender web;
 
-    PushDispatcher(JdbcClient jdbc, TransactionTemplate tx, ObjectMapper mapper,
+    PushDispatcher(JdbcClient jdbc, TransactionTemplate tx, ObjectMapper mapper, WebPushSender web,
             @Value("${tourny.push.enabled:true}") boolean enabled,
             @Value("${tourny.push.url:https://exp.host/--/api/v2/push/send}") String url,
             @Value("${tourny.push.access-token:}") String accessToken) {
@@ -48,6 +49,7 @@ class PushDispatcher {
         this.enabled = enabled;
         this.url = url;
         this.accessToken = accessToken;
+        this.web = web;
         this.client = RestClient.builder()
                 .requestFactory(new JdkClientHttpRequestFactory(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()))
                 .build();
@@ -81,9 +83,10 @@ class PushDispatcher {
         long id = ((Number) row.get("id")).longValue();
         try {
             // People (by account) and followers (by device token), each device once.
-            List<String> tokens = jdbc.sql("SELECT DISTINCT pt.token FROM public.push_tokens pt JOIN public.push_outbox o ON o.id = ? WHERE pt.user_id = ANY (o.user_ids) OR pt.token = ANY (o.tokens)")
-                    .param(id).query(String.class).list();
+            var devices = jdbc.sql("SELECT DISTINCT pt.token, pt.platform, pt.p256dh, pt.auth_secret FROM public.push_tokens pt JOIN public.push_outbox o ON o.id = ? WHERE pt.user_id = ANY (o.user_ids) OR pt.token = ANY (o.tokens)")
+                    .param(id).query().listOfRows();
             JsonNode data = mapper.readTree((String) row.get("data"));
+            List<String> tokens = devices.stream().filter((d) -> !"web".equals(d.get("platform"))).map((d) -> (String) d.get("token")).toList();
             for (int from = 0; from < tokens.size(); from += EXPO_BATCH) {
                 var batch = tokens.subList(from, Math.min(tokens.size(), from + EXPO_BATCH));
                 var messages = new ArrayList<Map<String, Object>>();
@@ -94,6 +97,16 @@ class PushDispatcher {
                 if (!accessToken.isBlank()) request = request.header("Authorization", "Bearer " + accessToken);
                 String body = request.body(messages).retrieve().body(String.class);
                 dropDeadTokens(batch, mapper.readTree(body));
+            }
+            // Browsers are best effort: a failed browser never makes the phones get the same message twice.
+            if (web.enabled()) {
+                String payload = mapper.writeValueAsString(Map.of("title", row.get("title"), "body", row.get("body"), "data", data));
+                for (var d : devices) {
+                    if (!"web".equals(d.get("platform"))) continue;
+                    if (web.send((String) d.get("token"), (String) d.get("p256dh"), (String) d.get("auth_secret"), payload) == WebPushSender.Result.GONE) {
+                        jdbc.sql("DELETE FROM public.push_tokens WHERE token = ?").param(d.get("token")).update();
+                    }
+                }
             }
             jdbc.sql("UPDATE public.push_outbox SET sent_at = now(), attempts = attempts + 1 WHERE id = ?").param(id).update();
         } catch (Exception e) {

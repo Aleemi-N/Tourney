@@ -14,6 +14,7 @@ This is the single list for taking v2 live. "Verified" means I ran it here; "You
 1. **Rotate the Supabase database password** you pasted in chat on 2026-10-26.
 2. **Decide the domains** (`app.<domain>` for the website, `api.<domain>` for the API) and rent the VPS (2 GB RAM is enough to start; Docker installed).
 3. **Fill `deploy/.env`** from `deploy/.env.example`: `JWT_SECRET`, `ANON_KEY` (`node deploy/make-anon-key.mjs`), database passwords, and `CONTACT_EMAIL`, the address the privacy policy and terms show.
+4a. **Browser push (optional):** run `node deploy/make-vapid-keys.mjs`, put the three `VAPID_*` lines in `deploy/.env`, and rebuild the web image (the public key is compiled in). Without them the website simply hides the Follow buttons.
 4. **SMTP for password reset** (Brevo, Resend, or a Gmail app password): fill `SMTP_*` in `.env`. Without it "forgot password" cannot send the link.
 5. **Review the Privacy Policy and Terms** (`/privacy`, `/terms`) with someone who knows the rules where your users live. They are accurate to what the app collects, but they are drafts, not legal advice. Add your organization's name and address if you want them shown.
 6. **Take a fresh dump and rehearse once more** (`deploy/CUTOVER.md`, step "Before the day"), then run the cutover.
