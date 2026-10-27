@@ -114,3 +114,8 @@ get_payment_proof
 get_payment_receipt
 my_payment_receipts
 export_my_data
+save_finance_entry
+void_finance_entry
+get_finance_attachment
+get_finance_ledger
+get_finance_summary

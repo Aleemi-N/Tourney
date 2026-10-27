@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { BarChart3, CalendarDays, Gavel, LayoutDashboard, LayoutGrid, Settings, Shield, Trophy, UserCog, Users, Wallet } from 'lucide-react';
+import { BarChart3, CalendarDays, Gavel, LayoutDashboard, LayoutGrid, Settings, Shield, Trophy, ReceiptText, UserCog, Users, Wallet } from 'lucide-react';
 import { AppShell, type NavItem, type NavSection } from '@/components/ui/AppShell';
 
 interface DashboardShellProps {
@@ -40,6 +40,7 @@ export function DashboardShell({ children, user, lotEnabledTournamentIds = [] }:
         fixtures,
         { name: 'Standings', href: `${base}/standings`, icon: BarChart3 },
         { name: 'Payments', href: `${base}/payments`, icon: Wallet },
+        { name: 'Income & expenses', shortName: 'Finance', href: `${base}/finance`, icon: ReceiptText },
         { name: 'Settings', href: `${base}/settings`, icon: Settings },
       ],
     });
