@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 import { Choice, Field } from '@/components/form';
 import { PaymentSettings } from '@/components/payment-settings';
 import { RegistrationLimits } from '@/components/registration-limits';
+import { StreamSponsors } from '@/components/stream-sponsors';
 import { PhotoField } from '@/components/photo-field';
 import { OrganizerFrame, useTournamentName } from '@/components/organizer';
 import { portalCard, Section } from '@/components/shell';
@@ -81,6 +82,7 @@ export default function OrganizerSettings() {
           <DetailsForm id={id} initial={details} initialLogo={logo} onSaved={load} />
           <RegistrationForm id={id} config={config} auction={details.format === 'LEAGUE' && details.league_mode === 'AUCTION'} onSaved={load} />
           <Section title="Registration limits"><RegistrationLimits tournamentId={id} /></Section>
+          <Section title="Live stream & sponsors"><StreamSponsors tournamentId={id} /></Section>
           <Section title="Fees & Payments"><PaymentSettings tournamentId={id} /></Section>
           {details.format === 'LEAGUE' && details.league_mode === 'AUCTION' ? <PriceCategories id={id} /> : null}
           <Section title="Match Format">

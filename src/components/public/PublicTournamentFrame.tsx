@@ -12,6 +12,8 @@ import Image from 'next/image';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { cn } from '@/lib/utils';
+import { Video } from 'lucide-react';
+import { SponsorStrip, usePublicExtras } from './SponsorStrip';
 import { WebFollowButton } from './WebFollowButton';
 
 const TABS = [
@@ -33,6 +35,7 @@ interface Props {
 
 export function PublicTournamentFrame({ slug, name, logoUrl, status, children }: Props) {
   const pathname = usePathname();
+  const extras = usePublicExtras(slug);
   // Pages of one match or one team also offer to follow just that.
   const matchId = /^\/t\/[^/]+\/match\/([0-9a-f-]{36})(?:\/|$)/i.exec(pathname)?.[1];
   const teamId = /^\/t\/[^/]+\/teams\/([0-9a-f-]{36})(?:\/|$)/i.exec(pathname)?.[1];
@@ -56,6 +59,7 @@ export function PublicTournamentFrame({ slug, name, logoUrl, status, children }:
             </Link>
             <div className="flex shrink-0 items-center gap-1">
               {status === 'LIVE' ? <StatusPill status="LIVE" /> : null}
+              {extras?.stream_url ? <a href={extras.stream_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-live px-3 text-sm font-bold text-white hover:opacity-90"><Video className="h-4 w-4" aria-hidden="true" />Watch live</a> : null}
               {matchId ? <WebFollowButton kind="MATCH" targetId={matchId} label="this match" /> : null}
               {teamId ? <WebFollowButton kind="TEAM" targetId={teamId} label="this team" /> : null}
               <WebFollowButton kind="TOURNAMENT" slug={slug} label={name} />
@@ -86,6 +90,14 @@ export function PublicTournamentFrame({ slug, name, logoUrl, status, children }:
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-10">{children}</main>
+      {extras && extras.sponsors.length > 0 ? (
+        <footer aria-label="Sponsors" className="border-t border-border bg-surface">
+          <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+            <p className="mb-4 text-center text-xs font-bold uppercase tracking-[0.2em] text-text-muted">Our sponsors</p>
+            <SponsorStrip sponsors={extras.sponsors} />
+          </div>
+        </footer>
+      ) : null}
     </div>
   );
 }

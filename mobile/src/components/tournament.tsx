@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
 import { Moon, Sun } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/text';
-import { Body, Card, ErrorText, Loading, StatusPill } from '@/components/ui';
-import { api } from '@/lib/api';
+import { Body, Button, Card, ErrorText, Loading, StatusPill } from '@/components/ui';
+import { api, imageUrl } from '@/lib/api';
 import { useSetThemeChoice } from '@/lib/theme-choice';
 import { radius, tint, useIsDark, useTheme, type Palette } from '@/theme';
 
@@ -15,11 +15,18 @@ export type TournamentInfo = {
 };
 export type TeamInfo = { id: string; name: string; short_name: string | null; place: string | null; primary_color: string | null; secondary_color: string | null };
 
+export type Sponsor = { id: string; name: string; logo_path: string | null; website: string | null; tier: 'TITLE' | 'SPONSOR' | 'PARTNER' };
+export type PublicExtras = { stream_url: string | null; sponsors: Sponsor[] };
+
 /** The tournament and its teams, loaded once per screen. `null` means not found. */
 export function useTournament(slug: string) {
   const [tournament, setTournament] = useState<TournamentInfo | null | undefined>(undefined);
   const [teams, setTeams] = useState<TeamInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [extras, setExtras] = useState<PublicExtras | null>(null);
+  useEffect(() => {
+    api.rpc('get_public_extras', { p_slug: slug }).then(({ data }) => setExtras((data as unknown as PublicExtras | null) ?? null));
+  }, [slug]);
   useEffect(() => {
     (async () => {
       const { data, error: e } = await api.from('public_tournament_view')
@@ -31,7 +38,7 @@ export function useTournament(slug: string) {
       setTeams((t.data as TeamInfo[]) ?? []);
     })();
   }, [slug]);
-  return { tournament, teams, error };
+  return { tournament, teams, error, extras };
 }
 
 export const initials = (name: string) => name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
@@ -71,7 +78,7 @@ export function TournamentFrame({ slug, active, children }: { slug: string; acti
   const t = useTheme();
   const dark = useIsDark();
   const setChoice = useSetThemeChoice();
-  const { tournament, error } = useTournament(slug);
+  const { tournament, error, extras } = useTournament(slug);
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: t.background }}>
       <View style={{ backgroundColor: t.surface, borderBottomWidth: 1, borderBottomColor: t.border }}>
@@ -99,9 +106,34 @@ export function TournamentFrame({ slug, active, children }: { slug: string; acti
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}>
         {error ? <ErrorText>{error}</ErrorText> : null}
-        {tournament === null ? <Body muted>This tournament is unavailable or no longer public.</Body> : children}
+        {tournament === null ? <Body muted>This tournament is unavailable or no longer public.</Body> : (
+          <>
+            {extras?.stream_url ? <Button title="Watch live" accessibilityLabel="Watch the live stream" onPress={() => void Linking.openURL(extras.stream_url as string)} /> : null}
+            {children}
+            <Sponsors sponsors={extras?.sponsors ?? []} />
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/** Sponsor logos at the bottom of the public pages; the title sponsor is larger. */
+export function Sponsors({ sponsors }: { sponsors: Sponsor[] }) {
+  const t = useTheme();
+  if (sponsors.length === 0) return null;
+  return (
+    <View accessibilityLabel="Sponsors" style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: t.border, gap: 12, alignItems: 'center' }}>
+      <Text style={{ color: t.textMuted, fontSize: 12, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>Our sponsors</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 20 }}>
+        {sponsors.map((s) => {
+          const uri = imageUrl('logos', s.logo_path);
+          const height = s.tier === 'TITLE' ? 52 : s.tier === 'SPONSOR' ? 38 : 28;
+          const inner = uri ? <Image accessibilityLabel={s.name} source={{ uri }} style={{ height, width: height * 3 }} resizeMode="contain" /> : <Text style={{ color: t.textSecondary, fontSize: 14, fontWeight: '700' }}>{s.name}</Text>;
+          return s.website ? <Pressable key={s.id} accessibilityRole="link" accessibilityLabel={s.name} onPress={() => void Linking.openURL(s.website as string)}>{inner}</Pressable> : <View key={s.id}>{inner}</View>;
+        })}
+      </View>
+    </View>
   );
 }
 

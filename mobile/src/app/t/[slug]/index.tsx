@@ -1,13 +1,13 @@
 import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
 import { Calendar, CalendarDays, ChartColumn, ChevronRight, List, MapPin, Radio, User, Users, Volleyball } from 'lucide-react-native';
-import { Pressable, ScrollView, View, type DimensionValue } from 'react-native';
+import { Linking, Pressable, ScrollView, View, type DimensionValue } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/text';
 import { Body, Button, Card, StatusPill } from '@/components/ui';
 import { AnnouncementsCard } from '@/components/announcements';
 import { TournamentAwards } from '@/components/awards';
 import { FollowButton } from '@/components/follow-button';
-import { Empty, Loading, shortOf, Tile, useTournament } from '@/components/tournament';
+import { Empty, Loading, shortOf, Sponsors, Tile, useTournament } from '@/components/tournament';
 import { radius, tint, useTheme } from '@/theme';
 
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null);
@@ -16,7 +16,7 @@ const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString('en-GB', {
 export default function TournamentOverview() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const t = useTheme();
-  const { tournament, teams } = useTournament(slug);
+  const { tournament, teams, extras } = useTournament(slug);
 
   if (tournament === undefined) return <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}><Loading /></SafeAreaView>;
   if (tournament === null) return <SafeAreaView style={{ flex: 1, backgroundColor: t.background, padding: 16 }}><Empty text="This tournament is unavailable or no longer public." /></SafeAreaView>;
@@ -53,6 +53,8 @@ export default function TournamentOverview() {
           </View>
           {tournament.description ? <Text style={{ color: t.textSecondary, fontSize: 16, lineHeight: 24 }}>{tournament.description}</Text> : null}
         </View>
+
+        {extras?.stream_url ? <Button title="Watch live" accessibilityLabel="Watch the live stream" onPress={() => void Linking.openURL(extras.stream_url as string)} /> : null}
 
         <Card style={{ padding: 0, gap: 0 }}>
           {facts.map((f, i) => (
@@ -123,6 +125,7 @@ export default function TournamentOverview() {
             ))}
           </View>
         </View>
+        <Sponsors sponsors={extras?.sponsors ?? []} />
         <Body muted>Built on the Tourny platform.</Body>
       </ScrollView>
     </SafeAreaView>

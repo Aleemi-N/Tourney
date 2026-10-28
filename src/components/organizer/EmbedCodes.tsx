@@ -12,6 +12,7 @@ export function EmbedCodes({ slug }: { slug: string }) {
     <details className="mt-4 rounded-xl border border-border bg-surface p-4">
       <summary className="cursor-pointer text-sm font-semibold text-text-primary">Embed on your website</summary>
       <p className="mt-2 text-xs text-text-secondary">Paste one of these into your club website. It updates by itself and links back to Tourny. Add <code>?theme=dark</code> to the address for a dark version. A single match can be embedded with <code>/embed/t/{slug}/live/&lt;match id&gt;</code>.</p>
+      <p className="mt-2 text-xs text-text-secondary">For a live stream, add <code>{origin}/embed/t/{slug}/overlay/&lt;match id&gt;</code> to OBS or vMix as a Browser Source (transparent background). It shows a scoreboard bar that updates every few seconds. Add <code>?pos=top</code> to put it at the top, <code>?sponsors=1</code> to show your sponsors under it, and <code>?refresh=2</code> to update every 2 seconds.</p>
       <div className="mt-3 space-y-3">
         {widgets.map((w) => (
           <label key={w.path} className="block text-xs font-medium text-text-secondary">

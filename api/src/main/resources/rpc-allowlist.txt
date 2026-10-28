@@ -121,3 +121,8 @@ get_finance_ledger
 get_finance_summary
 set_registration_limits
 get_registration_status
+set_stream_url
+get_public_extras
+list_sponsors
+save_sponsor
+delete_sponsor
