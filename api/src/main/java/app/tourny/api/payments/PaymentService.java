@@ -137,6 +137,9 @@ class PaymentService {
         if (Boolean.TRUE.equals(jdbc.sql("SELECT public.registration_settled(?, ?, ?)").param(kind).param(registrationId).param(reg.tournamentId()).query(Boolean.class).single())) {
             throw new PaymentException(409, "The fee is already paid");
         }
+        if (Boolean.TRUE.equals(jdbc.sql("SELECT public.registration_waitlisted(?, ?)").param(kind).param(registrationId).query(Boolean.class).single())) {
+            throw new PaymentException(409, "You are on the waitlist. You can pay when a place opens up.");
+        }
         Keys keys = keys(reg.tournamentId());
         if (keys == null) throw new PaymentException(409, "The organizer takes this fee offline. Pay them directly and they will mark you as paid.");
 

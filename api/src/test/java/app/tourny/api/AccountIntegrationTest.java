@@ -72,6 +72,14 @@ class AccountIntegrationTest {
 
         Path upload = Files.createDirectories(storage.resolve("avatars").resolve(userId)).resolve("photo.png");
         Files.writeString(upload, "x");
+        // A photo whose path is not under the person's folder (the database holds the path, so deleting the account must remove the file).
+        Path legacy = Files.createDirectories(storage.resolve("avatars").resolve("legacy")).resolve(userId + ".png");
+        Files.writeString(legacy, "z");
+        try (Connection c = DriverManager.getConnection(DB_URL, "postgres", "postgres"); var st = c.prepareStatement("UPDATE public.profiles SET avatar_path = ? WHERE id = ?::uuid")) {
+            st.setString(1, "legacy/" + userId + ".png");
+            st.setString(2, userId);
+            st.executeUpdate();
+        }
         Path someoneElses = Files.createDirectories(storage.resolve("avatars").resolve("00000000-0000-0000-0000-000000000abc")).resolve("keep.png");
         Files.writeString(someoneElses, "y");
 
@@ -82,7 +90,11 @@ class AccountIntegrationTest {
         var done = send("/account/v1/delete", "{\"confirm\":\"DELETE\"}", token);
         assertEquals(200, done.statusCode(), done.body());
         assertFalse(Files.exists(upload), "the person's files are removed");
+        assertFalse(Files.exists(legacy), "a photo stored outside the person's folder is removed too");
         assertTrue(Files.exists(someoneElses), "other people's files are not");
+        // The access token issued before the deletion is refused from now on, even though it has not expired.
+        var stale = HTTP.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/rest/v1/profiles?select=id")).header("Authorization", "Bearer " + token).GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(401, stale.statusCode(), stale.body());
         assertEquals(400, send("/auth/v1/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\"}", null).statusCode(), "cannot sign in any more");
 
         try (Connection c = DriverManager.getConnection(DB_URL, "postgres", "postgres"); var st = c.prepareStatement("SELECT status, email FROM public.profiles WHERE id = ?::uuid")) {

@@ -3,19 +3,22 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { callRpc } from '@/lib/web-push';
+import { usePublicExtrasContext } from './PublicExtrasProvider';
 
 export type Sponsor = { id: string; name: string; logo_path: string | null; website: string | null; tier: 'TITLE' | 'SPONSOR' | 'PARTNER' };
 export type PublicExtras = { stream_url: string | null; sponsors: Sponsor[] };
 
 /** The stream link and sponsors of a public tournament (null while loading or when there is nothing to show). */
 export function usePublicExtras(slug: string): PublicExtras | null {
-  const [extras, setExtras] = useState<PublicExtras | null>(null);
+  const provided = usePublicExtrasContext(); // the tournament pages get it from the server layout
+  const [fetched, setFetched] = useState<PublicExtras | null>(null);
   useEffect(() => {
+    if (provided !== undefined) return;
     let live = true;
-    void callRpc('get_public_extras', { p_slug: slug }).then(({ data }) => { if (live) setExtras((data as PublicExtras | null) ?? null); });
+    void callRpc('get_public_extras', { p_slug: slug }).then(({ data }) => { if (live) setFetched((data as PublicExtras | null) ?? null); });
     return () => { live = false; };
-  }, [slug]);
-  return extras;
+  }, [slug, provided]);
+  return provided !== undefined ? provided : fetched;
 }
 
 const logoUrl = (path: string) => createClient().storage.from('logos').getPublicUrl(path).data.publicUrl;

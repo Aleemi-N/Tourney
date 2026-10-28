@@ -8,7 +8,7 @@ export type Fees = { player_fee: number; team_fee: number; currency: string; onl
 
 /** The link that opens the payer's UPI app (GPay, PhonePe, Paytm...) with the payee, amount and a note filled in. */
 export const upiLink = (upiId: string, payee: string | null, amount: number, note: string) =>
-  `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payee || 'Organizer')}&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(note.slice(0, 40))}`;
+  `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payee || 'Organizer')}&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(note.slice(0, 40))}`;
 
 export const rupees = (n: number | string | null | undefined) => `₹${Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 

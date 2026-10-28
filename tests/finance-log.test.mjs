@@ -53,7 +53,8 @@ try {
   await call("SELECT public.mark_registration_paid('PLAYER', $1, 'PAID', NULL)", [regs[0].id]);
   await call("SELECT public.mark_registration_paid('PLAYER', $1, 'WAIVED', NULL)", [regs[1].id]); // a waiver is no income
   const pay = (await call("SELECT payment_id FROM public.list_registration_payments($1) WHERE registration_id=$2", [T1, regs[0].id]))[0].payment_id;
-  await call("SELECT public.record_manual_refund($1, 50, NULL)", [pay]);
+  await call("SELECT public.record_manual_refund($1, 30, NULL)", [pay]);
+  await call("SELECT public.record_manual_refund($1, 20, NULL)", [pay]);
 
   let s = await summary();
   assert.equal(Number(s.fees_collected), 250, 'only the paid fee, not the waived one');
@@ -65,7 +66,12 @@ try {
   assert.equal(cat('INCOME', 'Registration fees'), 250); assert.equal(cat('EXPENSE', 'Refunds'), 50); assert.equal(cat('EXPENSE', 'Venue'), 5000);
 
   let ledger = await call('SELECT * FROM public.get_finance_ledger($1)', [T1]);
-  assert.deepEqual(ledger.map((l) => l.source).sort(), ['ENTRY', 'ENTRY', 'ENTRY', 'FEE', 'REFUND']);
+  assert.deepEqual(ledger.map((l) => l.source).sort(), ['ENTRY', 'ENTRY', 'ENTRY', 'FEE', 'REFUND', 'REFUND'], 'each refund is its own line');
+  // A later change to the payment does not move an earlier refund's date.
+  const refundDates = (await call("SELECT occurred_on FROM public.get_finance_ledger($1) WHERE source='REFUND'", [T1])).map((r) => String(r.occurred_on));
+  await raw("UPDATE public.registration_payments SET updated_at = now() + interval '40 days', note = 'touched' WHERE id=$1", [pay]);
+  await as(org);
+  assert.deepEqual((await call("SELECT occurred_on FROM public.get_finance_ledger($1) WHERE source='REFUND'", [T1])).map((r) => String(r.occurred_on)), refundDates);
   assert.ok(ledger.find((l) => l.source === 'FEE').description.startsWith('Registration fee: '));
   assert.equal(ledger.find((l) => l.id === venue).has_attachment, true);
   assert.equal(ledger.find((l) => l.id === refs).has_attachment, false);
@@ -83,7 +89,8 @@ try {
   await call("SELECT public.save_finance_entry($1, $2, 'EXPENSE', 'Venue', 5500, '2026-10-20', NULL, NULL, NULL, true)", [T1, venue]);
   assert.equal((await call('SELECT public.get_finance_attachment($1) AS a', [venue]))[0].a, null);
   const edits = await raw("SELECT before_json, after_json FROM public.audit_logs WHERE entity_id=$1 AND action='FINANCE_ENTRY_EDITED' ORDER BY created_at", [venue]);
-  assert.equal(edits.length, 2); assert.equal(Number(edits[0].before_json.amount), 5000); assert.equal(Number(edits[0].after_json.amount), 5500);
+  assert.equal(edits.length, 2); // both rows share one transaction timestamp, so look for the change rather than relying on their order
+  assert.ok(edits.some((e) => Number(e.before_json.amount) === 5000 && Number(e.after_json.amount) === 5500), 'the amount change is logged with before and after');
   await as(org);
 
   // Void: the entry stays in the log, leaves the totals, cannot be edited, and can be restored. Everything is logged.

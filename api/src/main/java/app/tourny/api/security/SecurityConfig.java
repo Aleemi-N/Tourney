@@ -21,6 +21,13 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
+import java.util.UUID;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 
 /** Stateless API: callers log in once and send the access token as a Bearer header. */
 @Configuration
@@ -64,8 +71,20 @@ class SecurityConfig {
     }
 
     @Bean
-    JwtDecoder jwtDecoder() {
-        return NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
+    JwtDecoder jwtDecoder(AccountGuard accounts) {
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
+        // A token outlives its account, so a deleted account's token is refused even though it has not expired.
+        OAuth2TokenValidator<Jwt> notDeleted = jwt -> {
+            UUID user;
+            try {
+                user = UUID.fromString(jwt.getSubject());
+            } catch (RuntimeException e) {
+                return OAuth2TokenValidatorResult.success(); // the anonymous key and service keys carry no user
+            }
+            return accounts.isDeleted(user) ? OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token", "This account was deleted", null)) : OAuth2TokenValidatorResult.success();
+        };
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(JwtValidators.createDefault(), notDeleted));
+        return decoder;
     }
 
     @Bean

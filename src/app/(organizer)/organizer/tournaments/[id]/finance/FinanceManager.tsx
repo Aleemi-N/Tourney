@@ -13,7 +13,8 @@ const CATEGORIES = {
   EXPENSE: ['Venue', 'Referees', 'Trophies & prizes', 'Balls & equipment', 'Food & water', 'Printing & branding', 'Travel', 'Medical', 'Streaming & media', 'Other expense'],
 };
 const input = 'mt-1.5 min-h-11 w-full rounded-xl border border-border bg-background px-3 text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40';
-const today = () => new Date().toISOString().slice(0, 10);
+/** Today in the device's own time zone (toISOString would give the UTC day, which is yesterday in India after midnight). */
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const blank = { id: null as string | null, kind: 'EXPENSE' as 'INCOME' | 'EXPENSE', category: '', amount: '', date: today(), description: '', party: '' };
 
 /** The tournament's income and expense log: totals, the entries, adding and correcting, and a CSV export. */

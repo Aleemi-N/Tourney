@@ -21,7 +21,8 @@ const CATEGORIES = {
   INCOME: ['Sponsorship', 'Donation', 'Merchandise', 'Food stall', 'Other income'],
   EXPENSE: ['Venue', 'Referees', 'Trophies & prizes', 'Balls & equipment', 'Food & water', 'Printing & branding', 'Travel', 'Medical', 'Streaming & media', 'Other expense'],
 };
-const today = () => new Date().toISOString().slice(0, 10);
+/** Today in the device's own time zone (toISOString would give the UTC day, which is yesterday in India after midnight). */
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const blank = { id: null as string | null, kind: 'EXPENSE' as 'INCOME' | 'EXPENSE', category: '', amount: '', date: today(), description: '', party: '' };
 
 /** Income and expense log of the tournament: totals, entries, adding and correcting, and a CSV export. */

@@ -49,10 +49,23 @@ try {
   assert.equal(st.player_spots_left, 0); assert.equal(st.waitlist, p.length); assert.equal(st.open, true);
   await fails("SELECT public.approve_player_registration($1, 'ICON_LOT', NULL)", [p[0].id], /tournament is full/);
 
+  // Someone on the waitlist is not asked to pay (and cannot submit a payment) until they have a place.
+  await as(org);
+  await call("SELECT public.set_registration_fees($1, 250, 0)", [T1]);
+  await call("SELECT public.set_upi_details($1, 'ravi@okhdfc', 'Ravi')", [T1]);
+  const waiting = (await raw("SELECT r.id, u.email FROM public.player_tournament_registrations r JOIN public.player_profiles pp ON pp.id=r.player_id JOIN auth.users u ON u.id=pp.user_id WHERE r.id=$1", [p[0].id]))[0];
+  await as(waiting.email);
+  assert.ok(!(await call('SELECT * FROM public.my_payments_due()')).some((d) => d.registration_id === waiting.id), 'a waitlisted player owes nothing yet');
+  await fails("SELECT public.submit_upi_payment('PLAYER', $1, '402100000001')", [waiting.id], /on the waitlist/);
+  await as(org);
   // Raising the limit moves people off the waitlist; approving one moves the rest up.
   await call('SELECT public.set_registration_limits($1, NULL, $2, NULL, NULL)', [T1, approved + 2]);
   p = await positions();
   assert.deepEqual(p.slice(0, 2).map((x) => x.waitlist_position), [null, null]);
+  await as(waiting.email);
+  assert.ok((await call('SELECT * FROM public.my_payments_due()')).some((d) => d.registration_id === waiting.id), 'with a place they are asked to pay');
+  await as(org);
+  await call('SELECT public.set_registration_fees($1, 0, 0)', [T1]);
   assert.deepEqual(p.slice(2).map((x) => x.waitlist_position), p.slice(2).map((_, i) => i + 1));
   await call("SELECT public.approve_player_registration($1, 'ICON_LOT', NULL)", [p[0].id]);
   p = await positions();
