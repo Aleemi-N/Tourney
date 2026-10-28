@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "lint:design": "node scripts/lint-design.mjs"
+    "lint:design": "node scripts/lint-design.mjs",
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
