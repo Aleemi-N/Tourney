@@ -3,6 +3,7 @@ import { useContext, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Choice } from '@/components/form';
 import { AccountData } from '@/components/account-data';
+import { MyCertificates } from '@/components/certificates';
 import { PaymentReceipts, PaymentsDue } from '@/components/payments';
 import { usePush } from '@/lib/push';
 import { useIsSuperAdmin } from '@/components/admin';
@@ -121,6 +122,7 @@ export default function AccountScreen() {
 
       <PaymentsDue />
       <PaymentReceipts />
+      <MyCertificates />
 
       {loaded ? (
         <Section title="My tournaments">

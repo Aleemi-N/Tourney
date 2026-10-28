@@ -126,3 +126,6 @@ get_public_extras
 list_sponsors
 save_sponsor
 delete_sponsor
+get_certificates
+get_certificate
+my_certificates
