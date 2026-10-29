@@ -12,4 +12,6 @@ cp .env.example .env.local                       # NEXT_PUBLIC_API_URL=http://lo
 pnpm dev                                         # the website on :3000
 ```
 
+After changing a migration run `pnpm db:reset` and `pnpm db:types` (regenerates `src/lib/api/types.ts`).
+
 Tests: `pnpm test` (database and client tests, after `pnpm db:reset`), `cd api && ./mvnw test`, and `tests/e2e-journey.mjs` for the full lifecycle (see its header). The mobile app is in `mobile/` (see its README).

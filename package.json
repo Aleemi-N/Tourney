@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "lint:design": "node scripts/lint-design.mjs",
     "db:reset": "bash deploy/dev-stack.sh",
+    "db:types": "node scripts/gen-types.mjs",
     "test": "node --test --test-concurrency=1 tests/*.test.mjs"
   },
   "dependencies": {

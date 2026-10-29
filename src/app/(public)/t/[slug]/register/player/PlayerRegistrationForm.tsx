@@ -52,7 +52,7 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
         p_tournament_id: tournamentId,
         p_display_name: displayName,
         p_primary_position: submittedPrimaryPosition,
-        p_photo_path: photoUrl || undefined,
+        p_photo_path: photoUrl || null,
         p_date_of_birth: dob || undefined,
         p_phone: phone || undefined,
         p_place: place || undefined,
