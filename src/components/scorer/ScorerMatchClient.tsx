@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCcw, Undo2, Trophy, Clock, Wifi, WifiOff, Hourglass, MapPin, ArrowLeftRight, Settings2 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { Button } from '@/components/ui/Button';
 import { cardClasses } from '@/components/ui/Card';
 import { StatusPill } from '@/components/ui/StatusPill';
@@ -88,7 +88,7 @@ export function ScorerMatchClient({
   const [conn, setConn] = useState<'connecting' | 'live' | 'reconnecting'>('connecting');
   const [now, setNow] = useState(() => Date.now());
 
-  const supabase = useMemo(() => createClient(), []);
+  const api = useMemo(() => createClient(), []);
   const isWorking = useRef(false);
   const isSubmittingRef = useRef(false);
   const nextIkey = useRef(crypto.randomUUID());
@@ -101,18 +101,18 @@ export function ScorerMatchClient({
       : state.sets.find((s) => s.status === 'PENDING' || s.status === 'LIVE') ?? state.sets[state.sets.length - 1];
 
   const refresh = useCallback(async () => {
-    const { data, error } = await supabase.rpc('get_scorer_match_state', {
+    const { data, error } = await api.rpc('get_scorer_match_state', {
       p_match_id: state.match.id,
     });
     if (!error && data) {
       setState(data as MatchState);
       setConn('live');
     }
-  }, [state.match.id, supabase]);
+  }, [state.match.id, api]);
 
   // Realtime subscriptions
   useEffect(() => {
-    const channel = supabase
+    const channel = api
       .channel(`scorer-match-${state.match.id}`)
       .on(
         'postgres_changes',
@@ -149,9 +149,9 @@ export function ScorerMatchClient({
     return () => {
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('online', onOnline);
-      void supabase.removeChannel(channel);
+      void api.removeChannel(channel);
     };
-  }, [refresh, state.match.id, supabase]);
+  }, [refresh, state.match.id, api]);
 
   // Authoritative countdown timer for active timeout
   const rawActiveTimeout = state.timeouts?.active;
@@ -212,7 +212,7 @@ export function ScorerMatchClient({
     }
 
     try {
-      const { error } = await supabase.rpc('award_point', {
+      const { error } = await api.rpc('award_point', {
         p_match_id: state.match.id,
         p_team_id: teamId,
         p_idempotency_key: key,
@@ -239,7 +239,7 @@ export function ScorerMatchClient({
     setPending(true);
     setErrorMsg(null);
     try {
-      const { error } = await supabase.rpc('undo_last_score_event', {
+      const { error } = await api.rpc('undo_last_score_event', {
         p_match_id: state.match.id,
       });
       if (error) {
@@ -262,7 +262,7 @@ export function ScorerMatchClient({
     setPending(true);
     setErrorMsg(null);
     try {
-      const { error } = await supabase.rpc('call_match_timeout', {
+      const { error } = await api.rpc('call_match_timeout', {
         p_match_id: state.match.id,
         p_team_id: teamId,
       });
@@ -284,7 +284,7 @@ export function ScorerMatchClient({
     setPending(true);
     setErrorMsg(null);
     try {
-      const { error } = await supabase.rpc('end_match_timeout', {
+      const { error } = await api.rpc('end_match_timeout', {
         p_match_id: state.match.id,
       });
       if (error) {

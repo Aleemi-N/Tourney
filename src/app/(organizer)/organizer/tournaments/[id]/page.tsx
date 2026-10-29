@@ -1,4 +1,4 @@
-import { getTournament } from '@/lib/supabase/server';
+import { getTournament } from '@/lib/api/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -11,7 +11,7 @@ import { RegistrationStatusControl } from './RegistrationStatusControl';
 import { TournamentStatsServer } from './TournamentStatsServer';
 import { OrganizerLinkPending } from '@/components/organizer/OrganizerLinkPending';
 import { TournamentApprovalStatus } from '@/components/organizer/TournamentApprovalStatus';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import type { ApprovalStatus } from '@/lib/super-admin-types';
 
 export const dynamic = 'force-dynamic';
@@ -40,9 +40,9 @@ async function TournamentOverviewContent({
     notFound();
   }
 
-  const supabase = await createClient();
-  const { data: branding } = await supabase.from('tournament_branding').select('logo_path').eq('tournament_id', id).maybeSingle();
-  const logoUrl = branding?.logo_path ? supabase.storage.from('logos').getPublicUrl(branding.logo_path).data.publicUrl : null;
+  const api = await createClient();
+  const { data: branding } = await api.from('tournament_branding').select('logo_path').eq('tournament_id', id).maybeSingle();
+  const logoUrl = branding?.logo_path ? api.storage.from('logos').getPublicUrl(branding.logo_path).data.publicUrl : null;
 
   // Approval fields — with safe fallback for pre-migration rows
   const t = tournament as Record<string, unknown>;

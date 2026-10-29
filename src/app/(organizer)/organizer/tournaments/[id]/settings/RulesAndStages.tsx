@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, Layers, Trash2 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { Button } from '@/components/ui/Button';
 import { cardClasses } from '@/components/ui/Card';
 import { Field, Input } from '@/components/ui/Field';
@@ -29,12 +29,12 @@ type RemovalPlan = {
 const presets = { BO3: { setsToWin: 2, sets: [25, 25, 15] }, BO5: { setsToWin: 3, sets: [25, 25, 25, 25, 15] } };
 
 function RuleEditor({ tournamentId, stageId, label, rule }: { tournamentId: string; stageId: string | null; label: string; rule?: VolleyballRule }) {
-  const router = useRouter(); const supabase = createClient();
+  const router = useRouter(); const api = createClient();
   const initialSets = rule?.set_rules.length ? rule.set_rules : presets.BO3.sets.map((target_points, index) => ({ set_number: index + 1, target_points }));
   const [setsToWin, setSetsToWin] = useState(rule?.sets_to_win ?? 2); const [sets, setSets] = useState<SetRule[]>(initialSets); const [winByTwo, setWinByTwo] = useState(rule?.win_by_two ?? true); const [state, setState] = useState('');
   const preset = setsToWin === 2 && sets.length === 3 ? 'BO3' : setsToWin === 3 && sets.length === 5 ? 'BO5' : 'CUSTOM';
   function choosePreset(value: string) { if (value === 'BO3' || value === 'BO5') { const next = presets[value]; setSetsToWin(next.setsToWin); setSets(next.sets.map((target_points, index) => ({ set_number: index + 1, target_points }))); } }
-  async function save() { setState('Saving…'); const { error } = await supabase.rpc('save_volleyball_rule', { p_tournament_id: tournamentId, p_stage_id: stageId as string, p_sets_to_win: setsToWin, p_win_by_two: winByTwo, p_set_rules: (sets as unknown) as string }); setState(error ? error.message : 'Saved'); if (!error) router.refresh(); }
+  async function save() { setState('Saving…'); const { error } = await api.rpc('save_volleyball_rule', { p_tournament_id: tournamentId, p_stage_id: stageId as string, p_sets_to_win: setsToWin, p_win_by_two: winByTwo, p_set_rules: (sets as unknown) as string }); setState(error ? error.message : 'Saved'); if (!error) router.refresh(); }
   return <article className="rounded-xl border border-border bg-surface-muted p-4"><div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold text-text-primary">{label}</h3><select value={preset} onChange={e => choosePreset(e.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"><option value="BO3">Best of 3</option><option value="BO5">Best of 5</option><option value="CUSTOM">Custom</option></select></div><div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="text-sm text-text-secondary">Sets required to win<input type="number" min="1" value={setsToWin} onChange={e => setSetsToWin(Number(e.target.value))} className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-text-primary" /></label><label className="flex items-center gap-3 self-end rounded-lg bg-surface p-3 text-sm text-text-primary"><input type="checkbox" checked={winByTwo} onChange={e => setWinByTwo(e.target.checked)} className="h-5 w-5 accent-primary" />Win by 2</label></div><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{sets.map((setRule, index) => <label key={setRule.set_number} className="text-xs text-text-secondary">Set {setRule.set_number}<input aria-label={`Set ${setRule.set_number} target points`} type="number" min="1" value={setRule.target_points} onChange={e => setSets(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, target_points: Number(e.target.value) } : item))} className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-text-primary" /></label>)}</div><div className="mt-4 flex flex-wrap items-center justify-between gap-3"><button type="button" onClick={() => setSets(current => [...current, { set_number: current.length + 1, target_points: 25 }])} className="text-sm font-medium text-primary">+ Add set</button><div className="flex items-center gap-3"><span className="text-xs text-text-secondary">{state}</span><button type="button" onClick={save} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Save rule</button></div></div></article>;
 }
 
@@ -63,7 +63,7 @@ export function RulesAndStages({ tournamentId, stages, rules }: { tournamentId: 
  */
 function StageList({ tournamentId, stages }: { tournamentId: string; stages: Stage[] }) {
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
+  const api = useMemo(() => createClient(), []);
   const [checkingId, setCheckingId] = useState<string | null>(null);
   const [removal, setRemoval] = useState<RemovalPlan | null>(null);
   const [confirmation, setConfirmation] = useState('');
@@ -74,7 +74,7 @@ function StageList({ tournamentId, stages }: { tournamentId: string; stages: Sta
   async function previewRemoval(stageId: string) {
     setMessage(null);
     setCheckingId(stageId);
-    const { data, error } = await supabase.rpc('preview_tournament_stage_removal', { p_stage_id: stageId });
+    const { data, error } = await api.rpc('preview_tournament_stage_removal', { p_stage_id: stageId });
     setCheckingId(null);
     if (error) {
       setMessage({ tone: 'danger', text: error.message });
@@ -87,7 +87,7 @@ function StageList({ tournamentId, stages }: { tournamentId: string; stages: Sta
   async function removeStage() {
     if (!removal) return;
     setRemoving(true);
-    const { error } = await supabase.rpc('remove_tournament_stage', {
+    const { error } = await api.rpc('remove_tournament_stage', {
       p_stage_id: removal.stage_id,
       p_expected_snapshot: removal.snapshot,
       p_confirmation: confirmation,

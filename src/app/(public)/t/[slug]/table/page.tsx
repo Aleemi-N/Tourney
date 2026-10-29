@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getTournamentHeader } from '@/lib/tournament-header';
 import { PublicTournamentFrame } from '@/components/public/PublicTournamentFrame';
 import { TournamentNotFound, EmptyState } from '@/components/public/TournamentNotFound';
@@ -48,8 +48,8 @@ export default async function PublicTablePage({ params }: Props) {
   const tournament = await getTournamentHeader(slug);
   if (!tournament) return <TournamentNotFound />;
 
-  const supabase = await createClient();
-  const { data: standings } = await supabase.rpc('get_public_standings', { p_tournament_id: tournament.id });
+  const api = await createClient();
+  const { data: standings } = await api.rpc('get_public_standings', { p_tournament_id: tournament.id });
   const rows = (standings ?? []) as StandingsRow[];
 
   return (

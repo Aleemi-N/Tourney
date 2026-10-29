@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CertificateSheet, KIND_LABEL, type Certificate } from '@/components/certificates/CertificateSheet';
 import { PrintButton } from '@/components/certificates/PrintButton';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getTournamentHeader } from '@/lib/tournament-header';
 
 export const dynamic = 'force-dynamic';
@@ -13,8 +13,8 @@ export default async function CertificatesPrintPage({ params, searchParams }: { 
   const { slug } = await params;
   const { kind } = await searchParams;
   const tournament = await getTournamentHeader(slug);
-  const supabase = (await createClient()) as unknown as { rpc: (n: string, a: Record<string, unknown>) => PromiseLike<{ data: unknown }> };
-  const { data } = tournament ? await supabase.rpc('get_certificates', { p_tournament_id: tournament.id }) : { data: null };
+  const api = (await createClient()) as unknown as { rpc: (n: string, a: Record<string, unknown>) => PromiseLike<{ data: unknown }> };
+  const { data } = tournament ? await api.rpc('get_certificates', { p_tournament_id: tournament.id }) : { data: null };
   const all = (data ?? []) as Certificate[];
   const certs = kind && KIND_LABEL[kind] ? all.filter((c) => c.kind === kind) : all;
   return (

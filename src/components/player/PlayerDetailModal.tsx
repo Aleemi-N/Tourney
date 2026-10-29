@@ -14,8 +14,8 @@ import {
   ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
-import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
-import { createClient } from '@/lib/supabase/client';
+import { resolvePublicStorageUrl } from '@/lib/api/storage-url';
+import { createClient } from '@/lib/api/client';
 import { formatVolleyballPosition } from '@/lib/volleyball-positions';
 import { downloadSinglePlayerCardPNG } from '@/lib/generate-player-card';
 
@@ -65,13 +65,13 @@ export function PlayerDetailModal({ isOpen, onClose, player }: PlayerDetailModal
 
   if (!isOpen || !player) return null;
 
-  const supabase = createClient();
-  const photoUrl = resolvePublicStorageUrl(supabase, 'avatars', player.photo_path);
+  const api = createClient();
+  const photoUrl = resolvePublicStorageUrl(api, 'avatars', player.photo_path);
   const initial = player.display_name.trim().charAt(0).toUpperCase();
 
   async function downloadCardPNG() {
     if (!player) return;
-    await downloadSinglePlayerCardPNG(player, supabase);
+    await downloadSinglePlayerCardPNG(player, api);
   }
 
   async function downloadPhoto() {

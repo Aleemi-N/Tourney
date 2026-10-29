@@ -6,7 +6,7 @@ const migration = readFileSync(
   new URL('../db/migrations/20260921000021_tournament_staff_and_branding.sql', import.meta.url),
   'utf8',
 );
-const serverHelper = readFileSync(new URL('../src/lib/supabase/server.ts', import.meta.url), 'utf8');
+const serverHelper = readFileSync(new URL('../src/lib/api/server.ts', import.meta.url), 'utf8');
 
 test('organizer authorization explicitly requires an active organizer role', () => {
   assert.match(serverHelper, /\.eq\('role', 'ORGANIZER'\)/);

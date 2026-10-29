@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getTournamentHeader } from '@/lib/tournament-header';
 import { TournamentNotFound } from '@/components/public/TournamentNotFound';
 import { PublicTournamentFrame } from '@/components/public/PublicTournamentFrame';
@@ -38,12 +38,12 @@ export default async function PublicLivePage({ params }: Props) {
   const tournament = await getTournamentHeader(slug);
   if (!tournament) return <TournamentNotFound />;
 
-  const supabase = await createClient();
+  const api = await createClient();
   const isAuctionLeague = tournament.format === 'LEAGUE' && tournament.league_mode === 'AUCTION';
 
   // ── 1. Auction Live (highest priority during PREPARATION/AUCTION phase) ────
   if (isAuctionLeague) {
-    const { data: latestAuctionEvent } = await supabase
+    const { data: latestAuctionEvent } = await api
       .from('auction_public_events')
       .select('auction_id, created_at')
       .eq('tournament_id', tournament.id)
@@ -53,7 +53,7 @@ export default async function PublicLivePage({ params }: Props) {
 
     let targetAuctionId = latestAuctionEvent?.auction_id;
     if (!targetAuctionId) {
-      const { data: auctionData } = await supabase
+      const { data: auctionData } = await api
         .from('auctions')
         .select('id')
         .eq('tournament_id', tournament.id)
@@ -62,7 +62,7 @@ export default async function PublicLivePage({ params }: Props) {
     }
 
     if (targetAuctionId) {
-      const { data: auctionState, error } = await supabase.rpc('get_auction_public_state', {
+      const { data: auctionState, error } = await api.rpc('get_auction_public_state', {
         p_auction_id: targetAuctionId,
       });
       if (!error && auctionState) {
@@ -92,7 +92,7 @@ export default async function PublicLivePage({ params }: Props) {
   }
 
   // ── 2. Live Matches ────────────────────────────────────────────────────────
-  const { data: liveMatches } = await supabase
+  const { data: liveMatches } = await api
     .from('public_fixture_view')
     .select('id,match_number,home_team_id,away_team_id,status,venue,court')
     .eq('tournament_id', tournament.id)
@@ -102,13 +102,13 @@ export default async function PublicLivePage({ params }: Props) {
     (liveMatches ?? []).flatMap((m) => [m.home_team_id, m.away_team_id]).filter(Boolean)
   )];
   const { data: matchTeams } = matchTeamIds.length
-    ? await supabase.from('public_team_view').select('id,name,short_name').in('id', matchTeamIds)
+    ? await api.from('public_team_view').select('id,name,short_name').in('id', matchTeamIds)
     : { data: [] };
 
   const teamName = (id: string | null) => matchTeams?.find((t) => t.id === id)?.name ?? 'TBD';
 
   // ── 3. Lot Draw fallback ───────────────────────────────────────────────────
-  const { data: events } = await supabase
+  const { data: events } = await api
     .from('lot_public_events')
     .select('lot_session_id, lot_type, created_at')
     .eq('tournament_id', tournament.id)
@@ -122,7 +122,7 @@ export default async function PublicLivePage({ params }: Props) {
 
   const snapshots = await Promise.all(
     latestSessionIds.map(async (sessionId) => {
-      const { data } = await supabase.rpc('get_lot_public_state', {
+      const { data } = await api.rpc('get_lot_public_state', {
         p_lot_session_id: sessionId,
       });
       return data as unknown as PublicLotState | null;
@@ -134,7 +134,7 @@ export default async function PublicLivePage({ params }: Props) {
     snapshots.find((s) => s?.session.status === 'COMPLETED') ??
     null;
 
-  const { data: teams } = await supabase
+  const { data: teams } = await api
     .from('public_team_view')
     .select('id, name, short_name')
     .eq('tournament_id', tournament.id);

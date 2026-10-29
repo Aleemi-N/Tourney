@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * The part of the Supabase Storage API the app uses (public reads, upload, delete), backed by a
+ * The image storage the app uses (public reads, upload, delete), backed by a
  * directory. Buckets and rules follow the old storage policies: images only, 2 MB, and a user
  * writes under their own id; an organizer also writes under their tournament's id in "logos".
  */
@@ -54,9 +54,9 @@ class StorageController {
         this.tx = tx;
     }
 
-    @GetMapping("/storage/v1/object/public/{bucket}/**")
+    @GetMapping("/storage/object/public/{bucket}/**")
     ResponseEntity<Resource> read(@PathVariable String bucket, HttpServletRequest request) {
-        Path file = resolve(bucket, objectName(request, "/storage/v1/object/public/" + bucket + "/"));
+        Path file = resolve(bucket, objectName(request, "/storage/object/public/" + bucket + "/"));
         if (!Files.isRegularFile(file)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Object not found");
         return ResponseEntity.ok()
                 .contentType(contentType(file))
@@ -66,17 +66,17 @@ class StorageController {
                 .body(new FileSystemResource(file));
     }
 
-    @PostMapping("/storage/v1/object/{bucket}/**")
+    @PostMapping("/storage/object/{bucket}/**")
     ResponseEntity<Map<String, String>> create(@PathVariable String bucket, HttpServletRequest request, @AuthenticationPrincipal Jwt jwt) throws Exception {
         return write(bucket, request, jwt, false);
     }
 
-    @PutMapping("/storage/v1/object/{bucket}/**")
+    @PutMapping("/storage/object/{bucket}/**")
     ResponseEntity<Map<String, String>> replace(@PathVariable String bucket, HttpServletRequest request, @AuthenticationPrincipal Jwt jwt) throws Exception {
         return write(bucket, request, jwt, true);
     }
 
-    @DeleteMapping("/storage/v1/object/{bucket}")
+    @DeleteMapping("/storage/object/{bucket}")
     List<Map<String, String>> remove(@PathVariable String bucket, @RequestBody Map<String, List<String>> body, @AuthenticationPrincipal Jwt jwt) throws IOException {
         List<Map<String, String>> removed = new java.util.ArrayList<>();
         for (String name : body.getOrDefault("prefixes", List.of())) {
@@ -90,7 +90,7 @@ class StorageController {
     // -- internals ----------------------------------------------------------------------------
 
     private ResponseEntity<Map<String, String>> write(String bucket, HttpServletRequest request, Jwt jwt, boolean upsertDefault) throws Exception {
-        String name = objectName(request, "/storage/v1/object/" + bucket + "/");
+        String name = objectName(request, "/storage/object/" + bucket + "/");
         Path file = resolve(bucket, name);
         authorize(bucket, name, jwt);
         boolean upsert = upsertDefault || "true".equalsIgnoreCase(request.getHeader("x-upsert"));
@@ -112,36 +112,11 @@ class StorageController {
         return ResponseEntity.ok(Map.of("Key", bucket + "/" + name, "Id", java.util.UUID.randomUUID().toString()));
     }
 
-    /**
-     * The file part of the multipart body. Parsed here because storage-js names the file field with an
-     * empty string, which the servlet container's own multipart parser rejects.
-     */
+    /** The file is the request body itself. */
     private static byte[] fileBytes(HttpServletRequest request) throws IOException {
-        var type = request.getContentType() == null ? null : java.util.regex.Pattern.compile("boundary=\"?([^;\"]+)").matcher(request.getContentType());
-        if (type == null || !type.find()) {
-            // storage-js sends an ArrayBuffer or Blob as the raw request body (no multipart wrapper).
-            byte[] raw = request.getInputStream().readNBytes((int) MAX_BYTES + 1);
-            if (raw.length == 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No file in the request");
-            return raw;
-        }
-        byte[] body = request.getInputStream().readNBytes((int) MAX_BYTES + 4096);
-        if (body.length > MAX_BYTES + 4000) throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "The object exceeded the maximum allowed size");
-        String text = new String(body, java.nio.charset.StandardCharsets.ISO_8859_1); // 1:1 bytes, so offsets match
-        String delimiter = "--" + type.group(1);
-        int from = 0;
-        while ((from = text.indexOf(delimiter, from)) >= 0) {
-            int headersStart = from + delimiter.length();
-            if (text.startsWith("--", headersStart)) break; // closing delimiter
-            int headersEnd = text.indexOf("\r\n\r\n", headersStart);
-            if (headersEnd < 0) break;
-            int next = text.indexOf("\r\n" + delimiter, headersEnd + 4);
-            if (next < 0) break;
-            if (text.substring(headersStart, headersEnd).toLowerCase().contains("filename=")) {
-                return java.util.Arrays.copyOfRange(body, headersEnd + 4, next);
-            }
-            from = next + 2;
-        }
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No file in the request");
+        byte[] raw = request.getInputStream().readNBytes((int) MAX_BYTES + 1);
+        if (raw.length == 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No file in the request");
+        return raw;
     }
 
     private void authorize(String bucket, String name, Jwt jwt) {

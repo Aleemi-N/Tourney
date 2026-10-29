@@ -1,4 +1,4 @@
-import { getUser, getTournament, getTournamentMembership } from '@/lib/supabase/server';
+import { getUser, getTournament, getTournamentMembership } from '@/lib/api/server';
 import { notFound, redirect } from 'next/navigation';
 
 /**

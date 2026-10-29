@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getTournamentHeader } from '@/lib/tournament-header';
 import { PublicTournamentFrame } from '@/components/public/PublicTournamentFrame';
 import { TournamentNotFound, EmptyState } from '@/components/public/TournamentNotFound';
@@ -55,9 +55,9 @@ export default async function PublicPlayersPage({ params }: Props) {
   const tournament = await getTournamentHeader(slug);
   if (!tournament) return <TournamentNotFound />;
 
-  const supabase = await createClient();
+  const api = await createClient();
 
-  const { data: players } = await supabase
+  const { data: players } = await api
     .from('public_player_view')
     .select('id,display_name,photo_path,primary_position,secondary_position,team_id,acquisition_type')
     .eq('tournament_id', tournament.id)
@@ -66,7 +66,7 @@ export default async function PublicPlayersPage({ params }: Props) {
   // Fetch team names for player cards
   const teamIds = [...new Set((players ?? []).map((p) => p.team_id).filter(Boolean))];
   const { data: teams } = teamIds.length
-    ? await supabase.from('public_team_view').select('id,name,short_name').in('id', teamIds)
+    ? await api.from('public_team_view').select('id,name,short_name').in('id', teamIds)
     : { data: [] };
 
   const teamName = (id: string | null) => teams?.find((t) => t.id === id)?.name ?? null;
@@ -96,7 +96,7 @@ export default async function PublicPlayersPage({ params }: Props) {
 
             // Safe photo resolution
             const photoUrl = player.photo_path
-              ? supabase.storage.from('player-photos').getPublicUrl(player.photo_path).data.publicUrl
+              ? api.storage.from('player-photos').getPublicUrl(player.photo_path).data.publicUrl
               : null;
 
             const team = teamName(player.team_id);

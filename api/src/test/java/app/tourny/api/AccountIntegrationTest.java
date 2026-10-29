@@ -63,10 +63,10 @@ class AccountIntegrationTest {
     @Test
     void deletingAnAccountRemovesTheSignInAndTheUploadedFiles() throws Exception {
         String email = "delete-" + System.nanoTime() + "@tourny.local";
-        var created = send("/auth/v1/signup", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\",\"data\":{\"full_name\":\"Leaving Soon\"}}", null);
+        var created = send("/auth/signup", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\",\"data\":{\"full_name\":\"Leaving Soon\"}}", null);
         assertEquals(200, created.statusCode(), created.body());
         String userId = field(created.body(), "id");
-        String token = field(send("/auth/v1/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\"}", null).body(), "access_token");
+        String token = field(send("/auth/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\"}", null).body(), "access_token");
 
         Path upload = Files.createDirectories(storage.resolve("avatars").resolve(userId)).resolve("photo.png");
         Files.writeString(upload, "x");
@@ -81,19 +81,19 @@ class AccountIntegrationTest {
         Path someoneElses = Files.createDirectories(storage.resolve("avatars").resolve("00000000-0000-0000-0000-000000000abc")).resolve("keep.png");
         Files.writeString(someoneElses, "y");
 
-        assertTrue(send("/account/v1/delete", "{\"confirm\":\"DELETE\"}", null).statusCode() >= 400, "needs a signed-in user");
-        assertEquals(400, send("/account/v1/delete", "{\"confirm\":\"yes\"}", token).statusCode());
+        assertTrue(send("/account/delete", "{\"confirm\":\"DELETE\"}", null).statusCode() >= 400, "needs a signed-in user");
+        assertEquals(400, send("/account/delete", "{\"confirm\":\"yes\"}", token).statusCode());
         assertTrue(Files.exists(upload), "nothing is removed without the confirmation");
 
-        var done = send("/account/v1/delete", "{\"confirm\":\"DELETE\"}", token);
+        var done = send("/account/delete", "{\"confirm\":\"DELETE\"}", token);
         assertEquals(200, done.statusCode(), done.body());
         assertFalse(Files.exists(upload), "the person's files are removed");
         assertFalse(Files.exists(legacy), "a photo stored outside the person's folder is removed too");
         assertTrue(Files.exists(someoneElses), "other people's files are not");
         // The access token issued before the deletion is refused from now on, even though it has not expired.
-        var stale = HTTP.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/rest/v1/profiles?select=id")).header("Authorization", "Bearer " + token).GET().build(), HttpResponse.BodyHandlers.ofString());
+        var stale = HTTP.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/rest/profiles?select=id")).header("Authorization", "Bearer " + token).GET().build(), HttpResponse.BodyHandlers.ofString());
         assertEquals(401, stale.statusCode(), stale.body());
-        assertEquals(400, send("/auth/v1/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\"}", null).statusCode(), "cannot sign in any more");
+        assertEquals(400, send("/auth/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\"}", null).statusCode(), "cannot sign in any more");
 
         try (Connection c = DriverManager.getConnection(DB_URL, "postgres", "postgres"); var st = c.prepareStatement("SELECT status, email FROM public.profiles WHERE id = ?::uuid")) {
             st.setString(1, userId);

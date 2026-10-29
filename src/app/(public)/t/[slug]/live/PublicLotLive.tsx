@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Radio } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { PlayerCard } from '@/components/player/PlayerCard';
 import { lotLabel, type PublicLotState } from '@/lib/lot-draw';
 
 export function PublicLotLive({ tournament, teams, initialState }: { tournament: { id: string; name: string; slug: string }; teams: Array<{ id: string; name: string; short_name: string | null }>; initialState: PublicLotState | null }) {
-  const supabase = useMemo(() => createClient(), []);
+  const api = useMemo(() => createClient(), []);
   const reduceMotion = useReducedMotion();
   const [state, setState] = useState(initialState);
   const [justRevealed, setJustRevealed] = useState<number | null>(null);
@@ -16,16 +16,16 @@ export function PublicLotLive({ tournament, teams, initialState }: { tournament:
   const refresh = useCallback(async (sessionId?: string) => {
     let id = sessionId ?? state?.session.id;
     if (!id) {
-      const { data } = await supabase.from('lot_public_events').select('lot_session_id').eq('tournament_id', tournament.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      const { data } = await api.from('lot_public_events').select('lot_session_id').eq('tournament_id', tournament.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
       id = data?.lot_session_id;
     }
     if (!id) return;
-    const { data } = await supabase.rpc('get_lot_public_state', { p_lot_session_id: id });
+    const { data } = await api.rpc('get_lot_public_state', { p_lot_session_id: id });
     if (data) setState(data as unknown as PublicLotState);
-  }, [state?.session.id, supabase, tournament.id]);
+  }, [state?.session.id, api, tournament.id]);
   useEffect(() => {
     let lastSequence = state?.last_sequence ?? 0;
-    const channel = supabase.channel(`lot-public-${tournament.id}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lot_public_events', filter: `tournament_id=eq.${tournament.id}` }, (message) => {
+    const channel = api.channel(`lot-public-${tournament.id}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lot_public_events', filter: `tournament_id=eq.${tournament.id}` }, (message) => {
       const event = message.new as { lot_session_id: string; sequence_number: number; event_type: string; card_number: number | null };
       if (event.sequence_number > lastSequence + 1) setConnection('reconnecting');
       lastSequence = event.sequence_number;
@@ -35,8 +35,8 @@ export function PublicLotLive({ tournament, teams, initialState }: { tournament:
       if (status === 'SUBSCRIBED') { setConnection('live'); void refresh(); }
       else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setConnection('reconnecting');
     });
-    return () => { void supabase.removeChannel(channel); };
-  }, [refresh, state?.last_sequence, supabase, tournament.id]);
+    return () => { void api.removeChannel(channel); };
+  }, [refresh, state?.last_sequence, api, tournament.id]);
   useEffect(() => {
     if (!state || !['PREPARING', 'SHUFFLED', 'LIVE'].includes(state.session.status)) return;
     const recoveryPoll = window.setInterval(() => void refresh(state.session.id), 5000);

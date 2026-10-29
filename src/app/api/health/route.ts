@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 
 // Opt out of caching, this must be dynamic
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const supabase = await createClient();
+    const api = await createClient();
     
     // Lightweight check: Can we read from the database?
     // We use a safe query against a known public table, limiting to 1 row.
-    const { error } = await supabase
+    const { error } = await api
       .from('tournaments')
       .select('id')
       .limit(1);

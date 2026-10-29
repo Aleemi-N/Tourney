@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { shareFixturesPoster } from '@/lib/share-posters';
 import { DeclareResult } from '@/components/organizer/DeclareResult';
 import { PlanDaysModal } from '@/components/organizer/PlanDaysModal';
@@ -130,12 +130,12 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
   }
   async function createStage() {
     if (!window.confirm(`Create “${stageName}” as the first stage?`)) return;
-    const supabase = createClient();
+    const api = createClient();
     // Every stage starts with a format, so its fixtures are created with the right number of sets.
     await call('setup', async () => {
-      const { data: stageId, error } = await supabase.rpc('save_tournament_stage', { p_tournament_id: tournament.id, p_stage_id: null, p_name: stageName, p_stage_type: tournament.format, p_sequence: 1, p_qualification_count: tournament.format === 'LEAGUE' ? qualificationCount : undefined });
+      const { data: stageId, error } = await api.rpc('save_tournament_stage', { p_tournament_id: tournament.id, p_stage_id: null, p_name: stageName, p_stage_type: tournament.format, p_sequence: 1, p_qualification_count: tournament.format === 'LEAGUE' ? qualificationCount : undefined });
       if (error) return { error };
-      return supabase.rpc('save_volleyball_rule', presetRuleArgs(tournament.id, stageId, stageFormat));
+      return api.rpc('save_volleyball_rule', presetRuleArgs(tournament.id, stageId, stageFormat));
     }, 'Competition stage created.');
   }
   async function schedule(event: React.FormEvent<HTMLFormElement>, matchId: string) {
@@ -171,9 +171,9 @@ export function FixtureManager({ tournament, stages, matches, scorers, orderScop
   }
   async function confirmNext(stageId: string) {
     if (!preview || !window.confirm('Confirm this authoritative progression decision?')) return;
-    setPending('progression'); const supabase = createClient(); const { data, error } = await supabase.rpc('apply_league_progression', { p_stage_id: stageId, p_decision: decision, p_include_third_place: thirdPlace, p_idempotency_key: confirmationKey });
+    setPending('progression'); const api = createClient(); const { data, error } = await api.rpc('apply_league_progression', { p_stage_id: stageId, p_decision: decision, p_include_third_place: thirdPlace, p_idempotency_key: confirmationKey });
     const targetStageId = (data as { target_stage_id?: string | null } | null)?.target_stage_id;
-    const formatError = !error && targetStageId ? (await supabase.rpc('save_volleyball_rule', presetRuleArgs(tournament.id, targetStageId, nextFormat))).error : null;
+    const formatError = !error && targetStageId ? (await api.rpc('save_volleyball_rule', presetRuleArgs(tournament.id, targetStageId, nextFormat))).error : null;
     setPending(null); setMessage(error?.message ?? (formatError ? `Next stage created, but its format was not saved: ${formatError.message}` : 'Progression applied.'));
     if (!error) { setPreview(null); setConfirmationKey(crypto.randomUUID()); router.refresh(); }
   }

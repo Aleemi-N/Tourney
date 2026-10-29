@@ -69,7 +69,7 @@ class ApiIntegrationTest {
     }
 
     private String login(String email) throws Exception {
-        var response = post("/auth/v1/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}", null);
+        var response = post("/auth/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}", null);
         assertEquals(200, response.statusCode(), response.body());
         var m = Pattern.compile("\"access_token\":\"([^\"]+)\"").matcher(response.body());
         assertTrue(m.find());
@@ -78,8 +78,8 @@ class ApiIntegrationTest {
 
     @Test
     void loginRejectsWrongPasswordAndUnknownEmail() throws Exception {
-        assertEquals(400, post("/auth/v1/token?grant_type=password", "{\"email\":\"organizer@tourny.local\",\"password\":\"nope\"}", null).statusCode());
-        assertEquals(400, post("/auth/v1/token?grant_type=password", "{\"email\":\"nobody@tourny.local\",\"password\":\"nope\"}", null).statusCode());
+        assertEquals(400, post("/auth/token?grant_type=password", "{\"email\":\"organizer@tourny.local\",\"password\":\"nope\"}", null).statusCode());
+        assertEquals(400, post("/auth/token?grant_type=password", "{\"email\":\"nobody@tourny.local\",\"password\":\"nope\"}", null).statusCode());
     }
 
     @Test
@@ -139,36 +139,36 @@ class ApiIntegrationTest {
 
     @Test
     void sessionsRefreshRotateAndReuseEndsTheSession() throws Exception {
-        var first = post("/auth/v1/token?grant_type=password", "{\"email\":\"player@tourny.local\",\"password\":\"" + password + "\"}", null);
+        var first = post("/auth/token?grant_type=password", "{\"email\":\"player@tourny.local\",\"password\":\"" + password + "\"}", null);
         assertEquals(200, first.statusCode(), first.body());
         String access = field(first.body(), "access_token");
         String refresh = field(first.body(), "refresh_token");
 
-        var me = get("/auth/v1/user", access);
+        var me = get("/auth/user", access);
         assertEquals(200, me.statusCode(), me.body());
         assertEquals("player@tourny.local", field(me.body(), "email"));
-        assertEquals(401, get("/auth/v1/user", null).statusCode());
+        assertEquals(401, get("/auth/user", null).statusCode());
 
-        var second = post("/auth/v1/token?grant_type=refresh_token", "{\"refresh_token\":\"" + refresh + "\"}", null);
+        var second = post("/auth/token?grant_type=refresh_token", "{\"refresh_token\":\"" + refresh + "\"}", null);
         assertEquals(200, second.statusCode(), second.body());
         String rotated = field(second.body(), "refresh_token");
 
         // Replaying the old token is theft: it fails and revokes the rotated one too.
-        assertEquals(400, post("/auth/v1/token?grant_type=refresh_token", "{\"refresh_token\":\"" + refresh + "\"}", null).statusCode());
-        assertEquals(400, post("/auth/v1/token?grant_type=refresh_token", "{\"refresh_token\":\"" + rotated + "\"}", null).statusCode());
+        assertEquals(400, post("/auth/token?grant_type=refresh_token", "{\"refresh_token\":\"" + refresh + "\"}", null).statusCode());
+        assertEquals(400, post("/auth/token?grant_type=refresh_token", "{\"refresh_token\":\"" + rotated + "\"}", null).statusCode());
     }
 
     @Test
     void signUpCreatesAnAccountThatCanSignIn() throws Exception {
         String email = "signup-" + System.nanoTime() + "@tourny.local";
-        var created = post("/auth/v1/signup", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\",\"data\":{\"full_name\":\"Sign Up Test\"}}", null);
+        var created = post("/auth/signup", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\",\"data\":{\"full_name\":\"Sign Up Test\"}}", null);
         assertEquals(200, created.statusCode(), created.body());
-        assertEquals(422, post("/auth/v1/signup", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\"}", null).statusCode());
-        assertEquals(422, post("/auth/v1/signup", "{\"email\":\"x" + email + "\",\"password\":\"short\"}", null).statusCode());
-        var login = post("/auth/v1/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\"}", null);
+        assertEquals(422, post("/auth/signup", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\"}", null).statusCode());
+        assertEquals(422, post("/auth/signup", "{\"email\":\"x" + email + "\",\"password\":\"short\"}", null).statusCode());
+        var login = post("/auth/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"correct-horse\"}", null);
         assertEquals(200, login.statusCode(), login.body());
         // The profile row comes from the existing handle_new_user trigger.
-        var profile = get("/rest/v1/profiles?select=full_name&id=eq." + field(login.body(), "id"), field(login.body(), "access_token"));
+        var profile = get("/rest/profiles?select=full_name&id=eq." + field(login.body(), "id"), field(login.body(), "access_token"));
         assertTrue(profile.body().contains("Sign Up Test"), profile.body());
     }
 
@@ -176,49 +176,43 @@ class ApiIntegrationTest {
     private static final byte[] PNG = java.util.Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==");
 
     private HttpResponse<String> upload(String path, byte[] bytes, String filename, String token, String method) throws Exception {
-        String boundary = "----tourny" + System.nanoTime();
-        var out = new java.io.ByteArrayOutputStream();
-        out.write(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"cacheControl\"\r\n\r\n3600\r\n").getBytes());
-        out.write(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"\"; filename=\"" + filename + "\"\r\nContent-Type: image/png\r\n\r\n").getBytes());
-        out.write(bytes);
-        out.write(("\r\n--" + boundary + "--\r\n").getBytes());
         var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
-                .header("Content-Type", "multipart/form-data; boundary=" + boundary).header("Authorization", "Bearer " + token)
-                .method(method, HttpRequest.BodyPublishers.ofByteArray(out.toByteArray())).build();
+                .header("Content-Type", "image/png").header("Authorization", "Bearer " + token)
+                .method(method, HttpRequest.BodyPublishers.ofByteArray(bytes)).build();
         return HTTP.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     @Test
-    void storageFollowsTheOldBucketRules() throws Exception {
+    void storageBucketRules() throws Exception {
         String player = login("player@tourny.local");
-        String playerId = field(post("/auth/v1/token?grant_type=password", "{\"email\":\"player@tourny.local\",\"password\":\"" + password + "\"}", null).body(), "id");
+        String playerId = field(post("/auth/token?grant_type=password", "{\"email\":\"player@tourny.local\",\"password\":\"" + password + "\"}", null).body(), "id");
         String name = playerId + "/" + System.nanoTime() + ".png";
 
-        var created = upload("/storage/v1/object/avatars/" + name, PNG, "a.png", player, "POST");
+        var created = upload("/storage/object/avatars/" + name, PNG, "a.png", player, "POST");
         assertEquals(200, created.statusCode(), created.body());
-        var read = HTTP.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/v1/object/public/avatars/" + name)).build(), HttpResponse.BodyHandlers.ofByteArray());
+        var read = HTTP.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/object/public/avatars/" + name)).build(), HttpResponse.BodyHandlers.ofByteArray());
         assertEquals(200, read.statusCode());
         assertEquals("image/png", read.headers().firstValue("content-type").orElse(""));
         assertTrue(java.util.Arrays.equals(PNG, read.body()));
 
-        assertEquals(409, upload("/storage/v1/object/avatars/" + name, PNG, "a.png", player, "POST").statusCode()); // no silent overwrite
-        assertEquals(200, upload("/storage/v1/object/avatars/" + name, PNG, "a.png", player, "PUT").statusCode());
-        assertEquals(403, upload("/storage/v1/object/avatars/90000000-0000-0000-0000-000000000001/x.png", PNG, "x.png", player, "POST").statusCode()); // someone else's folder
-        assertEquals(400, upload("/storage/v1/object/avatars/" + playerId + "/fake.png", "<html>not an image</html>".getBytes(), "fake.png", player, "POST").statusCode());
-        assertTrue(upload("/storage/v1/object/avatars/" + playerId + "/..%2Fx.png", PNG, "x.png", player, "POST").statusCode() >= 400); // traversal
-        assertEquals(403, upload("/storage/v1/object/player-photos/" + playerId + "/x.png", PNG, "x.png", player, "POST").statusCode()); // read-only bucket
+        assertEquals(409, upload("/storage/object/avatars/" + name, PNG, "a.png", player, "POST").statusCode()); // no silent overwrite
+        assertEquals(200, upload("/storage/object/avatars/" + name, PNG, "a.png", player, "PUT").statusCode());
+        assertEquals(403, upload("/storage/object/avatars/90000000-0000-0000-0000-000000000001/x.png", PNG, "x.png", player, "POST").statusCode()); // someone else's folder
+        assertEquals(400, upload("/storage/object/avatars/" + playerId + "/fake.png", "<html>not an image</html>".getBytes(), "fake.png", player, "POST").statusCode());
+        assertTrue(upload("/storage/object/avatars/" + playerId + "/..%2Fx.png", PNG, "x.png", player, "POST").statusCode() >= 400); // traversal
+        assertEquals(403, upload("/storage/object/player-photos/" + playerId + "/x.png", PNG, "x.png", player, "POST").statusCode()); // read-only bucket
 
         // An organizer writes into their tournament's logo folder; a player may not.
         String organizer = login("organizer@tourny.local");
-        String logo = "/storage/v1/object/logos/90200000-0000-0000-0000-000000000001/" + System.nanoTime() + ".png";
+        String logo = "/storage/object/logos/90200000-0000-0000-0000-000000000001/" + System.nanoTime() + ".png";
         assertEquals(200, upload(logo, PNG, "l.png", organizer, "POST").statusCode());
         assertEquals(403, upload(logo + "x", PNG, "l.png", player, "POST").statusCode());
 
-        var removed = HTTP.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/v1/object/avatars"))
+        var removed = HTTP.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/object/avatars"))
                 .header("Authorization", "Bearer " + player).header("Content-Type", "application/json")
                 .method("DELETE", HttpRequest.BodyPublishers.ofString("{\"prefixes\":[\"" + name + "\"]}")).build(), HttpResponse.BodyHandlers.ofString());
         assertEquals(200, removed.statusCode(), removed.body());
-        assertEquals(404, HTTP.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/v1/object/public/avatars/" + name)).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
+        assertEquals(404, HTTP.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/object/public/avatars/" + name)).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
     }
 
     private HttpResponse<String> patch(String path, String body, String token) throws Exception {
@@ -233,26 +227,26 @@ class ApiIntegrationTest {
     void clientsCannotWriteTablesDirectly() throws Exception {
         String player = login("player@tourny.local");
         // Self-approval and self-unsuspension were possible through the REST endpoint before.
-        assertEquals(403, patch("/rest/v1/team_owner_applications?status=eq.PENDING", "{\"status\":\"APPROVED\"}", player).statusCode());
-        assertEquals(403, patch("/rest/v1/profiles?id=not.is.null", "{\"status\":\"ACTIVE\"}", player).statusCode());
-        assertEquals(403, patch("/rest/v1/organization_members?user_id=not.is.null", "{\"role\":\"OWNER\"}", player).statusCode());
+        assertEquals(403, patch("/rest/team_owner_applications?status=eq.PENDING", "{\"status\":\"APPROVED\"}", player).statusCode());
+        assertEquals(403, patch("/rest/profiles?id=not.is.null", "{\"status\":\"ACTIVE\"}", player).statusCode());
+        assertEquals(403, patch("/rest/organization_members?user_id=not.is.null", "{\"role\":\"OWNER\"}", player).statusCode());
         // The columns the apps still update directly keep working for an organizer (zero rows here, but not refused).
         String organizer = login("organizer@tourny.local");
-        assertEquals(200, patch("/rest/v1/tournaments?id=eq.00000000-0000-0000-0000-000000000000", "{\"status\":\"PREPARATION\"}", organizer).statusCode());
+        assertEquals(200, patch("/rest/tournaments?id=eq.00000000-0000-0000-0000-000000000000", "{\"status\":\"PREPARATION\"}", organizer).statusCode());
         // ...but not other columns of the same table.
-        assertEquals(403, patch("/rest/v1/tournaments?id=eq.90200000-0000-0000-0000-000000000001", "{\"name\":\"Renamed\"}", organizer).statusCode());
+        assertEquals(403, patch("/rest/tournaments?id=eq.90200000-0000-0000-0000-000000000001", "{\"name\":\"Renamed\"}", organizer).statusCode());
     }
 
     @Test
     void suspendedAccountsCannotSignInOrRefresh() throws Exception {
         try (var c = DriverManager.getConnection(DB_URL, "postgres", "postgres")) {
-            var first = post("/auth/v1/token?grant_type=password", "{\"email\":\"scorer@tourny.local\",\"password\":\"" + password + "\"}", null);
+            var first = post("/auth/token?grant_type=password", "{\"email\":\"scorer@tourny.local\",\"password\":\"" + password + "\"}", null);
             assertEquals(200, first.statusCode(), first.body());
             String refresh = field(first.body(), "refresh_token");
             c.createStatement().executeUpdate("UPDATE public.profiles SET status='SUSPENDED' WHERE id=(SELECT id FROM auth.users WHERE email='scorer@tourny.local')");
             try {
-                assertEquals(400, post("/auth/v1/token?grant_type=password", "{\"email\":\"scorer@tourny.local\",\"password\":\"" + password + "\"}", null).statusCode());
-                assertEquals(400, post("/auth/v1/token?grant_type=refresh_token", "{\"refresh_token\":\"" + refresh + "\"}", null).statusCode());
+                assertEquals(400, post("/auth/token?grant_type=password", "{\"email\":\"scorer@tourny.local\",\"password\":\"" + password + "\"}", null).statusCode());
+                assertEquals(400, post("/auth/token?grant_type=refresh_token", "{\"refresh_token\":\"" + refresh + "\"}", null).statusCode());
             } finally {
                 c.createStatement().executeUpdate("UPDATE public.profiles SET status='ACTIVE' WHERE id=(SELECT id FROM auth.users WHERE email='scorer@tourny.local')");
             }
@@ -262,12 +256,12 @@ class ApiIntegrationTest {
     @Test
     void storageAcceptsARawBodyLikeStorageJsSendsForBuffers() throws Exception {
         String player = login("player@tourny.local");
-        String playerId = field(post("/auth/v1/token?grant_type=password", "{\"email\":\"player@tourny.local\",\"password\":\"" + password + "\"}", null).body(), "id");
-        var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/v1/object/avatars/" + playerId + "/raw-" + System.nanoTime() + ".png"))
+        String playerId = field(post("/auth/token?grant_type=password", "{\"email\":\"player@tourny.local\",\"password\":\"" + password + "\"}", null).body(), "id");
+        var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/object/avatars/" + playerId + "/raw-" + System.nanoTime() + ".png"))
                 .header("Content-Type", "image/png").header("Authorization", "Bearer " + player).header("x-upsert", "true")
                 .POST(HttpRequest.BodyPublishers.ofByteArray(PNG)).build();
         assertEquals(200, HTTP.send(request, HttpResponse.BodyHandlers.ofString()).statusCode());
-        var notImage = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/v1/object/avatars/" + playerId + "/raw-bad.png"))
+        var notImage = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/storage/object/avatars/" + playerId + "/raw-bad.png"))
                 .header("Content-Type", "image/png").header("Authorization", "Bearer " + player)
                 .POST(HttpRequest.BodyPublishers.ofString("<html>nope</html>")).build();
         assertEquals(400, HTTP.send(notImage, HttpResponse.BodyHandlers.ofString()).statusCode());
@@ -291,7 +285,7 @@ class ApiIntegrationTest {
 
     private String requestRecovery(String email, String verifier, String redirectTo) throws Exception {
         int before = CapturingMailer.SENT.size();
-        var response = post("/auth/v1/recover" + (redirectTo == null ? "" : "?redirect_to=" + java.net.URLEncoder.encode(redirectTo, "UTF-8")),
+        var response = post("/auth/recover" + (redirectTo == null ? "" : "?redirect_to=" + java.net.URLEncoder.encode(redirectTo, "UTF-8")),
                 "{\"email\":\"" + email + "\",\"code_challenge\":\"" + challenge(verifier) + "\",\"code_challenge_method\":\"s256\"}", null);
         assertEquals(200, response.statusCode(), response.body());
         return CapturingMailer.SENT.size() > before ? CapturingMailer.SENT.get(CapturingMailer.SENT.size() - 1)[1] : null;
@@ -305,15 +299,15 @@ class ApiIntegrationTest {
         String code = link.substring(link.indexOf("code=") + 5);
 
         // A wrong verifier fails and burns the code.
-        assertEquals(400, post("/auth/v1/token?grant_type=pkce", "{\"auth_code\":\"" + code + "\",\"code_verifier\":\"wrong\"}", null).statusCode());
-        assertEquals(400, post("/auth/v1/token?grant_type=pkce", "{\"auth_code\":\"" + code + "\",\"code_verifier\":\"" + verifier + "\"}", null).statusCode());
+        assertEquals(400, post("/auth/token?grant_type=pkce", "{\"auth_code\":\"" + code + "\",\"code_verifier\":\"wrong\"}", null).statusCode());
+        assertEquals(400, post("/auth/token?grant_type=pkce", "{\"auth_code\":\"" + code + "\",\"code_verifier\":\"" + verifier + "\"}", null).statusCode());
 
         String second = requestRecovery("player@tourny.local", verifier, "http://localhost:3100/auth/callback");
         String code2 = second.substring(second.indexOf("code=") + 5);
-        var session = post("/auth/v1/token?grant_type=pkce", "{\"auth_code\":\"" + code2 + "\",\"code_verifier\":\"" + verifier + "\"}", null);
+        var session = post("/auth/token?grant_type=pkce", "{\"auth_code\":\"" + code2 + "\",\"code_verifier\":\"" + verifier + "\"}", null);
         assertEquals(200, session.statusCode(), session.body());
         assertEquals("player@tourny.local", field(session.body(), "email"));
-        assertEquals(400, post("/auth/v1/token?grant_type=pkce", "{\"auth_code\":\"" + code2 + "\",\"code_verifier\":\"" + verifier + "\"}", null).statusCode()); // single use
+        assertEquals(400, post("/auth/token?grant_type=pkce", "{\"auth_code\":\"" + code2 + "\",\"code_verifier\":\"" + verifier + "\"}", null).statusCode()); // single use
 
         // A link never points at a site we do not know, and unknown emails get the same answer but no mail.
         String evil = requestRecovery("scorer@tourny.local", verifier, "https://evil.example/steal");

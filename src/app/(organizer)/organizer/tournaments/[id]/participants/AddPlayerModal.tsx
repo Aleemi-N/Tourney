@@ -7,7 +7,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Loader2, UserPlus, CheckCircle2 } from 'lucide-react';
 import { manualRegisterPlayerAction } from '@/app/actions/participants';
 import { ImageUpload } from '@/components/forms/ImageUpload';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 
 const POSITIONS = [
   { value: 'OUTSIDE_HITTER', label: 'Outside Hitter' },
@@ -48,8 +48,8 @@ export function AddPlayerModal({ tournamentId, open, onClose }: AddPlayerModalPr
 
   useEffect(() => {
     if (open) {
-      const supabase = createClient();
-      supabase.auth.getUser().then(({ data }) => {
+      const api = createClient();
+      api.auth.getUser().then(({ data }) => {
         if (data.user) {
           setOrganizerUserId(data.user.id);
         }

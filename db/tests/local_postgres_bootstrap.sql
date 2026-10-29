@@ -1,4 +1,4 @@
--- Minimal Supabase-owned objects needed to validate migrations on plain PostgreSQL.
+-- Minimal objects (roles, auth schema) needed to validate migrations on plain PostgreSQL; deploy/bootstrap.sql is the full version.
 DO $$ BEGIN CREATE ROLE anon NOLOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE ROLE authenticated NOLOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 GRANT USAGE ON SCHEMA public TO anon, authenticated;

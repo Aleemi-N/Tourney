@@ -10,7 +10,7 @@ import { buildTournamentMetadata } from '@/lib/public-tournament-metadata';
  * No mutation capability, no private data.
  */
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getTeamColors, getTournamentHeader } from '@/lib/tournament-header';
 import { PublicMatchLive } from '@/components/public/PublicMatchLive';
 import type { Metadata } from 'next';
@@ -39,8 +39,8 @@ export default async function TVMatchPage({ params }: Props) {
     );
   }
 
-  const supabase = await createClient();
-  const { data: matchState, error } = await supabase.rpc('get_public_match_state', {
+  const api = await createClient();
+  const { data: matchState, error } = await api.rpc('get_public_match_state', {
     p_match_id: matchId,
   });
 

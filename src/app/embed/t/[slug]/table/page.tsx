@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { EmbedShell } from '@/components/embed/EmbedShell';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getTournamentHeader } from '@/lib/tournament-header';
 import { getCanonicalOrigin } from '@/lib/origin';
 
@@ -16,8 +16,8 @@ export default async function EmbedTable({ params, searchParams }: { params: Pro
   const tournament = await getTournamentHeader(slug);
   const href = `${getCanonicalOrigin()}/t/${slug}/table`;
   if (!tournament) return <EmbedShell theme={theme} title="Tournament not found" href={getCanonicalOrigin()} refreshSeconds={300}><p className="text-sm text-text-muted">This tournament is not public.</p></EmbedShell>;
-  const supabase = await createClient();
-  const { data } = await supabase.rpc('get_public_standings', { p_tournament_id: tournament.id });
+  const api = await createClient();
+  const { data } = await api.rpc('get_public_standings', { p_tournament_id: tournament.id });
   const rows = (data ?? []) as Row[];
 
   return (

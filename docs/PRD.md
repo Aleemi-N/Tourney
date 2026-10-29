@@ -6,11 +6,11 @@
 -   Delivery surface: Responsive web application + PWA
 -   Primary users: Organizers, Team Owners, Players, Scorers, Spectators
 -   Frontend: Next.js + TypeScript + Tailwind CSS + Framer Motion
--   Backend platform: Supabase
+-   Backend platform: the Tourny API (Spring Boot) on PostgreSQL
 -   Database: PostgreSQL
--   Authentication: Supabase Auth
--   Realtime: Supabase Realtime
--   Storage: Supabase Storage
+-   Authentication: the API's own accounts and JWTs
+-   Realtime: the API's websocket
+-   Storage: the API's image storage
 -   Security: PostgreSQL Row Level Security (RLS)
 -   Critical mutations: PostgreSQL functions/RPC transactions
 
@@ -501,7 +501,7 @@ and 1920px layout checks.
 
 ## 27. Delivery Phases
 
-1.  Foundation: Next.js, Supabase, migrations, auth, roles, responsive
+1.  Foundation: Next.js, the API, migrations, auth, roles, responsive
     shell, PWA.
 2.  Tournament setup + organization model.
 3.  Team Owner registration.

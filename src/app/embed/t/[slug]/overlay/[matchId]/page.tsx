@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getTournamentHeader } from '@/lib/tournament-header';
 import { OverlayRefresh, OverlaySponsors } from './OverlayParts';
 
@@ -21,8 +21,8 @@ export default async function OverlayPage({ params, searchParams }: { params: Pr
   const { pos, sponsors, refresh } = await searchParams;
   const seconds = Math.min(30, Math.max(2, Number(refresh) || 3));
   const tournament = await getTournamentHeader(slug);
-  const supabase = await createClient();
-  const { data } = tournament ? await supabase.rpc('get_public_match_state', { p_match_id: matchId }) : { data: null };
+  const api = await createClient();
+  const { data } = tournament ? await api.rpc('get_public_match_state', { p_match_id: matchId }) : { data: null };
   const state = data as unknown as State | null;
 
   return (

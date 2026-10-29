@@ -1,5 +1,5 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/lib/supabase/types';
+import type { Api } from '@/lib/api/core';
+import type { Database } from '@/lib/api/types';
 
 export type OwnerTeam = {
     id: string;
@@ -27,10 +27,10 @@ type TeamOwnerRow = {
 };
 
 export async function getOwnerTeams(
-    supabase: SupabaseClient<Database>,
+    api: Api<Database>,
     userId: string,
 ) {
-    const { data, error } = await supabase
+    const { data, error } = await api
         .from('team_owners')
         .select('team_id, teams!inner(id, name, short_name, logo_path, place, primary_color, tournament_id, tournaments(name))')
         .eq('user_id', userId)
@@ -58,16 +58,16 @@ export async function getOwnerTeams(
 }
 
 export async function getOwnerTeam(
-    supabase: SupabaseClient<Database>,
+    api: Api<Database>,
     userId: string,
     teamId: string,
 ) {
-    const teams = await getOwnerTeams(supabase, userId);
+    const teams = await getOwnerTeams(api, userId);
     const owned = teams.find((team) => team.id === teamId);
     if (owned) return owned;
 
     // Allow tournament organizers to preview/access team pages
-    const { data: teamData } = await supabase
+    const { data: teamData } = await api
         .from('teams')
         .select('id, name, short_name, logo_path, place, primary_color, tournament_id, tournaments!inner(name, created_by)')
         .eq('id', teamId)

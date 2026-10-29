@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getOwnerTeams } from '@/lib/owner/owner-team';
 import { OwnerPortalShell } from '@/components/owner/OwnerPortalShell';
 import { OwnerStat } from '@/components/owner/OwnerStat';
@@ -34,11 +34,11 @@ type SquadRow = {
 
 export default async function OwnerSquadPage({ params }: { params: Promise<{ teamId: string }> }) {
     const { teamId } = await params;
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const api = await createClient();
+    const { data: { user } } = await api.auth.getUser();
     if (!user) redirect('/login');
 
-    const teams = await getOwnerTeams(supabase, user.id);
+    const teams = await getOwnerTeams(api, user.id);
     const team = teams.find((item) => item.id === teamId);
     if (!team) notFound();
 
@@ -47,9 +47,9 @@ export default async function OwnerSquadPage({ params }: { params: Promise<{ tea
         { data: squadData },
         { data: salesData }
     ] = await Promise.all([
-        supabase.from('tournament_settings').select('min_squad_size, max_squad_size').eq('tournament_id', team.tournament_id).maybeSingle(),
-        supabase.from('team_players').select('id, player_id, acquisition_type, acquisition_amount, joined_at, player_profiles(id, display_name, photo_path, primary_position, secondary_position, place, height_cm, phone, date_of_birth, playing_history, jersey_name, jersey_number, jersey_size)').eq('team_id', team.id).eq('tournament_id', team.tournament_id).eq('status', 'ACTIVE'),
-        supabase.from('auction_sales').select('auction_players!inner(player_id, attempt_number)').eq('team_id', team.id)
+        api.from('tournament_settings').select('min_squad_size, max_squad_size').eq('tournament_id', team.tournament_id).maybeSingle(),
+        api.from('team_players').select('id, player_id, acquisition_type, acquisition_amount, joined_at, player_profiles(id, display_name, photo_path, primary_position, secondary_position, place, height_cm, phone, date_of_birth, playing_history, jersey_name, jersey_number, jersey_size)').eq('team_id', team.id).eq('tournament_id', team.tournament_id).eq('status', 'ACTIVE'),
+        api.from('auction_sales').select('auction_players!inner(player_id, attempt_number)').eq('team_id', team.id)
     ]);
 
     const rawSquad = (squadData ?? []) as unknown as SquadRow[];

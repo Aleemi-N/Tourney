@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 type StaffPerson = {
@@ -32,7 +32,7 @@ const messages: Record<string, string> = {
 
 export function StaffManager({ tournamentId, initialStaff }: { tournamentId: string; initialStaff: StaffPerson[] }) {
   const router = useRouter();
-  const supabase = createClient();
+  const api = createClient();
   const [showAdd, setShowAdd] = useState(false);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'ORGANIZER' | 'SCORER'>('SCORER');
@@ -47,7 +47,7 @@ export function StaffManager({ tournamentId, initialStaff }: { tournamentId: str
     event.preventDefault();
     setPending(true);
     setMessage(null);
-    const { data, error } = await supabase.rpc('add_tournament_staff_role', {
+    const { data, error } = await api.rpc('add_tournament_staff_role', {
       p_tournament_id: tournamentId,
       p_email: email,
       p_role: role,
@@ -68,7 +68,7 @@ export function StaffManager({ tournamentId, initialStaff }: { tournamentId: str
     if (!confirmRemove) return;
     setPending(true);
     setMessage(null);
-    const { data, error } = await supabase.rpc('remove_tournament_staff_role', {
+    const { data, error } = await api.rpc('remove_tournament_staff_role', {
       p_tournament_id: tournamentId,
       p_target_user_id: confirmRemove.userId,
       p_role: confirmRemove.role,

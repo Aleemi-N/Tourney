@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { resetPassword } from '@/app/actions/auth';
 import Link from 'next/link';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
@@ -15,10 +15,10 @@ export function ResetPasswordForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [sessionStatus, setSessionStatus] = useState<'pending' | 'valid' | 'invalid'>('pending');
   
-  const supabase = createClient();
+  const api = createClient();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    api.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         setSessionStatus('invalid');
         setError('Your password reset link is invalid or has expired. Please request a new one.');
@@ -26,7 +26,7 @@ export function ResetPasswordForm() {
         setSessionStatus('valid');
       }
     });
-  }, [supabase]);
+  }, [api]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

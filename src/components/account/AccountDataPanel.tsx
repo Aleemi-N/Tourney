@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { callRpc } from '@/lib/web-push';
 
 const field = 'mt-1.5 min-h-11 w-full rounded-xl border border-border bg-background px-3 text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40';
@@ -31,9 +31,9 @@ export function AccountDataPanel({ email }: { email: string }) {
     event.preventDefault();
     setBusy('delete');
     setMessage(null);
-    const supabase = createClient();
-    const { data: session } = await supabase.auth.getSession();
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/account/v1/delete`, {
+    const api = createClient();
+    const { data: session } = await api.auth.getSession();
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/account/delete`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${session.session?.access_token ?? ''}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ confirm }),
@@ -43,7 +43,7 @@ export function AccountDataPanel({ email }: { email: string }) {
       setBusy(null);
       return setMessage({ ok: false, text: json.error ?? `Could not delete the account (${response.status}).` });
     }
-    await supabase.auth.signOut();
+    await api.auth.signOut();
     window.location.href = '/';
   }
 

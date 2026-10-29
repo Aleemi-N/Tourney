@@ -23,7 +23,7 @@ export function LoginForm({ nextUrl }: { nextUrl?: string }) {
     const result = await login(formData);
 
     if (result?.error) {
-      // Don't leak exact Supabase internal errors if they are too technical
+      // Don't leak exact internal errors if they are too technical
       const message = result.error.includes('Invalid login') 
         ? 'Invalid email or password.'
         : 'An error occurred during sign in. Please try again.';

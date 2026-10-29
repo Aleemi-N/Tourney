@@ -1,18 +1,20 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getSafeRedirectUrl } from '@/lib/utils/url';
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
+import { createHash, randomBytes } from 'node:crypto';
+import { PKCE_COOKIE } from '@/lib/api/session-cookie';
 
 export async function login(formData: FormData) {
-  const supabase = await createClient();
+  const api = await createClient();
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const nextUrl = formData.get('nextUrl') as string;
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await api.auth.signInWithPassword({
     email,
     password,
   });
@@ -37,11 +39,11 @@ export async function login(formData: FormData) {
   const userId = data.user?.id;
   if (userId) {
     // Super Admin: check via the same authoritative RPC used by the layout.
-    const { data: isSuperAdmin } = await supabase.rpc('is_platform_super_admin');
+    const { data: isSuperAdmin } = await api.rpc('is_platform_super_admin');
     if (isSuperAdmin) redirect('/super-admin');
 
     // Organizer: has an active organization membership.
-    const { data: orgMember } = await supabase
+    const { data: orgMember } = await api
       .from('organization_members')
       .select('organization_id')
       .eq('user_id', userId)
@@ -51,7 +53,7 @@ export async function login(formData: FormData) {
     if (orgMember) redirect('/organizer/dashboard');
 
     // Team Owner: has an active team ownership record.
-    const { data: teamOwner } = await supabase
+    const { data: teamOwner } = await api
       .from('team_owners')
       .select('team_id')
       .eq('user_id', userId)
@@ -67,7 +69,7 @@ export async function login(formData: FormData) {
 }
 
 export async function register(formData: FormData) {
-  const supabase = await createClient();
+  const api = await createClient();
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const fullName = formData.get('fullName') as string;
@@ -78,7 +80,7 @@ export async function register(formData: FormData) {
   }
 
   // Step 1: Create auth user. signUp establishes the session.
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  const { data: authData, error: authError } = await api.auth.signUp({
     email,
     password,
     options: {
@@ -94,9 +96,9 @@ export async function register(formData: FormData) {
     return { error: 'Something went wrong during registration.' };
   }
 
-  // Supabase returns a non-null user object even for duplicate emails when
+  // The API returns a non-null user object even for duplicate emails when
   // email confirmation is disabled — but the identities array is empty.
-  // This is a deliberate anti-enumeration measure in Supabase Auth.
+  // This is a deliberate anti-enumeration measure of the sign-up endpoint.
   // We must check for it explicitly; otherwise the action silently redirects
   // to / as if registration succeeded, and the user can never sign in.
   if (!authData.user.identities || authData.user.identities.length === 0) {
@@ -110,7 +112,7 @@ export async function register(formData: FormData) {
 }
 
 export async function completeOrganizerOnboarding(formData: FormData) {
-  const supabase = await createClient();
+  const api = await createClient();
   const orgName = formData.get('orgName') as string;
   const orgSlug = formData.get('orgSlug') as string;
   const nextUrl = formData.get('nextUrl') as string;
@@ -119,14 +121,14 @@ export async function completeOrganizerOnboarding(formData: FormData) {
     return { error: 'Organization name and slug are required.' };
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await api.auth.getUser();
   if (!user) {
     return { error: 'You must be logged in to create an organization.' };
   }
 
   const fullName = user.user_metadata?.full_name || 'Organizer';
 
-  const { error: onboardingError } = await supabase.rpc(
+  const { error: onboardingError } = await api.rpc(
     'initialize_organizer_onboarding',
     {
       p_full_name: fullName,
@@ -144,7 +146,7 @@ export async function completeOrganizerOnboarding(formData: FormData) {
 }
 
 export async function requestPasswordReset(formData: FormData) {
-  const supabase = await createClient();
+  const api = await createClient();
   const email = formData.get('email') as string;
   
   if (!email) {
@@ -154,8 +156,12 @@ export async function requestPasswordReset(formData: FormData) {
   const headerList = await headers();
   const origin = headerList.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
   
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  // The reset link comes back with a one-time code; only this browser, which holds the verifier, can trade it for a sign-in.
+  const verifier = randomBytes(32).toString('base64url');
+  (await cookies()).set(PKCE_COOKIE, verifier, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 });
+  const { error } = await api.auth.requestPasswordReset(email, {
     redirectTo: `${origin}/auth/callback?next=/reset-password`,
+    challenge: createHash('sha256').update(verifier).digest('base64url'),
   });
 
   if (error) {
@@ -167,7 +173,7 @@ export async function requestPasswordReset(formData: FormData) {
 }
 
 export async function resetPassword(formData: FormData) {
-  const supabase = await createClient();
+  const api = await createClient();
   const password = formData.get('password') as string;
   const confirmPassword = formData.get('confirmPassword') as string;
 
@@ -183,7 +189,7 @@ export async function resetPassword(formData: FormData) {
     return { error: 'Password must be at least 6 characters' };
   }
 
-  const { error } = await supabase.auth.updateUser({
+  const { error } = await api.auth.updateUser({
     password: password
   });
 
@@ -196,8 +202,8 @@ export async function resetPassword(formData: FormData) {
 }
 
 export async function logout() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  const api = await createClient();
+  await api.auth.signOut();
   revalidatePath('/', 'layout');
   redirect('/');
 }

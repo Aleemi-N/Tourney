@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
-import { createClient, getUser } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/api/server';
 import { revalidatePath } from 'next/cache';
 
 // Update or create draft tournament
 export async function saveTournamentDraft(data: any) {
-  const supabase = await createClient();
+  const api = await createClient();
   const { data: { user } } = await getUser();
 
   if (!user) {
@@ -18,7 +18,7 @@ export async function saveTournamentDraft(data: any) {
 
     if (data.id) {
       // Update existing draft using RPC
-      const { data: rpcData, error: rpcError } = await supabase.rpc('update_tournament_draft', {
+      const { data: rpcData, error: rpcError } = await api.rpc('update_tournament_draft', {
         p_tournament_id: data.id,
         p_name: data.name || null,
         p_slug: data.slug || null,
@@ -36,7 +36,7 @@ export async function saveTournamentDraft(data: any) {
       result = rpcData;
     } else {
       // Create new draft using RPC
-      const { data: rpcData, error: rpcError } = await supabase.rpc('create_tournament_draft', {
+      const { data: rpcData, error: rpcError } = await api.rpc('create_tournament_draft', {
         p_name: data.name || 'Untitled',
         p_slug: data.slug || `draft-${Date.now()}`,
         p_description: data.description || null,
@@ -57,7 +57,7 @@ export async function saveTournamentDraft(data: any) {
   } catch (err: any) {
     console.error('Error saving draft:', err);
     
-    // Safely handle Supabase PostgrestError
+    // Safely handle a database error from the API
     if (err && typeof err === 'object' && 'code' in err && 'message' in err) {
       // Known custom RPC validation errors use PT prefix
       if (typeof err.code === 'string' && err.code.startsWith('PT')) {
@@ -72,13 +72,13 @@ export async function saveTournamentDraft(data: any) {
 }
 
 export async function publishTournament(tournamentId: string) {
-  const supabase = await createClient();
+  const api = await createClient();
   const { data: { user } } = await getUser();
 
   if (!user) return { error: 'Unauthorized' };
 
   // Fetch slug first to revalidate specific route cache
-  const { data: tourny } = await supabase
+  const { data: tourny } = await api
     .from('tournaments')
     .select('slug')
     .eq('id', tournamentId)
@@ -86,7 +86,7 @@ export async function publishTournament(tournamentId: string) {
 
   // Set status to REGISTRATION and mark as publicly discoverable.
   // is_public=true is what makes the tournament visible in the homepage discovery section.
-  const { error } = await supabase
+  const { error } = await api
     .from('tournaments')
     .update({ status: 'REGISTRATION', is_public: true })
     .eq('id', tournamentId);
@@ -109,12 +109,12 @@ export async function publishTournament(tournamentId: string) {
 }
 
 export async function closeRegistration(tournamentId: string) {
-  const supabase = await createClient();
+  const api = await createClient();
   const { data: { user } } = await getUser();
 
   if (!user) return { error: 'Unauthorized' };
 
-  const { data: tourny } = await supabase
+  const { data: tourny } = await api
     .from('tournaments')
     .select('slug, status')
     .eq('id', tournamentId)
@@ -123,7 +123,7 @@ export async function closeRegistration(tournamentId: string) {
   if (!tourny) return { error: 'Tournament not found.' };
   if (tourny.status !== 'REGISTRATION') return { error: 'Registration is not currently open.' };
 
-  const { error } = await supabase
+  const { error } = await api
     .from('tournaments')
     .update({ status: 'PREPARATION' })
     .eq('id', tournamentId)
@@ -141,12 +141,12 @@ export async function closeRegistration(tournamentId: string) {
 }
 
 export async function reopenRegistration(tournamentId: string) {
-  const supabase = await createClient();
+  const api = await createClient();
   const { data: { user } } = await getUser();
 
   if (!user) return { error: 'Unauthorized' };
 
-  const { data: tourny } = await supabase
+  const { data: tourny } = await api
     .from('tournaments')
     .select('slug, status')
     .eq('id', tournamentId)
@@ -155,7 +155,7 @@ export async function reopenRegistration(tournamentId: string) {
   if (!tourny) return { error: 'Tournament not found.' };
   if (!['PREPARATION', 'LIVE'].includes(tourny.status)) return { error: 'Tournament cannot be moved back to registration from its current state.' };
 
-  const { error } = await supabase
+  const { error } = await api
     .from('tournaments')
     .update({ status: 'REGISTRATION' })
     .eq('id', tournamentId)

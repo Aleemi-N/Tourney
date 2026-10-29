@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getTournamentHeader } from '@/lib/tournament-header';
 import { PublicTournamentFrame } from '@/components/public/PublicTournamentFrame';
 import { TournamentNotFound, EmptyState } from '@/components/public/TournamentNotFound';
@@ -52,9 +52,9 @@ export default async function PublicFixturesPage({ params }: Props) {
   const tournament = await getTournamentHeader(slug);
   if (!tournament) return <TournamentNotFound />;
 
-  const supabase = await createClient();
+  const api = await createClient();
 
-  const { data: fixtureRows } = await supabase
+  const { data: fixtureRows } = await api
     .from('public_fixture_view')
     .select('id,match_number,round_number,bracket_position,program_order,bracket_match_type,scheduled_at,venue,court,status,home_team_id,away_team_id')
     .eq('tournament_id', tournament.id)
@@ -68,7 +68,7 @@ export default async function PublicFixturesPage({ params }: Props) {
     (fixtures ?? []).flatMap((f) => [f.home_team_id, f.away_team_id]).filter(Boolean)
   )];
   const { data: teams } = teamIds.length
-    ? await supabase.from('public_team_view').select('id,name,short_name').in('id', teamIds)
+    ? await api.from('public_team_view').select('id,name,short_name').in('id', teamIds)
     : { data: [] };
 
   const teamName = (id: string | null) => teams?.find((t) => t.id === id)?.name ?? 'TBD';

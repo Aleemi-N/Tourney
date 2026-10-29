@@ -14,10 +14,10 @@
 -   TypeScript.
 -   Tailwind CSS.
 -   Framer Motion.
--   Supabase Auth.
--   Supabase PostgreSQL.
--   Supabase Realtime.
--   Supabase Storage.
+-   The API's accounts.
+-   PostgreSQL.
+-   The API's live updates.
+-   The API's image storage.
 -   PostgreSQL RLS.
 -   PostgreSQL functions/RPC for critical state transitions.
 
@@ -37,7 +37,7 @@ intentionally revised.
 
 ## 4. Authority Rule
 
-The browser controls presentation; PostgreSQL/Supabase controls truth.
+The browser controls presentation; PostgreSQL controls truth.
 
 Never trust client-computed values for: - Winning bid. - Remaining
 purse. - Squad eligibility. - Lot availability. - Lot turn. - Hidden
@@ -46,7 +46,7 @@ Set/match winner. - Tournament membership/role.
 
 ## 5. Authentication Rules
 
-1.  Use Supabase Auth for identity.
+1.  Use the API's accounts for identity.
 2.  Never store password hashes in application tables.
 3.  `profiles.id` maps to `auth.users.id`.
 4.  A user may have multiple contextual roles.
@@ -186,7 +186,7 @@ auction sales unless explicitly granted an Organizer role.
 
 ## 16. Realtime Rules
 
-1.  Use Supabase Realtime for live synchronization.
+1.  Use the API's live updates for live synchronization.
 2.  Subscribe only to required scoped data.
 3.  Realtime is a synchronization mechanism, not the source of truth.
 4.  On reconnect, refetch authoritative state before resuming critical
@@ -208,7 +208,7 @@ Show Reconnecting/Offline. - Restore state from server after reconnect.
 
 ## 18. Storage Rules
 
-Use Supabase Storage with explicit bucket policies.
+Use the API's image storage with explicit bucket rules.
 
 Suggested logical buckets: - avatars. - player-photos. - team-logos. -
 tournament-assets. - sponsor-assets. - template-assets. -
@@ -287,7 +287,7 @@ Production build. - Database/RLS/RPC integration suite. - Responsive
 checks for changed screens.
 
 Critical auction/lot/scoring/security changes: - Real
-PostgreSQL/Supabase integration tests. - Concurrency tests. -
+PostgreSQL integration tests. - Concurrency tests. -
 Permission-negative tests.
 
 ## 25. Required Security Tests

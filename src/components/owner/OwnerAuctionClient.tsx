@@ -2,8 +2,8 @@
 
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
+import { createClient } from '@/lib/api/client';
+import { resolvePublicStorageUrl } from '@/lib/api/storage-url';
 import type { OwnerSnapshot } from '@/lib/owner/owner-auction';
 import { UserIcon, ShieldCheckIcon, RadioIcon, SparklesIcon, AlertTriangleIcon, CheckCircleIcon, TrendingUpIcon } from 'lucide-react';
 import { AuctionPlayerCard } from '@/components/auction/AuctionPlayerCard';
@@ -29,8 +29,8 @@ export function OwnerAuctionClient({
 
     const refreshSnapshot = useCallback(async () => {
         if (!auctionId) return false;
-        const supabase = createClient();
-        const { data, error } = await supabase.rpc('get_auction_owner_state', {
+        const api = createClient();
+        const { data, error } = await api.rpc('get_auction_owner_state', {
             p_auction_id: auctionId,
             p_team_id: teamId,
         });
@@ -47,14 +47,14 @@ export function OwnerAuctionClient({
 
     useEffect(() => {
         if (!auctionId) return;
-        const supabase = createClient();
+        const api = createClient();
         let disposed = false;
 
         const recoverSnapshot = async () => {
             if (!disposed) await refreshSnapshot();
         };
 
-        const channel = supabase
+        const channel = api
             .channel(`owner-auction-${auctionId}-${teamId}`)
             .on(
                 'postgres_changes',
@@ -92,7 +92,7 @@ export function OwnerAuctionClient({
             disposed = true;
             document.removeEventListener('visibilitychange', recoverWhenVisible);
             window.removeEventListener('online', recoverWhenOnline);
-            void supabase.removeChannel(channel);
+            void api.removeChannel(channel);
         };
     }, [auctionId, refreshSnapshot, teamId]);
 
@@ -178,7 +178,7 @@ export function OwnerAuctionClient({
                         <AuctionPlayerCard
                             player={player}
                             highestBid={renderSnapshot.highest_bid}
-                            supabase={createClient()}
+                            api={createClient()}
                             currentlyBiddingTeamName={leading ? 'Your Team (YOU ARE LEADING)' : (renderSnapshot.highest_bid?.team.short_name ?? renderSnapshot.highest_bid?.team.name)}
                         />
                     ) : (

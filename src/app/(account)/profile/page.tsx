@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { LandingNav } from '@/components/landing/LandingNav';
 import { ArrowLeft } from 'lucide-react';
 import { AccountAvatar } from '@/components/profile/AccountAvatar';
-import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
+import { resolvePublicStorageUrl } from '@/lib/api/storage-url';
 import Image from 'next/image';
 import { CalendarDays, MapPin } from 'lucide-react';
 import { VolleyballIcon } from '@/components/landing/VolleyballIcon';
@@ -49,15 +49,15 @@ function formatTournamentDate(startDate?: string | null, endDate?: string | null
 }
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const api = await createClient();
+  const { data: { user } } = await api.auth.getUser();
 
   if (!user) {
     redirect('/login?next=/profile');
   }
 
   // Fetch basic user data (we use auth user metadata or profile if available)
-  const { data: profile } = await supabase
+  const { data: profile } = await api
     .from('profiles')
     .select('*')
     .eq('id', user.id)
@@ -68,7 +68,7 @@ export default async function ProfilePage() {
 
   // Derive "Tournaments Participated"
   // 1. Organizer relationships
-  const { data: organizerMemberships } = await supabase
+  const { data: organizerMemberships } = await api
     .from('tournament_members')
     .select(`
       tournament_id,
@@ -80,7 +80,7 @@ export default async function ProfilePage() {
 
   // 2. Player relationships
   // player_tournament_registrations requires player_id. We fetch player_profile first
-  const { data: playerProfile } = await supabase
+  const { data: playerProfile } = await api
     .from('player_profiles')
     .select('id, photo_path')
     .eq('user_id', user.id)
@@ -88,7 +88,7 @@ export default async function ProfilePage() {
 
   let playerRegistrations: any[] = [];
   if (playerProfile) {
-    const { data } = await supabase
+    const { data } = await api
       .from('player_tournament_registrations')
       .select(`
         tournament_id,
@@ -102,7 +102,7 @@ export default async function ProfilePage() {
 
   // 3. Team Owner relationships. Active assignments are authoritative; an
   // approved application alone does not grant access to an owner team.
-  const { data: ownerTeams } = await supabase
+  const { data: ownerTeams } = await api
     .from('team_owners')
     .select(`
       team_id,
@@ -163,17 +163,17 @@ export default async function ProfilePage() {
 
   // 4. Global Organizer Status
   const [{ data: organizerAccessMemberships }, { data: createdTournament }] = await Promise.all([
-    supabase
+    api
     .from('tournament_members')
     .select('tournament_id')
     .eq('user_id', user.id)
     .eq('role', 'ORGANIZER')
     .eq('status', 'ACTIVE')
     .limit(1),
-    supabase.from('tournaments').select('id').eq('created_by', user.id).limit(1).maybeSingle(),
+    api.from('tournaments').select('id').eq('created_by', user.id).limit(1).maybeSingle(),
   ]);
   const isGlobalOrganizer = Boolean(organizerAccessMemberships?.length || createdTournament);
-  const { data: scorerAccess } = await supabase
+  const { data: scorerAccess } = await api
     .from('tournament_members')
     .select('tournament_id')
     .eq('user_id', user.id)
@@ -183,7 +183,7 @@ export default async function ProfilePage() {
 
   const participations = Array.from(participationMap.values());
   const accountPhotoUrl = resolvePublicStorageUrl(
-    supabase,
+    api,
     'avatars',
     playerProfile?.photo_path || profile?.avatar_path,
   );
@@ -258,7 +258,7 @@ export default async function ProfilePage() {
               {participations.map((p, idx) => {
                 const playerStatus = p.playerRegistration ? playerStatusPresentation[p.playerRegistration.status] : null;
                 const branding = Array.isArray(p.tournament.tournament_branding) ? p.tournament.tournament_branding[0] : p.tournament.tournament_branding;
-                const logoUrl = resolvePublicStorageUrl(supabase, 'logos', branding?.logo_path);
+                const logoUrl = resolvePublicStorageUrl(api, 'logos', branding?.logo_path);
                 const date = formatTournamentDate(p.tournament.start_date, p.tournament.end_date);
                 return (
                 <article key={p.tournament.id || idx} className="overflow-hidden rounded-3xl border border-glass-border bg-surface-raised transition-all duration-500 hover:border-primary/50 dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] group relative">

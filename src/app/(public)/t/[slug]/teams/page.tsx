@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getTournamentHeader } from '@/lib/tournament-header';
 import { PublicTournamentFrame } from '@/components/public/PublicTournamentFrame';
 import { TournamentNotFound, EmptyState } from '@/components/public/TournamentNotFound';
@@ -36,8 +36,8 @@ export default async function PublicTeamsPage({ params }: Props) {
   const tournament = await getTournamentHeader(slug);
   if (!tournament) return <TournamentNotFound />;
 
-  const supabase = await createClient();
-  const { data: teams } = await supabase
+  const api = await createClient();
+  const { data: teams } = await api
     .from('public_team_view')
     .select('id,name,short_name,place,logo_path,primary_color,secondary_color')
     .eq('tournament_id', tournament.id)
@@ -67,7 +67,7 @@ export default async function PublicTeamsPage({ params }: Props) {
 
             // Resolve logo URL if available
             const logoUrl = team.logo_path
-              ? supabase.storage.from('logos').getPublicUrl(team.logo_path).data.publicUrl
+              ? api.storage.from('logos').getPublicUrl(team.logo_path).data.publicUrl
               : null;
 
             return (

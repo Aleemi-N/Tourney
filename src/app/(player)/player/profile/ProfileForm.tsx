@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { ImageUpload } from '@/components/forms/ImageUpload';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -15,7 +15,7 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
   const [photoUrl, setPhotoUrl] = useState<string | null>(initialProfile?.photo_path || null);
   const [primaryPosition, setPrimaryPosition] = useState(initialProfile?.primary_position || '');
   const [secondaryPosition, setSecondaryPosition] = useState(initialProfile?.secondary_position || '');
-  const supabase = createClient();
+  const api = createClient();
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -50,7 +50,7 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
     }
 
     try {
-      const { error: rpcError } = await supabase.rpc('update_player_profile', {
+      const { error: rpcError } = await api.rpc('update_player_profile', {
         p_display_name: displayName,
         p_primary_position: submittedPrimaryPosition,
         p_photo_path: photoUrl || undefined,
@@ -69,7 +69,7 @@ export function ProfileForm({ userId, initialProfile }: { userId: string, initia
 
       const previousPhotoPath = initialProfile?.photo_path as string | null | undefined;
       if (previousPhotoPath && photoUrl !== previousPhotoPath && previousPhotoPath.startsWith(`${userId}/`)) {
-        const { error: cleanupError } = await supabase.storage.from('avatars').remove([previousPhotoPath]);
+        const { error: cleanupError } = await api.storage.from('avatars').remove([previousPhotoPath]);
         if (cleanupError) console.error('Previous profile photo cleanup failed:', cleanupError);
       }
       

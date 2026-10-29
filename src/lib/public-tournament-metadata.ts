@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { cache } from 'react';
-import { createClient } from './supabase/server';
+import { createClient } from './api/server';
 import { getCanonicalOrigin, getAbsoluteUrl, TOURNY_PRODUCTION_ORIGIN } from './origin';
 
 export { TOURNY_PRODUCTION_ORIGIN, getCanonicalOrigin, getAbsoluteUrl };
@@ -26,9 +26,9 @@ export type PublicTournamentMetadata = {
 export const getPublicTournamentMetadata = cache(async (slug: string): Promise<PublicTournamentMetadata | null> => {
   if (!slug) return null;
   const normalizedSlug = slug.trim().toLowerCase();
-  const supabase = await createClient();
+  const api = await createClient();
 
-  const { data } = await supabase
+  const { data } = await api
     .from('tournaments')
     .select('id, name, slug, description, status, format, league_mode, is_public, tournament_branding(logo_path, primary_color, secondary_color)')
     .eq('slug', normalizedSlug)
@@ -41,7 +41,7 @@ export const getPublicTournamentMetadata = cache(async (slug: string): Promise<P
     : data.tournament_branding;
 
   const logoUrl = branding?.logo_path
-    ? supabase.storage.from('logos').getPublicUrl(branding.logo_path).data.publicUrl
+    ? api.storage.from('logos').getPublicUrl(branding.logo_path).data.publicUrl
     : null;
 
   return {

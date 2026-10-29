@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 
 export const rupees = (n: number | string | null | undefined) => `₹${Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
@@ -28,11 +28,11 @@ export const upiLink = (upiId: string, payee: string | null, amount: number, not
 
 /** Calls a payments endpoint of the API as the signed-in user. Errors carry the server's own message. */
 export async function paymentsFetch<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
-  const supabase = createClient();
-  const { data } = await supabase.auth.getSession();
+  const api = createClient();
+  const { data } = await api.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error('Sign in first.');
-  const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/payments/v1${path}`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments${path}`, {
     method: init.method ?? 'GET',
     headers: { Authorization: `Bearer ${token}`, ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' }) },
     body: init.body === undefined ? undefined : JSON.stringify(init.body),

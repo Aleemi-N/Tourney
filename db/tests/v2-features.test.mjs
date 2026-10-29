@@ -1,6 +1,6 @@
 // v2 feature checks against the local synthetic seed. Every test runs in its own
 // transaction and rolls back, so the seed is left untouched.
-// Run: node --test db/tests/v2-features.test.mjs (after `supabase db reset --local`)
+// Run: node --test db/tests/v2-features.test.mjs (after `pnpm db:reset`)
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import pg from 'pg';

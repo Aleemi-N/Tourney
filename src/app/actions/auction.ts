@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { revalidatePath } from 'next/cache';
 import type { AuctionCategoryCode } from '@/lib/organizer/organizer-auction';
 
@@ -14,8 +14,8 @@ export async function updateAuctionPriceCategoriesAction(
     c_name: string; c_price: number;
   }
 ) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('update_auction_price_categories', {
+  const api = await createClient();
+  const { data, error } = await api.rpc('update_auction_price_categories', {
     p_tournament_id: tournamentId,
     p_a_name: categories.a_name,
     p_a_price: categories.a_price,
@@ -56,8 +56,8 @@ export async function classifyAuctionPlayerAction(
   auctionPriceCategoryId: string | null,
   notes?: string | null
 ) {
-  const supabase = await createClient();
-  const { error } = await supabase.rpc('approve_player_registration', {
+  const api = await createClient();
+  const { error } = await api.rpc('approve_player_registration', {
     p_registration_id: registrationId,
     p_auction_category: auctionCategory,
     p_notes: notes || undefined,
@@ -91,8 +91,8 @@ export async function classifyAuctionPlayerAction(
 // ─── Auction lifecycle actions ────────────────────────────────────────────────
 
 export async function prepareAuctionAction(tournamentId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('prepare_auction', {
+  const api = await createClient();
+  const { data, error } = await api.rpc('prepare_auction', {
     p_tournament_id: tournamentId,
   });
   if (error) {
@@ -108,8 +108,8 @@ export async function setAuctionLifecycleAction(
   expectedVersion: number,
   requestKey: string
 ) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('set_auction_lifecycle', {
+  const api = await createClient();
+  const { data, error } = await api.rpc('set_auction_lifecycle', {
     p_auction_id: auctionId,
     p_action: action,
     p_expected_version: expectedVersion,
@@ -127,8 +127,8 @@ export async function openNextAuctionPlayerAction(
   requestKey: string,
   targetAuctionPlayerId?: string | null
 ) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('open_next_auction_player', {
+  const api = await createClient();
+  const { data, error } = await api.rpc('open_next_auction_player', {
     p_auction_id: auctionId,
     p_expected_version: expectedVersion,
     p_request_key: requestKey,
@@ -147,8 +147,8 @@ export async function finalizeAuctionSaleAction(
   expectedWinningBidId: string,
   requestKey: string
 ) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('finalize_auction_sale', {
+  const api = await createClient();
+  const { data, error } = await api.rpc('finalize_auction_sale', {
     p_auction_id: auctionId,
     p_auction_player_id: auctionPlayerId,
     p_expected_player_version: expectedPlayerVersion,
@@ -167,8 +167,8 @@ export async function markAuctionPlayerUnsoldAction(
   expectedPlayerVersion: number,
   requestKey: string
 ) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('mark_auction_player_unsold', {
+  const api = await createClient();
+  const { data, error } = await api.rpc('mark_auction_player_unsold', {
     p_auction_id: auctionId,
     p_auction_player_id: auctionPlayerId,
     p_expected_player_version: expectedPlayerVersion,
@@ -188,8 +188,8 @@ export async function requeueAuctionPlayerAction(
   requestKey: string,
   newPrice?: number
 ) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('requeue_auction_player', {
+  const api = await createClient();
+  const { data, error } = await api.rpc('requeue_auction_player', {
     p_auction_id: auctionId,
     p_auction_player_id: auctionPlayerId,
     p_expected_player_version: expectedPlayerVersion,
@@ -207,8 +207,8 @@ export async function completeAuctionAction(
   expectedVersion: number,
   requestKey: string
 ) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('complete_auction', {
+  const api = await createClient();
+  const { data, error } = await api.rpc('complete_auction', {
     p_auction_id: auctionId,
     p_expected_version: expectedVersion,
     p_request_key: requestKey,
@@ -236,8 +236,8 @@ export async function quickAddPlayerToAuctionAction(
   secondaryPosition?: string,
   phone?: string
 ) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('quick_add_player_to_live_auction', {
+  const api = await createClient();
+  const { data, error } = await api.rpc('quick_add_player_to_live_auction', {
     p_auction_id: auctionId,
     p_auction_price_category_id: priceCategoryId,
     p_existing_player_id: existingPlayerId || undefined,
@@ -262,10 +262,10 @@ export type EligiblePlayerResult = {
 };
 
 export async function getEligiblePlayersAction(tournamentId: string) {
-  const supabase = await createClient();
+  const api = await createClient();
 
   // 1. Get all registrations for this tournament that are APPROVED or REJECTED/REVOKED
-  const { data: regs, error: regError } = await supabase
+  const { data: regs, error: regError } = await api
     .from('player_tournament_registrations')
     .select(`
       player_id,
@@ -286,7 +286,7 @@ export async function getEligiblePlayersAction(tournamentId: string) {
   }
 
   // 2. Get existing auction players
-  const { data: auctionPlayers, error: auctionError } = await supabase
+  const { data: auctionPlayers, error: auctionError } = await api
     .from('auctions')
     .select(`
       id,
@@ -302,7 +302,7 @@ export async function getEligiblePlayersAction(tournamentId: string) {
   }
 
   const existingPlayerIds = new Set(
-    (auctionPlayers?.auction_players || []).map((ap) => ap.player_id)
+    (auctionPlayers?.auction_players || []).map((ap: { player_id: string }) => ap.player_id)
   );
 
   // 3. Filter out players already in the auction

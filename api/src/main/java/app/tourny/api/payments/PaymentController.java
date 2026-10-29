@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Registration fees. Every endpoint needs a signed-in user; the service checks who may do what. */
 @RestController
-@RequestMapping("/payments/v1")
+@RequestMapping("/payments")
 class PaymentController {
 
     record ConnectRequest(String keyId, String keySecret) {}

@@ -1,14 +1,24 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient } from '@supabase/supabase-js';
+import { Api, type StoredSession } from './client';
 
-// One backend for web and mobile: the Spring Boot API speaks the supabase-js protocol, so the
-// client only needs its address. Set EXPO_PUBLIC_API_URL / EXPO_PUBLIC_API_KEY (see .env.example).
+// One backend for web and mobile: the client in ./client.ts (a copy of the web app's src/lib/api/core.ts) talks to the
+// Spring Boot API in ../api. Set EXPO_PUBLIC_API_URL (see .env.example).
 // Android emulators reach the host machine at 10.0.2.2; iOS simulators and web use localhost.
 const url = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8080';
-const key = process.env.EXPO_PUBLIC_API_KEY ?? 'anon';
 
-export const api = createClient(url, key, {
-  auth: { storage: AsyncStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
+const SESSION_KEY = 'tourny-session';
+
+export const api = new Api(url, {
+  store: {
+    get: async () => {
+      const raw = await AsyncStorage.getItem(SESSION_KEY);
+      return raw ? (JSON.parse(raw) as StoredSession) : null;
+    },
+    set: async (session) => {
+      if (session) await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      else await AsyncStorage.removeItem(SESSION_KEY);
+    },
+  },
 });
 
 export const apiUrl = url;

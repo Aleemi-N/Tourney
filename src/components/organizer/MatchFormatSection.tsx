@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { Trophy, Settings2 } from 'lucide-react';
 
 type SetRule = { set_number: number; target_points: number };

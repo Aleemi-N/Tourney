@@ -44,7 +44,6 @@ next-env.d.ts
 test-results/
 playwright-report/
 playwright/.cache/
-supabase/.temp/
 screenshots/
 
 # Sensitive local production recovery material

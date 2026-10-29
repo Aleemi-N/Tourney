@@ -1,4 +1,4 @@
--- The Supabase-owned pieces the Tourny migrations and the API expect, for a plain PostgreSQL
+-- The roles, extensions and auth/storage schemas the Tourny migrations and the API expect, for a plain PostgreSQL
 -- server. Run once on an empty database, then apply db/migrations in order (except 52 and
 -- 53, which only reset auction data) and, for rehearsals, db/seed.sql.
 --   psql -v ON_ERROR_STOP=1 -v authenticator_password='...' -f deploy/bootstrap.sql
@@ -20,7 +20,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO anon, authen
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon, authenticated;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO anon, authenticated;
 
--- Accounts. Same columns as Supabase Auth so existing rows (and bcrypt hashes) import as they are.
+-- Accounts. Same columns as the old hosted project had, so its rows (and bcrypt hashes) import as they are.
 CREATE SCHEMA IF NOT EXISTS auth;
 CREATE TABLE auth.users (
   instance_id uuid,

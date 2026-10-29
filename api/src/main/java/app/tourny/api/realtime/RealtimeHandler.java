@@ -20,7 +20,7 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
- * The Phoenix-channel protocol realtime-js speaks, limited to postgres_changes. A client joins a
+ * The Phoenix-channel protocol the client speaks, limited to postgres_changes. A client joins a
  * topic with the table filters it wants, gets ids back, and receives a message for every matching
  * change that ChangeListener reports. Both wire formats are supported (1.0.0 objects and the
  * default 2.0.0 arrays). Broadcast and presence are not implemented.

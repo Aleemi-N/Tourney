@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 
 // payments-client is a client module, so the server formats the amount itself.
 const rupees = (n: number) => `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
@@ -7,8 +7,8 @@ type Fees = { player_fee: number; team_fee: number; online: boolean; upi: boolea
 
 /** "Registration fee: ₹250" shown before registering. Renders nothing for a free tournament. */
 export async function FeeNotice({ tournamentId, kind }: { tournamentId: string; kind: 'PLAYER' | 'TEAM' }) {
-  const supabase = (await createClient()) as unknown as { rpc: (n: string, a: Record<string, unknown>) => PromiseLike<{ data: unknown }> };
-  const { data } = await supabase.rpc('get_registration_fees', { p_tournament_id: tournamentId });
+  const api = (await createClient()) as unknown as { rpc: (n: string, a: Record<string, unknown>) => PromiseLike<{ data: unknown }> };
+  const { data } = await api.rpc('get_registration_fees', { p_tournament_id: tournamentId });
   const fees = data as Fees | null;
   const amount = Number(kind === 'PLAYER' ? fees?.player_fee : fees?.team_fee);
   if (!fees || !(amount > 0)) return null;

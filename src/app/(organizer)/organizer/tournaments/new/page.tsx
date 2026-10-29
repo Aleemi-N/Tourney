@@ -1,4 +1,4 @@
-import { createClient, getUser } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/api/server';
 import { TournamentWizard } from '@/components/organizer/wizard/TournamentWizard';
 import { redirect } from 'next/navigation';
 
@@ -9,7 +9,7 @@ export default async function NewTournamentPage({
 }: {
   searchParams: Promise<{ id?: string }>;
 }) {
-  const supabase = await createClient();
+  const api = await createClient();
   const [
     { data: { user } },
     params,
@@ -23,12 +23,12 @@ export default async function NewTournamentPage({
     { data: orgs },
     { data: tournament },
   ] = await Promise.all([
-    supabase
+    api
       .from('organization_members')
       .select('organization_id')
       .eq('user_id', user.id),
     params.id
-      ? supabase
+      ? api
           .from('tournaments')
           .select('*')
           .eq('id', params.id)
@@ -48,12 +48,12 @@ export default async function NewTournamentPage({
       { data: settings },
       { data: rules }
     ] = await Promise.all([
-      supabase
+      api
         .from('tournament_settings')
         .select('*')
         .eq('tournament_id', tournament.id)
         .single(),
-      supabase
+      api
         .from('volleyball_rules')
         .select('*')
         .eq('tournament_id', tournament.id)

@@ -18,9 +18,9 @@ class RealtimeConfig implements WebSocketConfigurer {
         this.origins = origins;
     }
 
-    /** The path supabase-js connects to ({url}/realtime/v1/websocket). */
+    /** The path the client connects to ({url}/realtime/websocket). */
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(handler, "/realtime/v1/websocket").setAllowedOrigins(origins);
+        registry.addHandler(handler, "/realtime/websocket").setAllowedOrigins(origins);
     }
 }

@@ -2,11 +2,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useId, useState, useRef } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import Image from 'next/image';
 import { UploadCloud, X, Loader2 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
-import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
+import { resolvePublicStorageUrl } from '@/lib/api/storage-url';
 import { PhotoCropModal } from './PhotoCropModal';
 
 interface ImageUploadProps {
@@ -33,7 +33,7 @@ export function ImageUpload({
   const [cropFile, setCropFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
-  const supabase = createClient();
+  const api = createClient();
 
   const validateFile = (file: File) => {
     setError(null);
@@ -64,7 +64,7 @@ export function ImageUpload({
       const fileName = `${crypto.randomUUID()}.${ext}`;
       const filePath = `${userId}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await api.storage
         .from(bucket)
         .upload(filePath, file, { upsert: true });
 
@@ -72,7 +72,7 @@ export function ImageUpload({
         throw uploadError;
       }
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: { publicUrl } } = api.storage
         .from(bucket)
         .getPublicUrl(filePath);
 
@@ -116,7 +116,7 @@ export function ImageUpload({
     onUploadSuccess('', ''); // Empty string implies cleared
   };
 
-  const displayUrl = resolvePublicStorageUrl(supabase, bucket, previewUrl);
+  const displayUrl = resolvePublicStorageUrl(api, bucket, previewUrl);
 
   return (
     <div className={twMerge("flex flex-col gap-2", className)}>

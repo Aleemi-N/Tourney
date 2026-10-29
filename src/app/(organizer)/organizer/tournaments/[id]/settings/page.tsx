@@ -1,4 +1,4 @@
-import { getTournament } from '@/lib/supabase/server';
+import { getTournament } from '@/lib/api/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';

@@ -1,5 +1,5 @@
 // Run:  PHOTO=<any .jpg> node tests/e2e-journey.mjs <output folder>
-//       (needs: supabase db reset, the API on 8080, the production web build on 3100, `expo start --web --port 8081`;
+//       (needs: pnpm db:reset, the API (SPRING_PROFILES_ACTIVE=dev) on 8080, the production web build on 3100, `expo start --web --port 8081`;
 //        restart the API first if you ran it recently, the sign-up limiter allows only a few accounts per hour)
 // End-to-end journey on the real stack: production web build (3100), Spring API (8080), Expo web (8081), Postgres.
 // A brand-new organizer creates a tournament and takes it all the way to certificates, with players, teams, fees,
@@ -10,12 +10,13 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 const require = createRequire(process.cwd() + '/package.json');
 const { chromium } = require('@playwright/test');
-const { createClient } = require('@supabase/supabase-js');
+const { Api } = await import('../src/lib/api/core.ts');
+// A client that keeps nothing: each test account holds its own sign-in in memory.
+const createClient = (url) => { let kept = null; return new Api(url, { store: { get: () => kept, set: (s) => { kept = s; } } }); };
 const pg = require('pg');
 const web = 'http://localhost:3100', mob = 'http://localhost:8081', API = 'http://localhost:8080';
 const outDir = process.argv[2];
 fs.mkdirSync(outDir, { recursive: true });
-const ANON = fs.readFileSync('.env.local', 'utf8').match(/NEXT_PUBLIC_SUPABASE_ANON_KEY="?([^"\s]+)/)[1];
 const PW = 'E2e-Journey-1!';
 if (!process.env.PHOTO) throw new Error('Set PHOTO to the path of any .jpg file');
 const PHOTO = fs.readFileSync(process.env.PHOTO);
@@ -31,7 +32,7 @@ const email = (n) => `e2e-${n}-${stamp}@tourny.local`;
 
 // ---- API users (real sign-up, real JWT) ---------------------------------------------------------------------------------
 async function account(name) {
-  const c = createClient(API, ANON, { auth: { persistSession: false, autoRefreshToken: false } });
+  const c = createClient(API);
   const e = email(name.toLowerCase().split(' ')[0]);
   const up = await c.auth.signUp({ email: e, password: PW, options: { data: { full_name: name } } });
   assert.ok(!up.error, `sign-up ${name}: ${up.error?.message}`);
@@ -288,9 +289,9 @@ try {
   await p4.getByLabel('Type DELETE to confirm').fill('DELETE');
   await Promise.all([p4.waitForURL((u) => u.pathname === '/', { timeout: 30000 }), p4.getByRole('button', { name: 'Delete my account' }).click()]);
   assert.equal((await one('SELECT status FROM public.player_tournament_registrations WHERE id=$1', [regIds[3]])).status, 'WITHDRAWN');
-  const stale = await fetch(`${API}/rest/v1/profiles?select=id`, { headers: { apikey: ANON, Authorization: `Bearer ${players[3].token}` } });
+  const stale = await fetch(`${API}/rest/profiles?select=id`, { headers: { Authorization: `Bearer ${players[3].token}` } });
   assert.equal(stale.status, 401, 'the deleted account\'s token is refused');
-  const relogin = await createClient(API, ANON, { auth: { persistSession: false } }).auth.signInWithPassword({ email: players[3].email, password: PW });
+  const relogin = await createClient(API).auth.signInWithPassword({ email: players[3].email, password: PW });
   assert.ok(relogin.error, 'cannot sign in any more');
   log('waitlisted player downloaded their data and deleted their account; registration withdrawn, token refused, sign-in gone');
 

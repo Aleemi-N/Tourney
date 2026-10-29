@@ -20,14 +20,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Radio, Wifi, WifiOff, RefreshCcw, Clock, Trophy, Pause, Maximize2, Minimize2 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { AuctionPlayerCard } from '@/components/auction/AuctionPlayerCard';
 
 function CurrentPlayerCard(props: {
   player: PublicCurrentPlayer;
   highestBid: PublicBid | null;
   recentBidsCount?: number;
-  supabase: ReturnType<typeof createClient>;
+  api: ReturnType<typeof createClient>;
   isFullscreen?: boolean;
   tournamentName?: string;
   tournamentLogoUrl?: string | null;
@@ -262,7 +262,7 @@ export function PublicAuctionLive({ auctionId, initialState, tournamentName, tou
 
   const containerRef = useRef<HTMLDivElement>(null);
   const lastSeqRef = useRef<number>(initialState.last_sequence ?? 0);
-  const supabase = useMemo(() => createClient(), []);
+  const api = useMemo(() => createClient(), []);
   const reduceMotion = useReducedMotion();
 
   // Fullscreen change listener
@@ -284,7 +284,7 @@ export function PublicAuctionLive({ auctionId, initialState, tournamentName, tou
 
   // ── Snapshot refresh ─────────────────────────────────────────────────────
   const refresh = useCallback(async () => {
-    const { data, error } = await supabase.rpc('get_auction_public_state', {
+    const { data, error } = await api.rpc('get_auction_public_state', {
       p_auction_id: auctionId,
     });
     if (!error && data) {
@@ -293,11 +293,11 @@ export function PublicAuctionLive({ auctionId, initialState, tournamentName, tou
       lastSeqRef.current = next.last_sequence ?? lastSeqRef.current;
       setConn('live');
     }
-  }, [auctionId, supabase]);
+  }, [auctionId, api]);
 
   // ── Realtime subscription ────────────────────────────────────────────────
   useEffect(() => {
-    const channel = supabase
+    const channel = api
       .channel(`public-auction-${auctionId}`)
       .on(
         'postgres_changes',
@@ -329,9 +329,9 @@ export function PublicAuctionLive({ auctionId, initialState, tournamentName, tou
       });
 
     return () => {
-      void supabase.removeChannel(channel);
+      void api.removeChannel(channel);
     };
-  }, [auctionId, refresh, supabase]);
+  }, [auctionId, refresh, api]);
 
   // ── Visibility / online recovery ─────────────────────────────────────────
   useEffect(() => {
@@ -398,7 +398,7 @@ export function PublicAuctionLive({ auctionId, initialState, tournamentName, tou
                 player={current_player}
                 highestBid={highest_bid}
                 recentBidsCount={recent_bids?.length ?? 0}
-                supabase={supabase}
+                api={api}
                 isFullscreen={true}
                 tournamentName={tournamentName}
                 tournamentLogoUrl={tournamentLogoUrl}

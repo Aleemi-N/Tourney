@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { PaymentReceipts, PaymentsDue } from '@/components/payments/PaymentsDue';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getOwnerTeams } from '@/lib/owner/owner-team';
 import { OwnerPortalShell } from '@/components/owner/OwnerPortalShell';
 import { Shield, Users, ArrowRight, Activity, FileText, Globe, Trophy, Wallet, UserCircle, Rocket } from 'lucide-react';
@@ -10,14 +10,14 @@ import { Shield, Users, ArrowRight, Activity, FileText, Globe, Trophy, Wallet, U
 export const metadata: Metadata = { title: 'Team Owner Dashboard' };
 
 export default async function OwnerDashboardPage() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const api = await createClient();
+    const { data: { user } } = await api.auth.getUser();
     if (!user) redirect('/login');
 
     const [teams, applicationsResult, activeTournamentsResult] = await Promise.all([
-        getOwnerTeams(supabase, user.id),
-        supabase.from('team_owner_applications').select('id, proposed_team_name, status, tournaments(name)').eq('user_id', user.id).in('status', ['PENDING', 'CHANGES_REQUESTED', 'REJECTED']),
-        supabase.from('tournaments')
+        getOwnerTeams(api, user.id),
+        api.from('team_owner_applications').select('id, proposed_team_name, status, tournaments(name)').eq('user_id', user.id).in('status', ['PENDING', 'CHANGES_REQUESTED', 'REJECTED']),
+        api.from('tournaments')
             .select('id, name, format, status')
             .in('status', ['DRAFT', 'REGISTRATION_OPEN', 'PUBLISHED', 'LIVE'])
             .order('created_at', { ascending: false })

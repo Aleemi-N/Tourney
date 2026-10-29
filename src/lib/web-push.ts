@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 
 const STORE = 'tourny-web-push';
 export const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? '';

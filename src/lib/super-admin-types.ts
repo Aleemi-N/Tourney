@@ -1,10 +1,10 @@
 /**
  * Super Admin V1 — Database type augmentations.
  *
- * These types extend the generated database.types.ts with the new tables
+ * These types extend the generated types in lib/api/types.ts with the new tables
  * added in migration 20260929000034_super_admin_v1.sql.
  *
- * Import these as needed alongside Database from '@/lib/supabase/types'.
+ * Import these as needed alongside Database from '@/lib/api/types'.
  */
 
 export type ApprovalStatus = 'APPROVED' | 'PENDING_APPROVAL' | 'REJECTED';
@@ -35,7 +35,7 @@ export interface TournamentApprovalHistory {
 
 /**
  * Extended tournament row including super-admin approval columns.
- * The generated database.types.ts will be regenerated after migration.
+ * The generated types will be updated after the migration.
  * Until then, use this augmented type where approval fields are needed.
  */
 export interface TournamentWithApproval {

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { EmbedShell } from '@/components/embed/EmbedShell';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getTournamentHeader } from '@/lib/tournament-header';
 import { getCanonicalOrigin } from '@/lib/origin';
 
@@ -16,13 +16,13 @@ export default async function EmbedFixtures({ params, searchParams }: { params: 
   const tournament = await getTournamentHeader(slug);
   const href = `${getCanonicalOrigin()}/t/${slug}/fixtures`;
   if (!tournament) return <EmbedShell theme={theme} title="Tournament not found" href={getCanonicalOrigin()} refreshSeconds={300}><p className="text-sm text-text-muted">This tournament is not public.</p></EmbedShell>;
-  const supabase = await createClient();
-  const { data } = await supabase.from('public_fixture_view')
+  const api = await createClient();
+  const { data } = await api.from('public_fixture_view')
     .select('id,match_number,status,scheduled_at,court,home_team_id,away_team_id,total_home_score,total_away_score')
     .eq('tournament_id', tournament.id).order('scheduled_at', { ascending: true, nullsFirst: false }).limit(60);
   const fixtures = (data ?? []) as Fixture[];
   const ids = [...new Set(fixtures.flatMap((f) => [f.home_team_id, f.away_team_id]).filter((id): id is string => Boolean(id)))];
-  const { data: teams } = ids.length ? await supabase.from('public_team_view').select('id,name').in('id', ids) : { data: [] };
+  const { data: teams } = ids.length ? await api.from('public_team_view').select('id,name').in('id', ids) : { data: [] };
   const names = new Map((teams ?? []).map((t) => [t.id as string, t.name as string]));
   const live = fixtures.filter((f) => f.status === 'LIVE');
   const upcoming = fixtures.filter((f) => f.status !== 'LIVE' && f.status !== 'COMPLETED');

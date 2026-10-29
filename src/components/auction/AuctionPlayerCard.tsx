@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { User, Hand, Award, Phone, Gavel, Shield } from 'lucide-react';
 import Image from 'next/image';
-import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
-import type { createClient } from '@/lib/supabase/client';
+import { resolvePublicStorageUrl } from '@/lib/api/storage-url';
+import type { createClient } from '@/lib/api/client';
 import { formatVolleyballPosition } from '@/lib/volleyball-positions';
 import { PlayerDetailModal, PlayerDetailData } from '@/components/player/PlayerDetailModal';
 
@@ -45,7 +45,7 @@ export interface AuctionPlayerCardProps {
     };
   } | null;
   recentBidsCount?: number;
-  supabase: ReturnType<typeof createClient>;
+  api: ReturnType<typeof createClient>;
   isFullscreen?: boolean;
   tournamentName?: string;
   tournamentLogoUrl?: string | null;
@@ -56,7 +56,7 @@ export function AuctionPlayerCard({
   player,
   highestBid,
   recentBidsCount,
-  supabase,
+  api,
   isFullscreen,
   tournamentName,
   tournamentLogoUrl,
@@ -66,7 +66,7 @@ export function AuctionPlayerCard({
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState<PlayerDetailData | null>(null);
 
-  const photoUrl = resolvePublicStorageUrl(supabase, 'avatars', player.player.photo_path);
+  const photoUrl = resolvePublicStorageUrl(api, 'avatars', player.player.photo_path);
   const initial = player.player.display_name.trim().charAt(0).toUpperCase();
 
   async function downloadPlayerCardPoster() {
@@ -274,9 +274,9 @@ export function AuctionPlayerCard({
 
     // If extra fields missing, fetch on demand
     const targetId = player.player.id;
-    if (targetId && supabase) {
+    if (targetId && api) {
       try {
-        const { data } = await supabase
+        const { data } = await api
           .from('player_profiles')
           .select('place, height_cm, phone, date_of_birth, playing_history, jersey_name, jersey_number, jersey_size')
           .eq('id', targetId)

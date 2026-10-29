@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import Link from 'next/link';
 import { TeamOwnerRegistrationForm } from '@/app/(public)/t/[slug]/register/team/TeamOwnerRegistrationForm';
 import { FeeNotice } from '@/components/payments/FeeNotice';
@@ -15,10 +15,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function TeamOwnerRegistrationPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const api = await createClient();
 
   // 1. Fetch Tournament
-  const { data: tournament } = await supabase
+  const { data: tournament } = await api
     .from('tournaments')
     .select('id, name, status, format')
     .eq('slug', slug)
@@ -43,7 +43,7 @@ export default async function TeamOwnerRegistrationPage({ params }: { params: Pr
   }
 
   // 2. Enforce Authentication
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await api.auth.getUser();
   if (!user) {
     return (
       <RegistrationShell slug={slug} tournamentName={tournament.name} title="Team Owner Registration">
@@ -59,7 +59,7 @@ export default async function TeamOwnerRegistrationPage({ params }: { params: Pr
   }
 
   // 3. Check existing application
-  const { data: application } = await supabase
+  const { data: application } = await api
     .from('team_owner_applications')
     .select('id, status, review_notes')
     .eq('tournament_id', tournament.id)
@@ -67,12 +67,12 @@ export default async function TeamOwnerRegistrationPage({ params }: { params: Pr
     .single();
 
   // Teams this user already runs elsewhere can be reused, unless already in this tournament.
-  const { data: ownedProfiles } = await supabase
+  const { data: ownedProfiles } = await api
     .from('team_profiles')
     .select('id, name, short_name, logo_path, place, primary_color, secondary_color')
     .eq('owner_user_id', user.id)
     .order('name');
-  const { data: enteredTeams } = await supabase.from('teams').select('team_profile_id').eq('tournament_id', tournament.id);
+  const { data: enteredTeams } = await api.from('teams').select('team_profile_id').eq('tournament_id', tournament.id);
   const entered = new Set((enteredTeams ?? []).map((team) => team.team_profile_id));
   const profiles = (ownedProfiles ?? []).filter((profile) => !entered.has(profile.id));
 

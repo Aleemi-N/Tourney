@@ -7,7 +7,7 @@ export type PublicStorageClient = {
 };
 
 export function resolvePublicStorageUrl(
-  supabase: PublicStorageClient,
+  api: PublicStorageClient,
   bucket: 'avatars' | 'logos',
   pathOrUrl?: string | null,
 ) {
@@ -22,5 +22,5 @@ export function resolvePublicStorageUrl(
     return pathOrUrl;
   }
 
-  return supabase.storage.from(bucket).getPublicUrl(pathOrUrl).data.publicUrl;
+  return api.storage.from(bucket).getPublicUrl(pathOrUrl).data.publicUrl;
 }

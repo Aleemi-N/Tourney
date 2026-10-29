@@ -126,7 +126,7 @@ class PaymentIntegrationTest {
     }
 
     private String login(String email) throws Exception {
-        var r = send("POST", "/auth/v1/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}", null);
+        var r = send("POST", "/auth/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}", null);
         var m = Pattern.compile("\"access_token\":\"([^\"]+)\"").matcher(r.body());
         assertTrue(m.find(), r.body());
         return m.group(1);
@@ -162,7 +162,7 @@ class PaymentIntegrationTest {
                 String organizer = login("organizer@tourny.local");
                 String payer = login(payerEmail);
                 String other = login(otherEmail);
-                String account = "/payments/v1/tournaments/" + T1 + "/account";
+                String account = "/payments/tournaments/" + T1 + "/account";
 
                 // Connecting: organizers only, valid-looking keys only, keys Razorpay accepts.
                 assertEquals(401, send("GET", account, null, null).statusCode());
@@ -180,19 +180,19 @@ class PaymentIntegrationTest {
 
                 // Paying: only the owner of the registration; a second tap reuses the open link.
                 String body = "{\"kind\":\"PLAYER\",\"registrationId\":\"" + regId + "\"}";
-                assertEquals(403, send("POST", "/payments/v1/pay", body, other).statusCode());
-                assertEquals(403, send("POST", "/payments/v1/pay", body, organizer).statusCode());
-                var pay = send("POST", "/payments/v1/pay", body, payer);
+                assertEquals(403, send("POST", "/payments/pay", body, other).statusCode());
+                assertEquals(403, send("POST", "/payments/pay", body, organizer).statusCode());
+                var pay = send("POST", "/payments/pay", body, payer);
                 assertEquals(200, pay.statusCode(), pay.body());
                 assertTrue(pay.body().contains("https://rzp.io/i/plink_"), pay.body());
                 assertEquals(1, created.size());
                 assertTrue(created.get(0).contains("\"amount\":25000"), created.get(0));
                 assertTrue(created.get(0).contains("https://app.example.test/pay/done"), created.get(0));
-                assertEquals(pay.body().replaceAll(".*\"shortUrl\":\"([^\"]+)\".*", "$1"), send("POST", "/payments/v1/pay", body, payer).body().replaceAll(".*\"shortUrl\":\"([^\"]+)\".*", "$1"));
+                assertEquals(pay.body().replaceAll(".*\"shortUrl\":\"([^\"]+)\".*", "$1"), send("POST", "/payments/pay", body, payer).body().replaceAll(".*\"shortUrl\":\"([^\"]+)\".*", "$1"));
                 assertEquals(1, created.size(), "no second payment page");
 
                 // Not paid yet: still open, and the registration cannot be approved.
-                assertTrue(send("GET", "/payments/v1/status?kind=PLAYER&registrationId=" + regId, null, payer).body().contains("\"status\":\"CREATED\""));
+                assertTrue(send("GET", "/payments/status?kind=PLAYER&registrationId=" + regId, null, payer).body().contains("\"status\":\"CREATED\""));
                 try {
                     exec(c, "UPDATE public.player_tournament_registrations SET status = 'APPROVED' WHERE id = ?::uuid", regId);
                     throw new AssertionError("approval must be blocked until the fee is paid");
@@ -202,7 +202,7 @@ class PaymentIntegrationTest {
 
                 // The payer pays on Razorpay's page; the app asks again and sees it paid.
                 linkStatus.put("plink_1", "paid");
-                var paid = send("GET", "/payments/v1/status?kind=PLAYER&registrationId=" + regId, null, payer);
+                var paid = send("GET", "/payments/status?kind=PLAYER&registrationId=" + regId, null, payer);
                 assertTrue(paid.body().contains("\"status\":\"PAID\"") && paid.body().contains("\"paid\":true"), paid.body());
                 assertEquals("pay_plink_1", one(c, "SELECT provider_payment_id FROM public.registration_payments WHERE registration_id = ?::uuid", regId));
                 exec(c, "UPDATE public.player_tournament_registrations SET status = 'APPROVED' WHERE id = ?::uuid", regId);
@@ -210,12 +210,12 @@ class PaymentIntegrationTest {
 
                 // Refunds: organizers only, within what was paid, partly then fully.
                 String paymentId = (String) one(c, "SELECT id::text FROM public.registration_payments WHERE registration_id = ?::uuid", regId);
-                assertEquals(403, send("POST", "/payments/v1/" + paymentId + "/refund", "{\"amount\":50}", payer).statusCode());
-                assertEquals(400, send("POST", "/payments/v1/" + paymentId + "/refund", "{\"amount\":999}", organizer).statusCode());
-                var part = send("POST", "/payments/v1/" + paymentId + "/refund", "{\"amount\":50}", organizer);
+                assertEquals(403, send("POST", "/payments/" + paymentId + "/refund", "{\"amount\":50}", payer).statusCode());
+                assertEquals(400, send("POST", "/payments/" + paymentId + "/refund", "{\"amount\":999}", organizer).statusCode());
+                var part = send("POST", "/payments/" + paymentId + "/refund", "{\"amount\":50}", organizer);
                 assertTrue(part.body().contains("PARTIALLY_REFUNDED"), part.body());
                 assertTrue(refunds.get(0).contains("pay_plink_1") && refunds.get(0).contains("\"amount\":5000"), refunds.get(0));
-                var rest = send("POST", "/payments/v1/" + paymentId + "/refund", null, organizer);
+                var rest = send("POST", "/payments/" + paymentId + "/refund", null, organizer);
                 assertTrue(rest.body().contains("\"status\":\"REFUNDED\""), rest.body());
                 assertTrue(refunds.get(1).contains("\"amount\":20000"), refunds.get(1));
 
@@ -224,7 +224,7 @@ class PaymentIntegrationTest {
                 assertEquals(null, one(c, "SELECT 1 FROM public.tournament_payment_accounts WHERE tournament_id = ?::uuid", T1));
                 // With no account the payer is told to pay the organizer directly.
                 exec(c, "DELETE FROM public.registration_payments WHERE registration_id = ?::uuid", regId);
-                var offline = send("POST", "/payments/v1/pay", body, payer);
+                var offline = send("POST", "/payments/pay", body, payer);
                 assertEquals(409, offline.statusCode());
                 assertTrue(offline.body().contains("offline"), offline.body());
             } finally {

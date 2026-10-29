@@ -15,7 +15,7 @@ import Image from 'next/image';
 import { Loader2, Tag, RefreshCcw, UserPlus } from 'lucide-react';
 import { LockClosedIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { formatVolleyballPosition } from '@/lib/volleyball-positions';
 import { AnimatedSelect } from './AnimatedSelect';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -190,8 +190,8 @@ export function ParticipantManager({
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('PENDING');
   const isAuctionLeague = tournament.format === 'LEAGUE' && tournament.league_mode === 'AUCTION';
 
-  // Supabase client for storage URL generation
-  const supabase = createClient();
+  // API client for storage URL generation
+  const api = createClient();
 
   // Local loading states
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -514,7 +514,7 @@ export function ParticipantManager({
                     >
                       {profile?.photo_path ? (
                         <Image
-                          src={supabase.storage.from('avatars').getPublicUrl(profile.photo_path).data.publicUrl}
+                          src={api.storage.from('avatars').getPublicUrl(profile.photo_path).data.publicUrl}
                           alt={profile.display_name}
                           fill
                           unoptimized
@@ -743,7 +743,7 @@ export function ParticipantManager({
                     {o.logo_path ? (
                       <Image
                         src={
-                          supabase.storage
+                          api.storage
                             .from('logos')
                             .getPublicUrl(o.logo_path).data.publicUrl
                         }
@@ -897,7 +897,7 @@ export function ParticipantManager({
         onClose={() => setShowDownloadModal(false)}
         players={players}
         auctionCategories={auctionCategories}
-        supabase={supabase}
+        api={api}
       />
 
       {/* Add Player Modal */}

@@ -1,24 +1,22 @@
 // Owner visibility QA against the local seed (db/seed.sql) and a running app.
 // Each owner must see only their own teams, in the data layer and in the portal,
 // and must get a 404 on another owner's team page.
-// Run: LOCAL_SUPABASE_ANON_KEY=<from `supabase status`> PHASE5C_BASE_URL=http://localhost:3000 node tests/phase5c-owner-visibility.test.mjs
+// Run: PHASE5C_BASE_URL=http://localhost:3000 node tests/phase5c-owner-visibility.test.mjs   (needs the API on 8080 and the website, both on the seeded local database)
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createClient } from '@supabase/supabase-js';
+import { Api } from '../src/lib/api/core.ts';
 import { chromium } from '@playwright/test';
 
-const supabaseUrl = process.env.LOCAL_SUPABASE_URL ?? 'http://127.0.0.1:54321';
-const anonKey = process.env.LOCAL_SUPABASE_ANON_KEY;
+const apiUrl = process.env.LOCAL_API_URL ?? 'http://127.0.0.1:8080';
 const baseUrl = process.env.PHASE5C_BASE_URL ?? 'http://localhost:3000';
 // The seed's single local-only password, read from the seed so it lives in one place.
 const password = process.env.LOCAL_QA_PASSWORD
   ?? readFileSync(new URL('../db/seed.sql', import.meta.url), 'utf8').match(/extensions\.crypt\('([^']+)'/)[1];
 
-if (!/^http:\/\/(127\.0\.0\.1|localhost)/.test(supabaseUrl) ||
+if (!/^http:\/\/(127\.0\.0\.1|localhost)/.test(apiUrl) ||
     !/^http:\/\/(127\.0\.0\.1|localhost)/.test(baseUrl)) {
   throw new Error('Owner visibility QA may run against local services only');
 }
-if (!anonKey) throw new Error('LOCAL_SUPABASE_ANON_KEY is required');
 
 // Seeded ownership (db/seed.sql): owner@ owns one team per tournament, owner2@ another.
 const OWNER_TEAMS = ['Estuary Eagles', 'Harbour Hawks', 'Kayal Kings', 'QA Falcons', 'Rainmakers'];
@@ -26,12 +24,11 @@ const OWNER2_TEAMS = ['Breakwater Blasters', 'Canal Cobras', 'Coastline Strikers
 const OWNER_AUCTION_TEAM = '90300000-0000-0000-0000-000000000021'; // Harbour Hawks, live auction
 
 async function queryOwner(email) {
-  const supabase = createClient(supabaseUrl, anonKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+  let kept = null;
+  const api = new Api(apiUrl, { store: { get: () => kept, set: (session) => { kept = session; } } });
+  const { data: authData, error: authError } = await api.auth.signInWithPassword({ email, password });
   assert.ifError(authError);
-  const result = await supabase
+  const result = await api
     .from('team_owners')
     .select('team_id, teams!inner(id, name)')
     .eq('user_id', authData.user.id)
@@ -55,8 +52,8 @@ async function login(email) {
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Sign In' }).click();
   await page.waitForURL((url) => !url.pathname.startsWith('/login'));
-  const authCookies = (await context.cookies()).filter((cookie) => cookie.name.startsWith('sb-'));
-  assert.ok(authCookies.length > 0, `${email} did not receive a Supabase auth cookie`);
+  const authCookies = (await context.cookies()).filter((cookie) => cookie.name === 'tourny-session');
+  assert.ok(authCookies.length > 0, `${email} did not receive a session cookie`);
   return { context, page };
 }
 

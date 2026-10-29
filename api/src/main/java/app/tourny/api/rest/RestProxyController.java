@@ -27,7 +27,7 @@ import org.springframework.web.client.RestClient;
  * Table and view reads and writes keep the PostgREST query language the web app already uses
  * (select=a,b(c), filters, Range, Prefer). The API forwards them to a self-hosted PostgREST with
  * the caller's token, so row-level security and grants decide what each role can do; signed-out
- * visitors get an anon token. Clients call /rest/{table}?... instead of Supabase's /rest/v1/.
+ * visitors get an anon token. Clients call /rest/{table}?...
  */
 @RestController
 class RestProxyController {
@@ -45,7 +45,7 @@ class RestProxyController {
     RestProxyController(JwtEncoder jwtEncoder,
                         @Value("${tourny.postgrest.url}") String postgrestUrl,
                         @Value("${tourny.postgrest.api-key:}") String apiKey) {
-        // Not RestClient's baseUrl: an absolute request path would replace the /rest/v1 prefix.
+        // Not RestClient's baseUrl: an absolute request path would replace the /rest prefix.
         this.baseUrl = postgrestUrl.replaceAll("/+$", "");
         this.client = RestClient.builder()
                 .requestFactory(new JdkClientHttpRequestFactory(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()))
@@ -54,10 +54,10 @@ class RestProxyController {
         this.apiKey = apiKey;
     }
 
-    @RequestMapping({"/rest/v1/**", "/rest/**"}) // /rest/v1 is the prefix supabase-js uses
+    @RequestMapping("/rest/**")
     ResponseEntity<byte[]> forward(HttpServletRequest request, @AuthenticationPrincipal Jwt jwt) throws Exception {
         String uri = request.getRequestURI();
-        String path = uri.startsWith("/rest/v1/") ? uri.substring("/rest/v1".length()) : uri.substring("/rest".length());
+        String path = uri.substring("/rest".length());
         String query = request.getQueryString();
         String token = jwt != null ? jwt.getTokenValue() : anonymousToken();
 

@@ -11,7 +11,7 @@
  */
 
 import { redirect } from 'next/navigation';
-import { createClient, getUser } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/api/server';
 import { SuperAdminShell } from '@/components/super-admin/SuperAdminShell';
 
 export default async function SuperAdminLayout({
@@ -27,8 +27,8 @@ export default async function SuperAdminLayout({
   }
 
   // 2. Platform super admin check — authoritative DB query
-  const supabase = await createClient();
-  const { data: isSuperAdmin, error: rpcError } = await supabase.rpc('is_platform_super_admin');
+  const api = await createClient();
+  const { data: isSuperAdmin, error: rpcError } = await api.rpc('is_platform_super_admin');
 
   if (rpcError || !isSuperAdmin) {
     // Redirect non-super-admins — do NOT reveal whether the route exists
@@ -42,7 +42,7 @@ export default async function SuperAdminLayout({
   };
 
   // 4. Load pending approval count for badge
-  const { count } = await supabase
+  const { count } = await api
     .from('tournaments')
     .select('*', { count: 'exact', head: true })
     .eq('approval_status', 'PENDING_APPROVAL');

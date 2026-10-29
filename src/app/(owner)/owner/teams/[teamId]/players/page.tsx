@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getOwnerTeams } from '@/lib/owner/owner-team';
-import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
+import { resolvePublicStorageUrl } from '@/lib/api/storage-url';
 import { OwnerPortalShell } from '@/components/owner/OwnerPortalShell';
 import { OwnerTeamHeader } from '@/components/owner/OwnerTeamHeader';
 import { OwnerPlayerPoolGrid, PlayerPoolItem } from '@/components/owner/OwnerPlayerPoolGrid';
@@ -38,26 +38,26 @@ export default async function OwnerPlayerPoolPage({
 }) {
     const { teamId } = await params;
     const { filter = 'all' } = await searchParams;
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const api = await createClient();
+    const { data: { user } } = await api.auth.getUser();
     if (!user) redirect('/login');
 
-    const teams = await getOwnerTeams(supabase, user.id);
+    const teams = await getOwnerTeams(api, user.id);
     const team = teams.find((item) => item.id === teamId);
     if (!team) notFound();
 
     const [{ data: registrationsData }, { data: auction }, { data: categoriesData }] = await Promise.all([
-        supabase
+        api
             .from('player_tournament_registrations')
             .select('id, player_id, player_profiles(id, display_name, photo_path, primary_position, secondary_position, place, height_cm, phone, date_of_birth, playing_history, jersey_name, jersey_number, jersey_size)')
             .eq('tournament_id', team.tournament_id)
             .eq('status', 'APPROVED'),
-        supabase
+        api
             .from('auctions')
             .select('id')
             .eq('tournament_id', team.tournament_id)
             .maybeSingle(),
-        supabase
+        api
             .from('tournament_auction_categories')
             .select('category_code, display_name, base_price, display_order')
             .eq('tournament_id', team.tournament_id)
@@ -85,14 +85,14 @@ export default async function OwnerPlayerPoolPage({
     }>();
 
     if (auction?.id) {
-        const { data: apList } = await supabase
+        const { data: apList } = await api
             .from('auction_players')
             .select('id, player_id, status, category_code, category_base_price, base_price')
             .eq('auction_id', auction.id);
 
         if (apList && apList.length > 0) {
             const apIds = apList.map(ap => ap.id);
-            const { data: salesList } = await supabase
+            const { data: salesList } = await api
                 .from('auction_sales')
                 .select('auction_player_id, sold_amount, team_id, teams(name)')
                 .in('auction_player_id', apIds);
@@ -126,7 +126,7 @@ export default async function OwnerPlayerPoolPage({
 
     const allPlayers: PlayerPoolItem[] = rawPlayers.map((row) => {
         const auctionInfo = auctionPlayersMap.get(row.player_id);
-        const photoUrl = resolvePublicStorageUrl(supabase, 'avatars', row.player_profiles?.photo_path);
+        const photoUrl = resolvePublicStorageUrl(api, 'avatars', row.player_profiles?.photo_path);
         const categoryCode = auctionInfo?.categoryCode ?? 'C';
         const catDetail = categoryMap.get(categoryCode);
         const basePrice = auctionInfo?.categoryBasePrice ?? catDetail?.basePrice ?? auctionInfo?.basePrice ?? (categoryCode === 'A' ? 500 : categoryCode === 'B' ? 300 : 100);

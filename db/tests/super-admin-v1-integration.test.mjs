@@ -24,7 +24,7 @@ import pg from 'pg';
 import assert from 'assert';
 
 const { Pool } = pg;
-const DB_URL = process.env.SUPABASE_DB_URL || 'postgresql://postgres:postgres@127.0.0.1:5440/tourny';
+const DB_URL = process.env.LOCAL_DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:5440/tourny';
 
 const pool = new Pool({ connectionString: DB_URL, max: 20 });
 

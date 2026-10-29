@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getOwnerTeams } from '@/lib/owner/owner-team';
 import { OwnerPortalShell } from '@/components/owner/OwnerPortalShell';
 import { OwnerTeamHeader } from '@/components/owner/OwnerTeamHeader';
@@ -9,15 +9,15 @@ export const metadata: Metadata = { title: 'Match Results | Team Owner' };
 
 export default async function OwnerResultsPage({ params }: { params: Promise<{ teamId: string }> }) {
     const { teamId } = await params;
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const api = await createClient();
+    const { data: { user } } = await api.auth.getUser();
     if (!user) redirect('/login');
 
-    const teams = await getOwnerTeams(supabase, user.id);
+    const teams = await getOwnerTeams(api, user.id);
     const team = teams.find((item) => item.id === teamId);
     if (!team) notFound();
 
-    const { data: results } = await supabase
+    const { data: results } = await api
         .from('public_fixture_view')
         .select('id,match_number,scheduled_at,venue,court,status,home_team_id,away_team_id,total_home_score,total_away_score,winner_team_id')
         .eq('tournament_id', team.tournament_id)
@@ -26,7 +26,7 @@ export default async function OwnerResultsPage({ params }: { params: Promise<{ t
         .order('scheduled_at', { ascending: false });
 
     const ids = [...new Set((results ?? []).flatMap((res) => [res.home_team_id, res.away_team_id]).filter((id): id is string => Boolean(id)))];
-    const { data: names } = ids.length ? await supabase.from('teams').select('id,name').in('id', ids) : { data: [] };
+    const { data: names } = ids.length ? await api.from('teams').select('id,name').in('id', ids) : { data: [] };
     const getTeamName = (id: string | null) => names?.find((item) => item.id === id)?.name ?? 'TBD';
 
     return (

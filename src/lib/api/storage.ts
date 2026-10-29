@@ -8,7 +8,7 @@ export async function uploadImage(
   file: File
 ): Promise<{ path: string; url: string } | { error: string }> {
   try {
-    const supabase = createClient();
+    const api = createClient();
     
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -29,7 +29,7 @@ export async function uploadImage(
     // Using a generic name per user, so it simply overwrites and we don't accumulate junk.
     const path = `${userId}/photo.${ext}`;
 
-    const { data, error } = await supabase.storage
+    const { data, error } = await api.storage
       .from(bucket)
       .upload(path, file, {
         cacheControl: '3600',
@@ -40,7 +40,7 @@ export async function uploadImage(
       return { error: error.message };
     }
 
-    const { data: publicData } = supabase.storage
+    const { data: publicData } = api.storage
       .from(bucket)
       .getPublicUrl(data.path);
 

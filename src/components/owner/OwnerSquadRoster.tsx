@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { UserIcon } from '@heroicons/react/24/solid';
-import { createClient } from '@/lib/supabase/client';
-import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
+import { createClient } from '@/lib/api/client';
+import { resolvePublicStorageUrl } from '@/lib/api/storage-url';
 import { PlayerDetailModal, PlayerDetailData } from '@/components/player/PlayerDetailModal';
 import { formatVolleyballPosition } from '@/lib/volleyball-positions';
 
@@ -32,7 +32,7 @@ export interface SquadRosterItem {
 
 export function OwnerSquadRoster({ squad, teamName }: { squad: SquadRosterItem[]; teamName: string }) {
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerDetailData | null>(null);
-  const supabase = createClient();
+  const api = createClient();
 
   if (squad.length === 0) {
     return (
@@ -53,7 +53,7 @@ export function OwnerSquadRoster({ squad, teamName }: { squad: SquadRosterItem[]
           const secondaryPos = item.player?.secondary_position
             ? formatVolleyballPosition(item.player.secondary_position)
             : null;
-          const photoUrl = resolvePublicStorageUrl(supabase, 'avatars', item.player?.photo_path);
+          const photoUrl = resolvePublicStorageUrl(api, 'avatars', item.player?.photo_path);
 
           const detailData: PlayerDetailData = {
             id: item.playerId,

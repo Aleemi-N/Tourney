@@ -1,21 +1,21 @@
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { ShareStandingsButton } from '@/components/organizer/ShareStandingsButton';
 
 type Standing = { rank: number; team_id: string; team_name: string; played: number; won: number; lost: number; drawn: number; league_points: number; sets_won: number; sets_lost: number; points_for: number; points_against: number };
 
 export default async function OrganizerStandingsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const api = await createClient();
   const [{ data: tournament }, { data: stages }, { data: branding }] = await Promise.all([
-    supabase.from('tournaments').select('id,name,slug,venue').eq('id', id).maybeSingle(),
-    supabase.from('tournament_stages').select('id,name,status,sequence,qualification_count').eq('tournament_id', id).eq('stage_type', 'LEAGUE').order('sequence'),
-    supabase.from('tournament_branding').select('logo_path').eq('tournament_id', id).maybeSingle(),
+    api.from('tournaments').select('id,name,slug,venue').eq('id', id).maybeSingle(),
+    api.from('tournament_stages').select('id,name,status,sequence,qualification_count').eq('tournament_id', id).eq('stage_type', 'LEAGUE').order('sequence'),
+    api.from('tournament_branding').select('logo_path').eq('tournament_id', id).maybeSingle(),
   ]);
-  const logoUrl = branding?.logo_path ? supabase.storage.from('logos').getPublicUrl(branding.logo_path).data.publicUrl : null;
+  const logoUrl = branding?.logo_path ? api.storage.from('logos').getPublicUrl(branding.logo_path).data.publicUrl : null;
   if (!tournament) notFound();
   const tables = await Promise.all((stages ?? []).map(async (stage) => {
-    const { data } = await supabase.rpc('get_stage_standings', { p_stage_id: stage.id });
+    const { data } = await api.rpc('get_stage_standings', { p_stage_id: stage.id });
     return { stage, rows: (Array.isArray(data) ? data : []) as unknown as Standing[] };
   }));
   const signed = (n: number) => (n > 0 ? `+${n}` : String(n));

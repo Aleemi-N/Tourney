@@ -7,14 +7,14 @@
  * Never trust client-side role claims.
  * Never expose service_role credentials.
  *
- * NOTE: The Supabase `.rpc()` call is typed against the generated Database
+ * NOTE: The `.rpc()` call is typed against the generated Database
  * type. Because the new RPCs are added in migration 34 which hasn't been
  * applied to the local type-generation yet, we cast through `unknown` where
  * needed to satisfy the compiler without losing runtime safety.
  * After migration is applied and types are regenerated, these casts can be removed.
  */
 
-import { createClient, getUser } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/api/server';
 import { revalidatePath } from 'next/cache';
 import type { PlatformDashboardMetrics } from '@/lib/super-admin-types';
 
@@ -27,21 +27,21 @@ import type { PlatformDashboardMetrics } from '@/lib/super-admin-types';
  * Queries the DB directly — never trusts client-supplied claims.
  */
 async function requireSuperAdmin() {
-  const supabase = await createClient();
+  const api = await createClient();
   const { data: { user } } = await getUser();
 
   if (!user) {
-    return { user: null, supabase, error: 'Not authenticated' as const };
+    return { user: null, api, error: 'Not authenticated' as const };
   }
 
   // DB-authoritative check: row must exist in platform_super_admins
-  const { data: isSuperAdmin, error } = await supabase.rpc('is_platform_super_admin');
+  const { data: isSuperAdmin, error } = await api.rpc('is_platform_super_admin');
 
   if (error || !isSuperAdmin) {
-    return { user, supabase, error: 'Unauthorized: Super Admin access required' as const };
+    return { user, api, error: 'Unauthorized: Super Admin access required' as const };
   }
 
-  return { user, supabase, error: null };
+  return { user, api, error: null };
 }
 
 // ---------------------------------------------------------------------------
@@ -51,13 +51,13 @@ async function requireSuperAdmin() {
 export async function getPlatformDashboardMetrics(): Promise<
   { data: PlatformDashboardMetrics } | { error: string }
 > {
-  const { supabase, error: authError } = await requireSuperAdmin();
+  const { api, error: authError } = await requireSuperAdmin();
 
   if (authError) {
     return { error: authError };
   }
 
-  const { data, error } = await supabase.rpc('platform_dashboard_metrics');
+  const { data, error } = await api.rpc('platform_dashboard_metrics');
 
   if (error) {
     console.error('platform_dashboard_metrics error:', error);
@@ -72,11 +72,11 @@ export async function getPlatformDashboardMetrics(): Promise<
 // ---------------------------------------------------------------------------
 
 export async function getApprovalQueue() {
-  const { supabase, error: authError } = await requireSuperAdmin();
+  const { api, error: authError } = await requireSuperAdmin();
   if (authError) return { error: authError };
 
   // Use raw select since approval_status is in generated types now
-  const { data, error } = await supabase
+  const { data, error } = await api
     .from('tournaments')
     .select(`
       id, name, format, league_mode, created_at,
@@ -96,10 +96,10 @@ export async function getApprovalQueue() {
 }
 
 export async function approveTournament(tournamentId: string): Promise<{ ok: boolean } | { error: string }> {
-  const { supabase, error: authError } = await requireSuperAdmin();
+  const { api, error: authError } = await requireSuperAdmin();
   if (authError) return { error: authError };
 
-  const { data, error } = await supabase.rpc('approve_tournament', {
+  const { data, error } = await api.rpc('approve_tournament', {
     p_tournament_id: tournamentId,
   });
 
@@ -120,14 +120,14 @@ export async function rejectTournament(
   tournamentId: string,
   reason: string,
 ): Promise<{ ok: boolean } | { error: string }> {
-  const { supabase, error: authError } = await requireSuperAdmin();
+  const { api, error: authError } = await requireSuperAdmin();
   if (authError) return { error: authError };
 
   if (!reason?.trim()) {
     return { error: 'Rejection reason is required.' };
   }
 
-  const { data, error } = await supabase.rpc('reject_tournament', {
+  const { data, error } = await api.rpc('reject_tournament', {
     p_tournament_id: tournamentId,
     p_reason: reason.trim(),
   });
@@ -153,10 +153,10 @@ export async function getAllTournaments(filter?: {
   approvalStatus?: string;
   search?: string;
 }) {
-  const { supabase, error: authError } = await requireSuperAdmin();
+  const { api, error: authError } = await requireSuperAdmin();
   if (authError) return { error: authError };
 
-  let query = supabase.from('tournaments')
+  let query = api.from('tournaments')
     .select(`
       id, name, slug, format, status, is_public, created_at,
       approval_status, approval_submitted_at, approval_reviewed_at,
@@ -188,11 +188,11 @@ export async function getAllTournaments(filter?: {
 // ---------------------------------------------------------------------------
 
 export async function getOrganizers() {
-  const { supabase, error: authError } = await requireSuperAdmin();
+  const { api, error: authError } = await requireSuperAdmin();
   if (authError) return { error: authError };
 
   // Get all organization owners with tournament counts
-  const { data, error } = await supabase
+  const { data, error } = await api
     .from('organization_members')
     .select(`
       user_id,
@@ -214,10 +214,10 @@ export async function suspendOrganizer(
   userId: string,
   reason?: string,
 ): Promise<{ ok: boolean } | { error: string }> {
-  const { supabase, error: authError } = await requireSuperAdmin();
+  const { api, error: authError } = await requireSuperAdmin();
   if (authError) return { error: authError };
 
-  const { data, error } = await supabase.rpc('suspend_organizer', {
+  const { data, error } = await api.rpc('suspend_organizer', {
     p_user_id: userId,
     p_reason: reason,
   });
@@ -236,10 +236,10 @@ export async function suspendOrganizer(
 export async function reactivateOrganizer(
   userId: string,
 ): Promise<{ ok: boolean } | { error: string }> {
-  const { supabase, error: authError } = await requireSuperAdmin();
+  const { api, error: authError } = await requireSuperAdmin();
   if (authError) return { error: authError };
 
-  const { data, error } = await supabase.rpc('reactivate_organizer', {
+  const { data, error } = await api.rpc('reactivate_organizer', {
     p_user_id: userId,
   });
 
@@ -259,7 +259,7 @@ export async function reactivateOrganizer(
 // ---------------------------------------------------------------------------
 
 export async function getSuperAdminAuditLog(limit = 50) {
-  const { supabase, error: authError } = await requireSuperAdmin();
+  const { api, error: authError } = await requireSuperAdmin();
   if (authError) return { error: authError };
 
   const superAdminActions = [
@@ -271,7 +271,7 @@ export async function getSuperAdminAuditLog(limit = 50) {
     'ORGANIZER_REACTIVATED',
   ];
 
-  const { data, error } = await supabase
+  const { data, error } = await api
     .from('audit_logs')
     .select(`
       id, action, entity_type, entity_id, reason, created_at,
@@ -298,12 +298,12 @@ export async function getSuperAdminAuditLog(limit = 50) {
 export async function submitTournamentForApproval(
   tournamentId: string,
 ): Promise<{ ok: boolean } | { error: string }> {
-  const supabase = await createClient();
+  const api = await createClient();
   const { data: { user } } = await getUser();
 
   if (!user) return { error: 'Not authenticated' };
 
-  const { data, error } = await supabase.rpc('submit_tournament_for_approval', {
+  const { data, error } = await api.rpc('submit_tournament_for_approval', {
     p_tournament_id: tournamentId,
   });
 

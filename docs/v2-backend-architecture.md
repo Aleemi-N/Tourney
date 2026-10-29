@@ -22,15 +22,15 @@ Decision: a single Spring Boot API in front of PostgreSQL serves **both** the Ne
 - `POST /auth/login|register|refresh|logout`, `POST /uploads`, `GET /events/...` (SSE).
 - Shared TypeScript client package `@tourny/api` (typed from the DB) used by Next.js and Expo, so there is one implementation of auth, retry and realtime.
 
-## Revision: keep supabase-js as the client
-Rewriting 95 files to a new client is avoidable. supabase-js (also works in React Native) only needs three things from its server, and the API provides them:
-- **`/rest/v1/*`**: forwarded to a self-hosted PostgREST with the caller's token, so the PostgREST query language the pages use (embedding, filters, Range) works unchanged and row-level security decides access. Implemented (`RestProxyController`).
-- **`/rest/v1/rpc/{fn}`**: handled by the API itself against the 76-function allow-list (same transaction/role context). Implemented (`RpcController`). Signed-out callers run as `anon`.
-- **`/auth/v1/*`** (GoTrue-compatible subset: `token` password + refresh with rotation, `user`, `logout`, `signup`; `recover` sends a one-time PKCE link by SMTP (migration 71) and `/auth/v1/token?grant_type=pkce` exchanges it, which is what the web reset-password page uses; Google/OAuth sign-in is not used by the app and is not implemented). Implemented (`AuthController`).
-- **`/storage/v1/object/*`**: public read, upload, delete on a directory (images only, 2 MB, per-user and per-tournament folders). Implemented (`StorageController`).
-- **`/realtime/v1/websocket`**: Phoenix protocol, postgres_changes only, fed by `LISTEN/NOTIFY` triggers (migration 69). Implemented (`RealtimeHandler`, `ChangeListener`). Rows of the two `*_public_events` tables are delivered whole; other tables announce key columns only.
-All of supabase-js (auth, rest, rpc, storage, realtime) is therefore served by the API; `node api/smoke.mjs` checks it with the real client.
-Web and mobile then differ from today only by the project URL, which is how "one backend for both" is met.
+## Revision: one in-house client, same endpoints
+The web and mobile apps use one small client written for this API (`src/lib/api/core.ts`, copied to `mobile/src/lib/client.ts` by `scripts/sync-client.mjs`): queries, functions, accounts, images and live updates over `fetch` and `WebSocket`, no third-party client library. The API serves:
+- **`/rest/*`**: forwarded to a self-hosted PostgREST with the caller's token, so embedding, filters and Range work and row-level security decides access (`RestProxyController`). Signed-out callers run as `anon`.
+- **`/rpc/{fn}`**: handled by the API itself against the allow-list in `rpc-allowlist.txt` (`RpcController`).
+- **`/auth/*`**: `token` (password, refresh with rotation, PKCE code exchange), `signup`, `user`, `logout`, `recover` (one-time PKCE link by SMTP). Google/OAuth sign-in is not used by the app (`AuthController`).
+- **`/storage/object/*`**: public read, raw-body upload, delete (images only, 2 MB, per-user and per-tournament folders) (`StorageController`).
+- **`/realtime/websocket`**: Phoenix-channel framing, `postgres_changes` only, fed by `LISTEN/NOTIFY` triggers (migration 69) (`RealtimeHandler`, `ChangeListener`). Rows of the two `*_public_events` tables are delivered whole; other tables announce key columns only.
+- **`/account/*`** and **`/payments/*`**: account export/deletion and registration fees.
+`tests/api-client.test.mjs` checks the client against a fake server; `node api/smoke.mjs` checks it against the running API.
 
 ## Order of work
 1. Spring Boot skeleton, Flyway baseline from `db/migrations` 1-67 (dropping the destructive 52/53), JWT auth, `/rpc` with RLS context. Tests against a throwaway Postgres.

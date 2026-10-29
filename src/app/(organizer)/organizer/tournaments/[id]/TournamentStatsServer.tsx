@@ -1,12 +1,12 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 
 export async function TournamentStatsServer({ tournamentId }: { tournamentId: string }) {
-  const supabase = await createClient();
+  const api = await createClient();
 
   const [{ count: playerCount }, { count: teamOwnerCount }, { count: teamCount }] = await Promise.all([
-    supabase.from('player_tournament_registrations').select('*', { count: 'exact', head: true }).eq('tournament_id', tournamentId),
-    supabase.from('team_owner_applications').select('*', { count: 'exact', head: true }).eq('tournament_id', tournamentId),
-    supabase.from('teams').select('*', { count: 'exact', head: true }).eq('tournament_id', tournamentId)
+    api.from('player_tournament_registrations').select('*', { count: 'exact', head: true }).eq('tournament_id', tournamentId),
+    api.from('team_owner_applications').select('*', { count: 'exact', head: true }).eq('tournament_id', tournamentId),
+    api.from('teams').select('*', { count: 'exact', head: true }).eq('tournament_id', tournamentId)
   ]);
 
   return (

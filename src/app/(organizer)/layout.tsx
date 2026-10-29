@@ -10,7 +10,7 @@
  * Placeholder shell — navigation to be built in the organizer phase.
  */
 import { DashboardShell } from '@/components/organizer/DashboardShell';
-import { createClient, getUser } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/api/server';
 import { isLotDrawEnabled } from '@/lib/lot-draw';
 import { redirect } from 'next/navigation';
 
@@ -30,8 +30,8 @@ export default async function OrganizerLayout({
     email: user.email,
   };
 
-  const supabase = await createClient();
-  const { data: tournaments } = await supabase
+  const api = await createClient();
+  const { data: tournaments } = await api
     .from('tournaments')
     .select('id, format, league_mode, tournament_settings(icon_selection_method, setter_selection_method)');
   const lotEnabledTournamentIds = (tournaments ?? []).filter((tournament) => {

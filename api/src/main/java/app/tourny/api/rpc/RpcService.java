@@ -23,7 +23,7 @@ import tools.jackson.databind.ObjectMapper;
 /**
  * Runs one allow-listed Postgres function for the signed-in user. The transaction carries the
  * user's id and role the way PostgREST does, so row-level security and auth.uid() behave exactly
- * as they did under Supabase. Arguments are bound as parameters; only names the database itself
+ * as they did before the move to this API. Arguments are bound as parameters; only names the database itself
  * reports for the function are ever placed in the SQL text.
  */
 @Service

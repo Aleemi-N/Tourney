@@ -64,14 +64,13 @@ services:
     build:
       context: ..
       args:
-        NEXT_PUBLIC_SUPABASE_URL: https://${API_DOMAIN}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
+        NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
         NEXT_PUBLIC_SITE_URL: https://${APP_DOMAIN}
         NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
     restart: unless-stopped
     environment:
       # The server side reaches the API over the internal network.
-      NEXT_PUBLIC_SUPABASE_URL: https://${API_DOMAIN}
+      NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
       NEXT_PUBLIC_SITE_URL: https://${APP_DOMAIN}
       NEXT_PUBLIC_CONTACT_EMAIL: ${CONTACT_EMAIL:-support@example.com}
 

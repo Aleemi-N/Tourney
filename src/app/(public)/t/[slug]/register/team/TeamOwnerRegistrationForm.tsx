@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { ImageUpload } from '@/components/forms/ImageUpload';
 import { Loader2 } from 'lucide-react';
 
@@ -23,7 +23,7 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId, profiles = [] 
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const supabase = createClient();
+  const api = createClient();
   const router = useRouter();
   const fieldClass = 'min-h-11 min-w-0 w-full rounded-xl border border-border bg-surface-muted  px-3 py-2.5 text-text-primary scheme-dark transition-all duration-300 placeholder:text-text-muted focus:border-primary focus:bg-surface-raised focus:outline-none focus:ring-4 focus:ring-primary/20 hover:border-border-strong';
   const labelClass = 'text-sm font-medium text-text-secondary ml-1';
@@ -50,7 +50,7 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId, profiles = [] 
     }
 
     try {
-      const { error: rpcError } = await supabase.rpc('submit_team_owner_application', {
+      const { error: rpcError } = await api.rpc('submit_team_owner_application', {
         p_tournament_id: tournamentId,
         p_proposed_team_name: proposedTeamName,
         p_team_short_name: teamShortName || undefined,
@@ -121,7 +121,7 @@ export function TeamOwnerRegistrationForm({ userId, tournamentId, profiles = [] 
         key={profileId}
         userId={userId}
         bucket="logos"
-        currentPhotoUrl={profile?.logo_path ? supabase.storage.from('logos').getPublicUrl(profile.logo_path).data.publicUrl : null}
+        currentPhotoUrl={profile?.logo_path ? api.storage.from('logos').getPublicUrl(profile.logo_path).data.publicUrl : null}
         onUploadSuccess={(url, path) => setLogoUrl(path)}
         label="Team Logo *"
       />

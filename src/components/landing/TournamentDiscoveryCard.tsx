@@ -21,7 +21,7 @@ export type DiscoveryTournamentProps = {
 export function TournamentDiscoveryCard({ tournament }: DiscoveryTournamentProps) {
   const branding = Array.isArray(tournament.tournament_branding) ? tournament.tournament_branding[0] : tournament.tournament_branding;
   const logoUrl = branding?.logo_path
-    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/${branding.logo_path}`
+    ? `${process.env.NEXT_PUBLIC_API_URL}/storage/object/public/logos/${branding.logo_path}`
     : null;
   const getStatusDisplay = (tournament: DiscoveryTournamentProps['tournament']) => {
     const { status, tournament_settings, format } = tournament;

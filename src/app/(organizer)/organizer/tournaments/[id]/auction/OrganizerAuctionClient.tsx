@@ -27,7 +27,7 @@ import {
   Settings
 } from 'lucide-react';
 import { AuctionPlayerCard } from '@/components/auction/AuctionPlayerCard';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { OrganizerAddPlayerModal } from '@/components/organizer/OrganizerAddPlayerModal';
 import { ConfigureQueueModal } from './ConfigureQueueModal';
 import Image from 'next/image';
@@ -238,7 +238,7 @@ function CurrentPlayerPanel({
     <AuctionPlayerCard
       player={cp}
       highestBid={hb}
-      supabase={createClient()}
+      api={createClient()}
       tournamentName={tournamentName}
       currentlyBiddingTeamName={hb ? (hb.team.short_name ?? hb.team.name) : '—'}
     />
@@ -677,8 +677,8 @@ export function OrganizerAuctionClient({
   const [showConfigureQueueModal, setShowConfigureQueueModal] = useState(false);
   const [pickSearchQuery, setPickSearchQuery] = useState('');
 
-  // Stable Supabase client — created once per component mount
-  const supabase = useMemo(() => createClient(), []);
+  // Stable API client — created once per component mount
+  const api = useMemo(() => createClient(), []);
 
   const disposed = useRef(false);
   const lastSequence = useRef(initialSnapshot?.last_sequence ?? 0);
@@ -692,7 +692,7 @@ export function OrganizerAuctionClient({
   // ── Snapshot refresh ──────────────────────────────────────────────────────
 
   const refreshSnapshot = useCallback(async (id: string) => {
-    const { data, error: rpcErr } = await supabase.rpc('get_auction_organizer_state', {
+    const { data, error: rpcErr } = await api.rpc('get_auction_organizer_state', {
       p_auction_id: id,
     });
     if (disposed.current) return;
@@ -705,13 +705,13 @@ export function OrganizerAuctionClient({
     setSnapshot(next);
     setReadiness(next.readiness);
     setConnected(true);
-  }, [supabase]);
+  }, [api]);
 
   const refreshReadiness = useCallback(async () => {
-    const { data } = await supabase.rpc('get_auction_readiness', { p_tournament_id: tournamentId });
+    const { data } = await api.rpc('get_auction_readiness', { p_tournament_id: tournamentId });
     if (disposed.current) return;
     if (data) setReadiness(data as unknown as ReadinessResult);
-  }, [supabase, tournamentId]);
+  }, [api, tournamentId]);
 
   // ── Realtime subscription ─────────────────────────────────────────────────
 
@@ -719,7 +719,7 @@ export function OrganizerAuctionClient({
     if (!auctionId) return;
     disposed.current = false;
 
-    const ch = supabase
+    const ch = api
       .channel(`org-auction-${auctionId}`)
       .on(
         'postgres_changes',
@@ -747,9 +747,9 @@ export function OrganizerAuctionClient({
 
     return () => {
       disposed.current = true;
-      void supabase.removeChannel(ch);
+      void api.removeChannel(ch);
     };
-  }, [auctionId, refreshSnapshot, supabase]);
+  }, [auctionId, refreshSnapshot, api]);
 
   useEffect(() => {
     if (!auctionId) return;
@@ -881,7 +881,7 @@ export function OrganizerAuctionClient({
   async function handlePlaceBid(teamId: string, amount: number) {
     if (!auctionId || !snapshot?.current_player) return;
     await run(async () => {
-      const { error: bidErr } = await supabase.rpc('place_auction_bid', {
+      const { error: bidErr } = await api.rpc('place_auction_bid', {
         p_auction_id: auctionId,
         p_auction_player_id: snapshot.current_player!.auction_player_id,
         p_team_id: teamId,
@@ -903,8 +903,8 @@ export function OrganizerAuctionClient({
 
   // ─── Storage base URL for player photos ──────────────────────────────────
 
-  const storageBase = process.env.NEXT_PUBLIC_SUPABASE_URL
-    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public`
+  const storageBase = process.env.NEXT_PUBLIC_API_URL
+    ? `${process.env.NEXT_PUBLIC_API_URL}/storage/object/public`
     : '';
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -1461,7 +1461,7 @@ export function OrganizerAuctionClient({
           onClose={() => setShowConfigureQueueModal(false)}
           queue={snapshot.queue}
           playerNameMap={playerNameMap}
-          supabase={supabase}
+          api={api}
           onSaved={() => refreshSnapshot(auctionId!)}
         />
       )}

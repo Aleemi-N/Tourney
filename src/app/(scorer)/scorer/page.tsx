@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { ScorerShell } from '@/components/scorer/ScorerShell';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CalendarClock } from 'lucide-react';
@@ -10,12 +10,12 @@ import { StatusPill } from '@/components/ui/StatusPill';
 export const metadata: Metadata = { title: 'Assigned Matches' };
 
 export default async function ScorerHomePage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const api = await createClient();
+  const { data: { user } } = await api.auth.getUser();
   if (!user) redirect('/login');
-  const { data: assignments } = await supabase.from('match_scorers').select('match_id').eq('user_id', user.id);
+  const { data: assignments } = await api.from('match_scorers').select('match_id').eq('user_id', user.id);
   const matches = await Promise.all((assignments ?? []).map(async (assignment) => {
-    const { data } = await supabase.rpc('get_scorer_match_state', { p_match_id: assignment.match_id });
+    const { data } = await api.rpc('get_scorer_match_state', { p_match_id: assignment.match_id });
     return data as { match: { id: string; status: string; match_number: number | null; venue: string | null }; home_team: { name: string }; away_team: { name: string } } | null;
   }));
 

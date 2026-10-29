@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import Link from 'next/link';
 import { PlayerRegistrationForm } from './PlayerRegistrationForm';
 import { FeeNotice } from '@/components/payments/FeeNotice';
@@ -19,10 +19,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function PlayerRegistrationPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const api = await createClient();
 
   // 1. Fetch Tournament
-  const { data: tournament } = await supabase
+  const { data: tournament } = await api
     .from('tournaments')
     .select('id, name, status, format, league_mode')
     .eq('slug', slug)
@@ -47,7 +47,7 @@ export default async function PlayerRegistrationPage({ params }: { params: Promi
   }
 
   // 2. Enforce Authentication
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await api.auth.getUser();
   if (!user) {
     return (
       <RegistrationShell slug={slug} tournamentName={tournament.name} title="Player Registration">
@@ -93,7 +93,7 @@ export default async function PlayerRegistrationPage({ params }: { params: Promi
   }
 
   // 3. Fetch Player Profile
-  const { data: profile } = await supabase
+  const { data: profile } = await api
     .from('player_profiles')
     .select('*')
     .eq('user_id', user.id)
@@ -102,7 +102,7 @@ export default async function PlayerRegistrationPage({ params }: { params: Promi
   // 4. Check existing registration
   let existingRegistration = null;
   if (profile) {
-    const { data: reg } = await supabase
+    const { data: reg } = await api
       .from('player_tournament_registrations')
       .select('id, status, auction_category, review_notes')
       .eq('tournament_id', tournament.id)

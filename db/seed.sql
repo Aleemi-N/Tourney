@@ -1,5 +1,5 @@
--- Local-only QA data. Supabase loads this file after local migrations during db reset.
--- Never apply this file to a linked or production project.
+-- Local-only QA data, loaded by deploy/dev-stack.sh (pnpm db:reset) after the migrations.
+-- Never apply this file to a production database.
 -- Every person, email and phone number is fictional. All accounts share the local-only
 -- password passed to extensions.crypt() below. Role accounts:
 --   organizer@tourny.local, owner@tourny.local, player@tourny.local, scorer@tourny.local,

@@ -3,7 +3,7 @@
 /**
  * PublicMatchLive — Client component for live match spectating.
  *
- * Subscribes to the match_sets table via Supabase Realtime to receive
+ * Subscribes to the match_sets table via the API's live updates to receive
  * live score updates. On each event it re-fetches the authoritative state
  * from get_public_match_state (never trusts event payloads for score values).
  *
@@ -17,7 +17,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { WifiOff, RefreshCcw, Trophy } from 'lucide-react';
 import { cardClasses } from '@/components/ui/Card';
 import { StatusPill } from '@/components/ui/StatusPill';
@@ -85,16 +85,16 @@ type ConnectionStatus = 'connected' | 'connecting' | 'offline';
 export function PublicMatchLive({ matchId, initialState, tvMode = false, homeColor, awayColor }: Props) {
   const [state, setState] = useState<MatchState>(initialState);
   const [conn, setConn] = useState<ConnectionStatus>('connected');
-  const supabase = createClient();
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const api = createClient();
+  const channelRef = useRef<ReturnType<typeof api.channel> | null>(null);
 
   const refresh = useCallback(async () => {
-    const { data, error } = await supabase.rpc('get_public_match_state', { p_match_id: matchId });
+    const { data, error } = await api.rpc('get_public_match_state', { p_match_id: matchId });
     if (!error && data) setState(data as unknown as MatchState);
-  }, [matchId, supabase]);
+  }, [matchId, api]);
 
   useEffect(() => {
-    const channel = supabase
+    const channel = api
       .channel(`public-match-${matchId}`)
       .on(
         'postgres_changes',
@@ -123,11 +123,11 @@ export function PublicMatchLive({ matchId, initialState, tvMode = false, homeCol
     window.addEventListener('online', handleOnline);
 
     return () => {
-      void supabase.removeChannel(channel);
+      void api.removeChannel(channel);
       document.removeEventListener('visibilitychange', handleVisible);
       window.removeEventListener('online', handleOnline);
     };
-  }, [matchId, supabase, refresh]);
+  }, [matchId, api, refresh]);
 
   const { match, home_team: home, away_team: away, sets } = state;
   const isCompleted = match.status === 'COMPLETED';

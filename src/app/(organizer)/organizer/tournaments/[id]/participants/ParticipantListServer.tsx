@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { ParticipantManager } from './ParticipantManager';
 
 export async function ParticipantListServer({
@@ -7,7 +7,7 @@ export async function ParticipantListServer({
 }: {
   tournament: any
 }) {
-  const supabase = await createClient();
+  const api = await createClient();
 
   const isAuctionLeague =
     tournament.format === 'LEAGUE' && tournament.league_mode === 'AUCTION';
@@ -19,7 +19,7 @@ export async function ParticipantListServer({
     auctionCategoriesResult,
     settingsResult,
   ] = await Promise.all([
-    supabase
+    api
       .from('player_tournament_registrations')
       .select(`
         id,
@@ -45,7 +45,7 @@ export async function ParticipantListServer({
       `)
       .eq('tournament_id', tournament.id)
       .order('created_at', { ascending: false }),
-    supabase
+    api
       .from('team_owner_applications')
       .select(`
         id,
@@ -63,14 +63,14 @@ export async function ParticipantListServer({
       .eq('tournament_id', tournament.id)
       .order('created_at', { ascending: false }),
     isAuctionLeague
-      ? supabase
+      ? api
         .from('tournament_auction_categories')
         .select('id,category_code,display_name,base_price,display_order')
         .eq('tournament_id', tournament.id)
         .order('display_order')
       : Promise.resolve({ data: null }),
     isAuctionLeague
-      ? supabase
+      ? api
         .from('tournament_settings')
         .select('icon_selection_method,setter_selection_method')
         .eq('tournament_id', tournament.id)

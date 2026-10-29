@@ -1,11 +1,11 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ArrowRightIcon, TrophyIcon } from './icons';
 import { OrganizerLinkPending } from '@/components/organizer/OrganizerLinkPending';
 
 export async function DashboardTournamentsServer({ userId }: { userId: string }) {
-  const supabase = await createClient();
+  const api = await createClient();
 
   interface TournamentItem {
     id: string;
@@ -16,13 +16,13 @@ export async function DashboardTournamentsServer({ userId }: { userId: string })
   }
 
   const [{ data: memberships }, { data: createdTournaments }] = await Promise.all([
-    supabase
+    api
       .from('tournament_members')
       .select('tournament_id')
       .eq('user_id', userId)
       .eq('role', 'ORGANIZER')
       .eq('status', 'ACTIVE'),
-    supabase
+    api
       .from('tournaments')
       .select('id, name, status, format, start_date')
       .eq('created_by', userId)
@@ -31,7 +31,7 @@ export async function DashboardTournamentsServer({ userId }: { userId: string })
 
   const memberTournamentIds = [...new Set((memberships || []).map((membership) => membership.tournament_id))];
   const { data: memberTournaments } = memberTournamentIds.length
-    ? await supabase.from('tournaments').select('id, name, status, format, start_date').in('id', memberTournamentIds).order('created_at', { ascending: false })
+    ? await api.from('tournaments').select('id, name, status, format, start_date').in('id', memberTournamentIds).order('created_at', { ascending: false })
     : { data: [] };
 
   const tournamentMap = new Map<string, TournamentItem>();
@@ -39,7 +39,7 @@ export async function DashboardTournamentsServer({ userId }: { userId: string })
   const tournaments = [...tournamentMap.values()];
 
   if (tournaments.length === 0) {
-    const { data: organizationMembership } = await supabase.from('organization_members').select('organization_id').eq('user_id', userId).eq('status', 'ACTIVE').limit(1);
+    const { data: organizationMembership } = await api.from('organization_members').select('organization_id').eq('user_id', userId).eq('status', 'ACTIVE').limit(1);
     if (!organizationMembership?.length) redirect('/organizer/onboarding');
   }
 
@@ -70,9 +70,9 @@ export async function DashboardTournamentsServer({ userId }: { userId: string })
   const activeTournaments = await Promise.all(
     activeTournamentsRaw.map(async (t) => {
       const [{ count: playerCount }, { count: teamOwnerCount }, { count: teamCount }] = await Promise.all([
-        supabase.from('player_tournament_registrations').select('*', { count: 'exact', head: true }).eq('tournament_id', t.id),
-        supabase.from('team_owner_applications').select('*', { count: 'exact', head: true }).eq('tournament_id', t.id),
-        supabase.from('teams').select('*', { count: 'exact', head: true }).eq('tournament_id', t.id)
+        api.from('player_tournament_registrations').select('*', { count: 'exact', head: true }).eq('tournament_id', t.id),
+        api.from('team_owner_applications').select('*', { count: 'exact', head: true }).eq('tournament_id', t.id),
+        api.from('teams').select('*', { count: 'exact', head: true }).eq('tournament_id', t.id)
       ]);
       return {
         ...t,

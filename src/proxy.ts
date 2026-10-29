@@ -1,20 +1,16 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import type { Database } from '@/lib/supabase/types';
+import { Api } from '@/lib/api/core';
+import { SESSION_COOKIE, cookieOptions, decodeSession, encodeSession } from '@/lib/api/session-cookie';
+import type { Database } from '@/lib/api/types';
 
 /**
- * Next.js Proxy (previously "middleware") — Supabase session refresh.
+ * Next.js Proxy (previously "middleware") — keeps the signed-in session fresh.
  *
  * In Next.js 16+, the `middleware` file convention is renamed to `proxy`.
  * The exported function is named `proxy` (previously `middleware`).
  *
- * Runs before every matched request to refresh the Supabase auth session.
- * This ensures Server Components can read a valid session via the server
- * client without re-triggering a token refresh mid-render.
- *
- * Uses the current @supabase/ssr getAll/setAll API including the `headers`
- * argument, which must be forwarded to the response to prevent CDN caching
- * of auth cookie responses.
+ * Runs before every matched request and renews the session cookie when the access token is about to expire.
+ * This ensures Server Components read a valid session without having to renew it mid-render (they cannot set cookies).
  *
  * IMPORTANT: This does NOT perform authorization. Authorization must always
  * be enforced server-side via RLS and RPC. Never rely on cookie checks here
@@ -28,49 +24,29 @@ export async function proxy(request: NextRequest) {
     request,
   });
 
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet, headers) {
-          // Update the internal Next.js cookies map
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
+  const api = new Api<Database>(process.env.NEXT_PUBLIC_API_URL!, {
+    store: {
+      get: () => decodeSession(request.cookies.get(SESSION_COOKIE)?.value),
+      set: (session) => {
+        const value = session ? encodeSession(session) : null;
+        if (value) request.cookies.set(SESSION_COOKIE, value);
+        else request.cookies.delete(SESSION_COOKIE);
 
-          // Explicitly serialize the updated cookies back into the raw 'cookie' HTTP header.
-          // Without this, Server Components will not see the refreshed session!
-          const requestHeaders = new Headers(request.headers);
-          const cookieHeader = request.cookies
-            .getAll()
-            .map((c) => `${c.name}=${c.value}`)
-            .join('; ');
-          requestHeaders.set('cookie', cookieHeader);
+        // Server Components read the request's cookie header, so the renewed session must be written into it,
+        // otherwise they would see the old, expired one.
+        const requestHeaders = new Headers(request.headers);
+        requestHeaders.set('cookie', request.cookies.getAll().map((c) => `${c.name}=${c.value}`).join('; '));
+        response = NextResponse.next({ request: { headers: requestHeaders } });
 
-          // Pass the explicitly modified headers forward to Server Components
-          response = NextResponse.next({
-            request: {
-              headers: requestHeaders,
-            },
-          });
-
-          // Set the cookies on the outbound response to update the browser
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
-          );
-
-          // Apply any standard headers provided by Supabase
-          Object.entries(headers).forEach(([key, value]) =>
-            response.headers.set(key, value),
-          );
-        },
+        // And the browser gets the new cookie.
+        if (value) response.cookies.set(SESSION_COOKIE, value, cookieOptions);
+        else response.cookies.delete(SESSION_COOKIE);
       },
     },
-  );
+  });
+
+  // Visitors who are not signed in have no cookie, so there is nothing to renew (and no request to make).
+  if (request.cookies.has(SESSION_COOKIE)) await api.auth.getSession();
 
   const isOrganizerRoute = request.nextUrl.pathname.startsWith('/organizer');
 
@@ -97,7 +73,7 @@ export async function proxy(request: NextRequest) {
   if (isOrganizerRoute || isSuperAdminRoute || isProtectedAccountRoute) {
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await api.auth.getUser();
 
     if (!user) {
       const redirectUrl = request.nextUrl.clone();
@@ -118,8 +94,7 @@ export const config = {
      * - _next/image   (Next.js image optimization)
      * - favicon.ico and common static asset extensions
      *
-     * Keeping static assets out of the proxy avoids unnecessary Supabase
-     * client instantiation on every asset request.
+     * Keeping static assets out of the proxy avoids needless work on every asset request.
      */
     '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|json|woff|woff2|ttf|otf)$).*)',
   ],

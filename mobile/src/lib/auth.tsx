@@ -1,4 +1,4 @@
-import type { Session } from '@supabase/supabase-js';
+import type { Session } from '@/lib/client';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { forgetPushToken } from '@/lib/push-token';
 import { api } from '@/lib/api';

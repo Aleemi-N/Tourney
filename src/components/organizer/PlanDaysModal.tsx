@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 
 type PlanMatch = {
   id: string; status: string; scheduled_at: string | null; venue: string | null; court: string | null;
@@ -99,11 +99,11 @@ export function PlanDaysModal({ stageName, items, onClose, onSaved, ...defaults 
 
   async function save() {
     setError('');
-    const supabase = createClient();
+    const api = createClient();
     const todo = slots.filter((s) => !LOCKED.includes(s.match.status));
     for (const [i, s] of todo.entries()) {
       setSaving(`Saving ${i + 1} of ${todo.length}…`);
-      const { error: rpcError } = await supabase.rpc('update_match_schedule', {
+      const { error: rpcError } = await api.rpc('update_match_schedule', {
         p_match_id: s.match.id,
         p_scheduled_at: s.at.toISOString(),
         p_venue: s.match.venue ?? undefined,

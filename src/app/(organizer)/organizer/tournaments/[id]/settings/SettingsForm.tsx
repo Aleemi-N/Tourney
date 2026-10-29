@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CurrencyRupeeIcon, LockClosedIcon } from '@heroicons/react/24/outline';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 
 type Method = 'LOT_DRAW' | 'AUCTION';
 type PriceRule = 'SAME_BASE_PRICE' | 'ORGANIZER_SETS_PRICE';
@@ -23,7 +23,7 @@ function MoneyField({ label, value, onChange, hint }: { label: string; value: st
 }
 
 export function SettingsForm({ tournament, configuration }: { tournament: Record<string, unknown>; configuration: Phase5Configuration }) {
-  const router = useRouter(); const supabase = createClient(); const initial = configuration.settings;
+  const router = useRouter(); const api = createClient(); const initial = configuration.settings;
   const [form, setForm] = useState({ playerRegistration: initial.player_registration_enabled, teamRegistration: initial.team_registration_enabled, maxTeams: initial.max_teams?.toString() ?? '', minSquad: initial.min_squad_size.toString(), maxSquad: initial.max_squad_size?.toString() ?? '', purse: initial.auction_starting_purse?.toString() ?? '', basePrice: initial.auction_base_price?.toString() ?? '', increment: initial.auction_bid_increment?.toString() ?? '', iconMethod: initial.icon_selection_method, setterMethod: initial.setter_selection_method, reauctionRule: initial.reauction_price_rule });
   const [loading, setLoading] = useState(false); const [error, setError] = useState<string | null>(null); const [success, setSuccess] = useState(false);
   const isAuction = tournament.format === 'LEAGUE' && tournament.league_mode === 'AUCTION';
@@ -31,7 +31,7 @@ export function SettingsForm({ tournament, configuration }: { tournament: Record
     event.preventDefault(); setLoading(true); setError(null); setSuccess(false);
     const min = Number(form.minSquad); const max = form.maxSquad ? Number(form.maxSquad) : undefined;
     if (!Number.isInteger(min) || min <= 0 || (max !== undefined && max < min)) { setError('Maximum squad size must be at least the positive minimum squad size.'); setLoading(false); return; }
-    const { error: rpcError } = await supabase.rpc('update_tournament_settings', { p_tournament_id: tournament.id as string, p_player_registration_enabled: form.playerRegistration, p_team_registration_enabled: form.teamRegistration, p_max_teams: form.maxTeams ? Number(form.maxTeams) : undefined, p_min_squad_size: min, p_max_squad_size: max, p_auction_starting_purse: form.purse ? Number(form.purse) : undefined, p_auction_base_price: form.basePrice ? Number(form.basePrice) : undefined, p_auction_bid_increment: form.increment ? Number(form.increment) : undefined, p_icon_selection_method: form.iconMethod, p_setter_selection_method: form.setterMethod, p_reauction_price_rule: form.reauctionRule });
+    const { error: rpcError } = await api.rpc('update_tournament_settings', { p_tournament_id: tournament.id as string, p_player_registration_enabled: form.playerRegistration, p_team_registration_enabled: form.teamRegistration, p_max_teams: form.maxTeams ? Number(form.maxTeams) : undefined, p_min_squad_size: min, p_max_squad_size: max, p_auction_starting_purse: form.purse ? Number(form.purse) : undefined, p_auction_base_price: form.basePrice ? Number(form.basePrice) : undefined, p_auction_bid_increment: form.increment ? Number(form.increment) : undefined, p_icon_selection_method: form.iconMethod, p_setter_selection_method: form.setterMethod, p_reauction_price_rule: form.reauctionRule });
     setLoading(false); if (rpcError) { setError(rpcError.message.includes('locked:') ? rpcError.message.split('locked:').pop()?.trim() ?? 'This setting is locked.' : 'Unable to update tournament settings.'); return; }
     setSuccess(true); router.refresh();
   }

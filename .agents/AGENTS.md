@@ -29,10 +29,10 @@ Do NOT deviate from this stack without explicit approval and an architecture cha
 | Language | TypeScript (strict mode) |
 | Styling | Tailwind CSS v4 |
 | Animation | Framer Motion |
-| Auth | Supabase Auth |
-| Database | Supabase PostgreSQL |
-| Realtime | Supabase Realtime |
-| Storage | Supabase Storage |
+| Auth | The Tourny API (`api/`, Spring Boot): own accounts and JWTs |
+| Database | PostgreSQL (+ PostgREST behind the API) |
+| Realtime | The API's websocket (`postgres_changes` over LISTEN/NOTIFY) |
+| Storage | The API's image storage |
 | Security | PostgreSQL RLS |
 | Critical mutations | PostgreSQL RPC functions |
 | Package manager | pnpm |
@@ -44,7 +44,7 @@ Do NOT introduce a separate Express/Node backend.
 
 ## 3. Core Authority Rule
 
-> **The browser controls presentation; PostgreSQL/Supabase controls authoritative tournament state.**
+> **The browser controls presentation; PostgreSQL controls authoritative tournament state.**
 
 Never trust client-computed values for:
 - Winning bid
@@ -81,19 +81,19 @@ All critical state transitions must go through verified PostgreSQL RPC functions
 
 ---
 
-## 6. Supabase Client Pattern
+## 6. API Client Pattern
 
 Three separate helpers — never mix them:
 
 | Helper | File | Used in |
 |---|---|---|
-| Browser client | `src/lib/supabase/client.ts` | Client Components |
-| Server client | `src/lib/supabase/server.ts` | Server Components, Route Handlers |
+| Browser client | `src/lib/api/client.ts` | Client Components |
+| Server client | `src/lib/api/server.ts` | Server Components, Route Handlers |
 | Proxy client | within `src/proxy.ts` | Proxy (Next.js 16 replacement for middleware) |
 
 > Note: In Next.js 16, `middleware.ts` is deprecated. Use `src/proxy.ts` with an exported `proxy` function instead of `middleware`.
 
-Use `@supabase/ssr` `createBrowserClient` / `createServerClient` with the current API (`getAll` / `setAll` pattern — NOT deprecated `get`/`set`/`remove`).
+All three build the same client (`src/lib/api/core.ts`; mobile has a copy made by `scripts/sync-client.mjs`). The session lives in the `tourny-session` cookie; the proxy renews it before Server Components read it.
 
 ---
 
@@ -161,7 +161,7 @@ Route groups in `src/app/`:
 
 ## 12. Realtime Rules
 
-- Use Supabase Realtime for live synchronization
+- Use the API's live updates (`api.channel(...).on('postgres_changes', ...)`) for live synchronization
 - Subscribe only to required scoped data — never subscribe to whole tables globally
 - Realtime is synchronization only — NOT the source of truth
 - On reconnect: refetch authoritative state before resuming critical actions
@@ -207,7 +207,7 @@ Complete means ALL of:
 | Small edit | Targeted tests |
 | Completed feature/module | Targeted tests + typecheck + lint |
 | End of phase / lock | Full typecheck + lint + production build + DB/RLS/RPC integration suite + responsive checks |
-| Auction/lot/scoring/security changes | Real PostgreSQL/Supabase integration tests + concurrency tests + permission-negative tests |
+| Auction/lot/scoring/security changes | Real PostgreSQL integration tests + concurrency tests + permission-negative tests |
 
 ---
 
@@ -215,7 +215,7 @@ Complete means ALL of:
 
 **Phase 1 — Foundation** (in progress / completed):
 - Next.js app initialized
-- Supabase client/server/middleware helpers
+- API client/server/proxy helpers
 - Design token system
 - Route group structure
 - PWA manifest foundation
@@ -226,11 +226,11 @@ Complete means ALL of:
 
 ## 17. What Requires Credentials Before It Works
 
-The following features require a real Supabase project URL and anon key in `.env.local`:
-- All Supabase client connections
+The following features need `NEXT_PUBLIC_API_URL` in `.env.local` (the API running, `pnpm db:reset` for a seeded local database):
+- All API client connections
 - Auth flows
 - Database queries
 - Realtime subscriptions
 - Storage uploads
 
-Create `.env.local` from `.env.example` when the Supabase project exists.
+Create `.env.local` from `.env.example`.

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { PencilLine, RotateCcw } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { Button } from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
@@ -48,10 +48,10 @@ export function ScoreFixPanel({
   async function submit() {
     setSaving(true);
     setError(null);
-    const supabase = createClient();
+    const api = createClient();
     const { error: rpcError } = mode === 'reset'
-      ? await supabase.rpc('reset_match', { p_match_id: matchId, p_reason: reason })
-      : await supabase.rpc('correct_set_score', { p_match_id: matchId, p_set_number: latest!.set_number, p_home_score: Number(home), p_away_score: Number(away), p_reason: reason });
+      ? await api.rpc('reset_match', { p_match_id: matchId, p_reason: reason })
+      : await api.rpc('correct_set_score', { p_match_id: matchId, p_set_number: latest!.set_number, p_home_score: Number(home), p_away_score: Number(away), p_reason: reason });
     setSaving(false);
     if (rpcError) {
       setError(rpcError.message);

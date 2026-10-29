@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Bell, BellRing } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { callRpc, ensureWebPush, storedEndpoint, webPushSupported } from '@/lib/web-push';
 
 type Kind = 'TEAM' | 'MATCH' | 'TOURNAMENT';

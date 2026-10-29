@@ -1,6 +1,6 @@
 
-import { createClient } from '@/lib/supabase/server';
-import { getTournament } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
+import { getTournament } from '@/lib/api/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
@@ -52,10 +52,10 @@ async function AuctionContent({ params }: { params: Promise<{ id: string }> }) {
     );
   }
 
-  const supabase = await createClient();
+  const api = await createClient();
 
   // Fetch auction (if it exists)
-  const { data: auctionRow } = await supabase
+  const { data: auctionRow } = await api
     .from('auctions')
     .select('id,status')
     .eq('tournament_id', id)
@@ -64,7 +64,7 @@ async function AuctionContent({ params }: { params: Promise<{ id: string }> }) {
   let snapshot: OrganizerAuctionSnapshot | null = null;
 
   if (auctionRow?.id) {
-    const { data: snapshotData } = await supabase.rpc('get_auction_organizer_state', {
+    const { data: snapshotData } = await api.rpc('get_auction_organizer_state', {
       p_auction_id: auctionRow.id,
     });
     if (snapshotData) {
@@ -75,14 +75,14 @@ async function AuctionContent({ params }: { params: Promise<{ id: string }> }) {
   // Also fetch readiness when no auction exists yet (DRAFT state)
   let readiness = snapshot?.readiness ?? null;
   if (!snapshot) {
-    const { data: readinessData } = await supabase.rpc('get_auction_readiness', {
+    const { data: readinessData } = await api.rpc('get_auction_readiness', {
       p_tournament_id: id,
     });
     readiness = readinessData as typeof readiness;
   }
 
   // Fetch auction categories for display
-  const { data: categoriesData } = await supabase
+  const { data: categoriesData } = await api
     .from('tournament_auction_categories')
     .select('id,category_code,display_name,base_price,display_order')
     .eq('tournament_id', id)
@@ -97,7 +97,7 @@ async function AuctionContent({ params }: { params: Promise<{ id: string }> }) {
   }));
 
   // Fetch team names for wallet monitor
-  const { data: teamsData } = await supabase
+  const { data: teamsData } = await api
     .from('teams')
     .select('id,name,short_name')
     .eq('tournament_id', id)
@@ -116,7 +116,7 @@ async function AuctionContent({ params }: { params: Promise<{ id: string }> }) {
   const playerNameMap: Record<string, string> = {};
   if (snapshot?.queue && snapshot.queue.length > 0) {
     const playerIds = [...new Set(snapshot.queue.map((q) => q.player_id))];
-    const { data: profilesData } = await supabase
+    const { data: profilesData } = await api
       .from('player_profiles')
       .select('id,display_name')
       .in('id', playerIds);
@@ -127,7 +127,7 @@ async function AuctionContent({ params }: { params: Promise<{ id: string }> }) {
   }
 
   // Fetch tournament settings for reauction_price_rule
-  const { data: settingsData } = await supabase
+  const { data: settingsData } = await api
     .from('tournament_settings')
     .select('reauction_price_rule')
     .eq('tournament_id', id)

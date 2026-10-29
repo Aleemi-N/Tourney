@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 
 type Status = {
   closes_at: string | null; timezone: string; open: boolean; max_players: number | null; player_spots_left: number | null; waitlist: number;
@@ -9,8 +9,8 @@ const day = (d: string) => new Date(d + 'T00:00:00Z').toLocaleDateString('en-GB'
 
 /** The deadline, places left and who may play, shown before registering. Renders nothing when there is nothing to say. */
 export async function RegistrationNotice({ tournamentId, kind }: { tournamentId: string; kind: 'PLAYER' | 'TEAM' }) {
-  const supabase = (await createClient()) as unknown as { rpc: (n: string, a: Record<string, unknown>) => PromiseLike<{ data: unknown }> };
-  const { data } = await supabase.rpc('get_registration_status', { p_tournament_id: tournamentId });
+  const api = (await createClient()) as unknown as { rpc: (n: string, a: Record<string, unknown>) => PromiseLike<{ data: unknown }> };
+  const { data } = await api.rpc('get_registration_status', { p_tournament_id: tournamentId });
   const s = data as Status | null;
   if (!s) return null;
   const when = (iso: string) => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: s.timezone });

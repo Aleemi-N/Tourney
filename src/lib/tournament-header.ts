@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 
 export type TournamentHeader = {
   id: string;
@@ -16,8 +16,8 @@ export type TournamentHeader = {
  * Cached per request (React cache) — multiple sub-pages share this call.
  */
 export const getTournamentHeader = cache(async (slug: string): Promise<TournamentHeader | null> => {
-  const supabase = await createClient();
-  const { data } = await supabase
+  const api = await createClient();
+  const { data } = await api
     .from('tournaments')
     .select('id, name, slug, status, format, league_mode, tournament_branding(logo_path)')
     .eq('slug', slug)
@@ -30,7 +30,7 @@ export const getTournamentHeader = cache(async (slug: string): Promise<Tournamen
     ? data.tournament_branding[0]
     : data.tournament_branding;
   const logoUrl = branding?.logo_path
-    ? supabase.storage.from('logos').getPublicUrl(branding.logo_path).data.publicUrl
+    ? api.storage.from('logos').getPublicUrl(branding.logo_path).data.publicUrl
     : null;
 
   return {
@@ -46,7 +46,7 @@ export const getTournamentHeader = cache(async (slug: string): Promise<Tournamen
 
 /** Primary colours of public teams by id (missing teams map to nothing). */
 export async function getTeamColors(teamIds: string[]): Promise<Record<string, string | null>> {
-  const supabase = await createClient();
-  const { data } = await supabase.from('public_team_view').select('id, primary_color').in('id', teamIds);
+  const api = await createClient();
+  const { data } = await api.from('public_team_view').select('id, primary_color').in('id', teamIds);
   return Object.fromEntries((data ?? []).map((team) => [team.id as string, team.primary_color as string | null]));
 }

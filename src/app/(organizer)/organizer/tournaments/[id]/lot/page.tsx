@@ -1,16 +1,16 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { applicableLotTypes, isLotDrawEnabled, type OrganizerLotState } from '@/lib/lot-draw';
 import { LotDrawClient } from './LotDrawClient';
 
 export default async function LotDrawPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const api = await createClient();
   const [{ data: tournament }, { data: settings }, { data: configuration }, { data: teams }, { data: events }] = await Promise.all([
-    supabase.from('tournaments').select('id,name,format,league_mode').eq('id', id).single(),
-    supabase.from('tournament_settings').select('icon_selection_method,setter_selection_method,max_squad_size').eq('tournament_id', id).single(),
-    supabase.rpc('get_tournament_phase5a_configuration', { p_tournament_id: id }),
-    supabase.from('teams').select('id,name,short_name,primary_color').eq('tournament_id', id).eq('status', 'ACTIVE').order('created_at'),
-    supabase.from('lot_public_events').select('lot_session_id,lot_type,sequence_number,created_at').eq('tournament_id', id).order('created_at', { ascending: false }),
+    api.from('tournaments').select('id,name,format,league_mode').eq('id', id).single(),
+    api.from('tournament_settings').select('icon_selection_method,setter_selection_method,max_squad_size').eq('tournament_id', id).single(),
+    api.rpc('get_tournament_phase5a_configuration', { p_tournament_id: id }),
+    api.from('teams').select('id,name,short_name,primary_color').eq('tournament_id', id).eq('status', 'ACTIVE').order('created_at'),
+    api.from('lot_public_events').select('lot_session_id,lot_type,sequence_number,created_at').eq('tournament_id', id).order('created_at', { ascending: false }),
   ]);
 
   if (!tournament || !settings || !isLotDrawEnabled(tournament.format, tournament.league_mode, settings.icon_selection_method, settings.setter_selection_method)) {
@@ -21,7 +21,7 @@ export default async function LotDrawPage({ params }: { params: Promise<{ id: st
   for (const event of events ?? []) if (!latestIds.has(event.lot_type)) latestIds.set(event.lot_type, event.lot_session_id);
   const states: Partial<Record<'ICON' | 'SETTER', OrganizerLotState>> = {};
   await Promise.all([...latestIds.entries()].map(async ([type, sessionId]) => {
-    const { data } = await supabase.rpc('get_lot_organizer_state', { p_lot_session_id: sessionId });
+    const { data } = await api.rpc('get_lot_organizer_state', { p_lot_session_id: sessionId });
     if (data) states[type as 'ICON' | 'SETTER'] = data as unknown as OrganizerLotState;
   }));
 

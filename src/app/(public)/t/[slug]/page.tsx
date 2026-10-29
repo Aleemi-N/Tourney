@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import Link from 'next/link';
 import Image from 'next/image';
 import { PublicLandingNav } from '@/components/landing/PublicLandingNav';
@@ -44,14 +44,14 @@ function formatFormat(format: string, leagueMode: string | null): string {
  */
 export default async function TournamentPublicPage({ params }: Props) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const api = await createClient();
 
   // Validates the session so RLS accurately determines if the user is a tournament member
-  await supabase.auth.getUser();
+  await api.auth.getUser();
 
   // Reads only from tournaments table. RLS allows public to read if is_public = true.
   // Organizers can read even if is_public = false (because they pass is_tournament_member check).
-  const { data: tournament } = await supabase
+  const { data: tournament } = await api
     .from('tournaments')
     .select('id, name, slug, sport, format, league_mode, venue, description, start_date, end_date, status, tournament_branding(logo_path)')
     .eq('slug', slug)
@@ -80,14 +80,14 @@ export default async function TournamentPublicPage({ params }: Props) {
   }
 
   // Fetch settings — tournament_settings has a public read policy for public tournaments
-  const { data: settings } = await supabase
+  const { data: settings } = await api
     .from('tournament_settings')
     .select('player_registration_enabled, team_registration_enabled, max_teams')
     .eq('tournament_id', tournament.id as string)
     .single();
 
   // Fetch approved teams from the safe public view (only ACTIVE teams in public tournaments)
-  const { data: teams } = await supabase
+  const { data: teams } = await api
     .from('public_team_view')
     .select('id, name, short_name, primary_color')
     .eq('tournament_id', tournament.id as string);
@@ -100,7 +100,7 @@ export default async function TournamentPublicPage({ params }: Props) {
   const endDate = formatDate(tournament.end_date ?? null);
   const teamsCount = teams?.length ?? 0;
   const branding = Array.isArray(tournament.tournament_branding) ? tournament.tournament_branding[0] : tournament.tournament_branding;
-  const logoUrl = branding?.logo_path ? supabase.storage.from('logos').getPublicUrl(branding.logo_path).data.publicUrl : null;
+  const logoUrl = branding?.logo_path ? api.storage.from('logos').getPublicUrl(branding.logo_path).data.publicUrl : null;
 
   const showPlayerCTA = isRegistrationOpen && playerRegEnabled;
   const showTeamOwnerCTA = isRegistrationOpen && isLeague && teamRegEnabled;

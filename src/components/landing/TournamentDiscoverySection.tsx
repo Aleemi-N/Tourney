@@ -1,14 +1,14 @@
 import React from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { TournamentDiscoveryCard, DiscoveryTournamentProps } from './TournamentDiscoveryCard';
 import { VolleyballIcon } from './VolleyballIcon';
 
 export async function TournamentDiscoverySection() {
-  const supabase = await createClient();
+  const api = await createClient();
   
   // Safe public query based on is_public flag and open statuses
-  const { data: tournaments } = await supabase
+  const { data: tournaments } = await api
     .from('tournaments')
     .select(`
       id, 

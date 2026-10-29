@@ -50,7 +50,7 @@ class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // bearer tokens only, no cookies
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/auth/v1/token", "/auth/v1/signup", "/auth/v1/recover", "/actuator/health", "/realtime/v1/websocket", "/error", "/storage/v1/object/public/**", "/rest/**", "/rpc/**").permitAll() // a token is decoded when sent; the database roles decide what is allowed
+                        .requestMatchers("/auth/token", "/auth/signup", "/auth/recover", "/actuator/health", "/realtime/websocket", "/error", "/storage/object/public/**", "/rest/**", "/rpc/**").permitAll() // a token is decoded when sent; the database roles decide what is allowed
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(o -> o.jwt(Customizer.withDefaults()))
                 .build();
@@ -62,7 +62,7 @@ class SecurityConfig {
         CorsConfiguration cors = new CorsConfiguration();
         cors.setAllowedOrigins(origins.stream().filter(o -> !o.isBlank()).toList());
         cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
-        cors.setAllowedHeaders(List.of("authorization", "apikey", "content-type", "x-client-info", "x-supabase-api-version", "prefer", "range", "accept-profile", "content-profile", "accept", "x-upsert", "cache-control", "if-none-match"));
+        cors.setAllowedHeaders(List.of("authorization", "content-type", "x-client-info", "prefer", "range", "accept-profile", "content-profile", "accept", "x-upsert", "cache-control", "if-none-match"));
         cors.setExposedHeaders(List.of("content-range", "content-type", "preference-applied"));
         cors.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

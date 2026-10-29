@@ -13,10 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/**
- * The subset of the GoTrue API that supabase-js and @supabase/ssr call, so web and mobile keep
- * their existing auth code and only change the project URL.
- */
+/** Accounts for the web and mobile clients: sign-in, sign-up, session renewal, the account itself and password recovery. */
 @RestController
 @RestControllerAdvice(assignableTypes = AuthController.class)
 class AuthController {
@@ -27,7 +24,7 @@ class AuthController {
         this.auth = auth;
     }
 
-    @PostMapping("/auth/v1/token")
+    @PostMapping("/auth/token")
     Map<String, Object> token(@RequestParam("grant_type") String grantType, @RequestBody Map<String, Object> body) {
         return switch (grantType) {
             case "password" -> auth.signInWithPassword(text(body, "email"), text(body, "password"));
@@ -40,7 +37,7 @@ class AuthController {
     // Account creation is open, so cap it per address: 20 accounts per hour is far above any real use.
     private final java.util.Map<String, java.util.List<java.time.Instant>> signups = new java.util.concurrent.ConcurrentHashMap<>();
 
-    @PostMapping("/auth/v1/signup")
+    @PostMapping("/auth/signup")
     Map<String, Object> signUp(@RequestBody Map<String, Object> body, jakarta.servlet.http.HttpServletRequest request) {
         var cutoff = java.time.Instant.now().minus(java.time.Duration.ofHours(1));
         var recent = new java.util.ArrayList<>(signups.getOrDefault(request.getRemoteAddr(), java.util.List.of()).stream().filter(t -> t.isAfter(cutoff)).toList());
@@ -52,26 +49,26 @@ class AuthController {
         return auth.signUp(text(body, "email"), text(body, "password"), data);
     }
 
-    @GetMapping("/auth/v1/user")
+    @GetMapping("/auth/user")
     Map<String, Object> user(@AuthenticationPrincipal Jwt jwt) {
         return auth.getUser(jwt.getSubject());
     }
 
-    @PutMapping("/auth/v1/user")
+    @PutMapping("/auth/user")
     Map<String, Object> updateUser(@AuthenticationPrincipal Jwt jwt, @RequestBody Map<String, Object> body) {
         @SuppressWarnings("unchecked")
         Map<String, Object> data = (Map<String, Object>) body.get("data");
         return auth.updateUser(jwt.getSubject(), (String) body.get("password"), data);
     }
 
-    @PostMapping("/auth/v1/logout")
+    @PostMapping("/auth/logout")
     ResponseEntity<Void> logout(@AuthenticationPrincipal Jwt jwt) {
         auth.signOut(jwt.getSubject());
         return ResponseEntity.noContent().build();
     }
 
-    /** Always 200, like GoTrue, so the response never reveals whether an email has an account. */
-    @PostMapping("/auth/v1/recover")
+    /** Always 200, so the response never reveals whether an email has an account. */
+    @PostMapping("/auth/recover")
     Map<String, Object> recover(@RequestBody Map<String, Object> body, @RequestParam(name = "redirect_to", required = false) String redirectTo) {
         auth.recover(text(body, "email"), (String) body.get("code_challenge"), (String) body.get("code_challenge_method"), redirectTo);
         return Map.of();

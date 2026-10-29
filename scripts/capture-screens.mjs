@@ -7,7 +7,7 @@
 //   --match  only routes whose role or path contains this text
 //   --widths comma-separated widths (default: 375,768,1440)
 //
-// Needs the local seed (`pnpm supabase db reset`) and the app running against it.
+// Needs the local seed (`pnpm db:reset`) and the app running against it.
 import { chromium } from '@playwright/test';
 import pg from 'pg';
 import fs from 'node:fs';

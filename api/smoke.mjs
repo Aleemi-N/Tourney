@@ -1,13 +1,11 @@
-// Smoke test of the API with the real supabase-js client: auth, rpc, storage and realtime.
+// Smoke test of the API with the real client (src/lib/api/core.ts): auth, rpc, storage and live updates.
 // Needs the API running against the seeded local database (see docs/v2-backend-architecture.md): node api/smoke.mjs
 import { execSync } from 'node:child_process';
-import { createRequire } from 'node:module';
 import fs from 'node:fs';
-const require = createRequire(process.cwd() + '/package.json');
-const { createClient } = require('@supabase/supabase-js');
+const { Api } = await import('../src/lib/api/core.ts');
 const password = fs.readFileSync('db/seed.sql', 'utf8').match(/extensions\.crypt\('([^']+)'/)[1];
-const key = fs.readFileSync('.env.local', 'utf8').match(/NEXT_PUBLIC_SUPABASE_ANON_KEY=(\S+)/)[1].replace(/"/g, '');
-const sb = createClient('http://localhost:8080', key, { auth: { persistSession: false } });
+let kept = null;
+const sb = new Api('http://localhost:8080', { store: { get: () => kept, set: (session) => { kept = session; } } });
 const { data, error } = await sb.auth.signInWithPassword({ email: 'player@tourny.local', password });
 if (error) throw error;
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
@@ -23,7 +21,7 @@ const rpc = await sb.rpc('get_public_standings', { p_tournament_id: '90200000-00
 console.log('rpc', rpc.error ?? rpc.data.length + ' rows');
 
 const matchId = '90700000-0000-0000-0000-000000000001';
-const sql = (q) => execSync(`docker exec -i supabase_db_tourny psql -U postgres -d postgres -At -c "${q}"`).toString();
+const sql = (q) => execSync(`docker exec -i tourny-dev-db psql -U postgres -d tourny -At -c "${q}"`).toString();
 const got = [];
 const status = await new Promise((resolve) => {
   sb.channel('t1')
@@ -38,5 +36,4 @@ sql(`update match_sets set target_points=target_points where match_id='${matchId
 await new Promise((r) => setTimeout(r, 1500));
 console.log(JSON.stringify(got));
 sql(`update matches set court='1' where id='${matchId}'`);
-await sb.removeAllChannels();
 process.exit(0);

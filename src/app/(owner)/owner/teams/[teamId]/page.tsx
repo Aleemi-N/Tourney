@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getOwnerTeams } from '@/lib/owner/owner-team';
 import { OwnerPortalShell } from '@/components/owner/OwnerPortalShell';
 import { OwnerStat } from '@/components/owner/OwnerStat';
@@ -34,11 +34,11 @@ type SquadRow = {
 
 export default async function OwnerTeamPage({ params }: { params: Promise<{ teamId: string }> }) {
     const { teamId } = await params;
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const api = await createClient();
+    const { data: { user } } = await api.auth.getUser();
     if (!user) redirect('/login');
 
-    const teams = await getOwnerTeams(supabase, user.id);
+    const teams = await getOwnerTeams(api, user.id);
     const team = teams.find((item) => item.id === teamId);
     if (!team) notFound();
 
@@ -50,13 +50,13 @@ export default async function OwnerTeamPage({ params }: { params: Promise<{ team
         { data: fixtures },
         { data: salesData }
     ] = await Promise.all([
-        supabase.from('auctions').select('id, status').eq('tournament_id', team.tournament_id).maybeSingle(),
+        api.from('auctions').select('id, status').eq('tournament_id', team.tournament_id).maybeSingle(),
         // SOLD and lot-assigned ACTIVE players
-        supabase.from('team_players').select('id, player_id, acquisition_type, acquisition_amount, player_profiles(id, display_name, photo_path, primary_position, secondary_position, place, height_cm, phone, date_of_birth, playing_history, jersey_name, jersey_number, jersey_size)').eq('team_id', team.id).eq('tournament_id', team.tournament_id).eq('status', 'ACTIVE'),
-        supabase.from('tournament_settings').select('max_squad_size').eq('tournament_id', team.tournament_id).maybeSingle(),
-        supabase.from('auction_team_wallets').select('starting_balance, spent_amount, remaining_balance').eq('team_id', team.id).maybeSingle(),
-        supabase.from('matches').select('id, court, scheduled_at, stage_id, home_team_id, away_team_id, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)').or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`).in('status', ['SCHEDULED']).order('scheduled_at', { ascending: true }).limit(1),
-        supabase.from('auction_sales').select('auction_players!inner(player_id, attempt_number)').eq('team_id', team.id)
+        api.from('team_players').select('id, player_id, acquisition_type, acquisition_amount, player_profiles(id, display_name, photo_path, primary_position, secondary_position, place, height_cm, phone, date_of_birth, playing_history, jersey_name, jersey_number, jersey_size)').eq('team_id', team.id).eq('tournament_id', team.tournament_id).eq('status', 'ACTIVE'),
+        api.from('tournament_settings').select('max_squad_size').eq('tournament_id', team.tournament_id).maybeSingle(),
+        api.from('auction_team_wallets').select('starting_balance, spent_amount, remaining_balance').eq('team_id', team.id).maybeSingle(),
+        api.from('matches').select('id, court, scheduled_at, stage_id, home_team_id, away_team_id, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)').or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`).in('status', ['SCHEDULED']).order('scheduled_at', { ascending: true }).limit(1),
+        api.from('auction_sales').select('auction_players!inner(player_id, attempt_number)').eq('team_id', team.id)
     ]);
 
     const squad: SquadRosterItem[] = ((squadData ?? []) as unknown as SquadRow[]).map((row) => {

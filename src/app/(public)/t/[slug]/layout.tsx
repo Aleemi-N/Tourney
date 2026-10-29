@@ -1,6 +1,6 @@
 import { PublicExtrasProvider } from '@/components/public/PublicExtrasProvider';
 import type { PublicExtras } from '@/components/public/SponsorStrip';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 
 /**
  * Public tournament page layout. It stays mounted while people move between the tournament's pages, so the stream link and
@@ -14,8 +14,8 @@ export default async function TournamentPublicLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const supabase = (await createClient()) as unknown as { rpc: (n: string, a: Record<string, unknown>) => PromiseLike<{ data: unknown }> };
-  const { data } = await supabase.rpc('get_public_extras', { p_slug: slug });
+  const api = (await createClient()) as unknown as { rpc: (n: string, a: Record<string, unknown>) => PromiseLike<{ data: unknown }> };
+  const { data } = await api.rpc('get_public_extras', { p_slug: slug });
   // Public tournament experiences intentionally use Tourny's dark token set.
   // Keeping the theme on the shared route layout also prevents a light frame
   // while navigating between the tournament page and registration pages.

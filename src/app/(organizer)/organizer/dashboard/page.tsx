@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getUser } from '@/lib/supabase/server';
+import { getUser } from '@/lib/api/server';
 import Link from 'next/link';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { Suspense } from 'react';

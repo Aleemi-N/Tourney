@@ -12,7 +12,7 @@
 
 ### Backend Platform
 
-Supabase provides: - Auth. - PostgreSQL. - Realtime. - Storage. - RLS. -
+The Tourny API and PostgreSQL provide: - Auth. - PostgreSQL. - Realtime. - Storage. - RLS. -
 PostgreSQL functions/RPC.
 
 ### Rendering
@@ -43,9 +43,9 @@ Browser / Installed PWA
         v
 Next.js
   |            \
-  |             \-- Server Components / server-side Supabase access
+  |             \-- Server Components / server-side API access
   |
-  +-- Supabase Browser Client
+  +-- API Browser Client
         |
         +-- Auth
         +-- PostgreSQL + RLS
@@ -88,7 +88,7 @@ Use only where needed: - `pgcrypto` or native UUID generation support. -
 `citext` optional for case-insensitive unique email-like fields if
 application tables need it.
 
-Supabase Auth remains responsible for identity credentials.
+The API's accounts remain responsible for identity credentials.
 
 ## 5. Database Schema
 
@@ -1075,7 +1075,7 @@ app/
 
 Route groups are illustrative; actual layouts may be adjusted.
 
-## 13. Supabase Client Separation
+## 13. API Client Separation
 
 Maintain separate helpers for: - Browser client. - Server client. -
 Middleware/session refresh where required.

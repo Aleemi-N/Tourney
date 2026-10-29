@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Download, Loader2, CheckCircle, Clock, Users } from 'lucide-react';
 import { downloadAllPlayerCardsZip, downloadAllPlayerPhotosZip, type CardAuctionCategory, type CardSourcePlayer } from '@/lib/generate-player-card';
-import type { createClient } from '@/lib/supabase/client';
+import type { createClient } from '@/lib/api/client';
 import { ImageIcon } from 'lucide-react';
 
 interface DownloadCardsModalProps {
@@ -13,7 +13,7 @@ interface DownloadCardsModalProps {
   onClose: () => void;
   players: CardSourcePlayer[];
   auctionCategories: CardAuctionCategory[];
-  supabase: ReturnType<typeof createClient>;
+  api: ReturnType<typeof createClient>;
 }
 
 export function DownloadCardsModal({
@@ -21,7 +21,7 @@ export function DownloadCardsModal({
   onClose,
   players,
   auctionCategories,
-  supabase,
+  api,
 }: DownloadCardsModalProps) {
   const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'APPROVED' | 'AUCTION' | 'PENDING'>('AUCTION');
   const [downloadMode, setDownloadMode] = useState<'CARDS' | 'PHOTOS'>('CARDS');
@@ -67,16 +67,16 @@ export function DownloadCardsModal({
       if (downloadMode === 'PHOTOS') {
         await downloadAllPlayerPhotosZip(
           targetPlayers,
-          supabase,
+          api,
           (current, total) => setProgress({ current, total })
         );
       } else {
         const orderMap: Record<string, number> = {};
         if (targetPlayers.length > 0) {
           const tId = targetPlayers[0].tournament_id ?? '';
-          const { data: auction } = await supabase.from('auctions').select('id').eq('tournament_id', tId).order('created_at', { ascending: false }).limit(1).single();
+          const { data: auction } = await api.from('auctions').select('id').eq('tournament_id', tId).order('created_at', { ascending: false }).limit(1).single();
           if (auction) {
-            const { data: aPlayers } = await supabase.from('auction_players').select('player_id, auction_order').eq('auction_id', auction.id);
+            const { data: aPlayers } = await api.from('auction_players').select('player_id, auction_order').eq('auction_id', auction.id);
             if (aPlayers) {
               aPlayers.forEach((ap) => { orderMap[ap.player_id] = ap.auction_order; });
             }
@@ -85,7 +85,7 @@ export function DownloadCardsModal({
         await downloadAllPlayerCardsZip(
           targetPlayers,
           auctionCategories,
-          supabase,
+          api,
           (current, total) => setProgress({ current, total }),
           orderMap
         );

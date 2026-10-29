@@ -4,7 +4,7 @@ Everything here was rehearsed except the steps marked **(live only)**. Never run
 
 ## Before the day
 1. VPS up with Docker; DNS for `app.<domain>` and `api.<domain>` pointing at it (set the TTL low a day ahead).
-2. `deploy/.env` filled in (`JWT_SECRET`, `ANON_KEY`, passwords, SMTP). `docker compose up -d --build` works and `https://api.<domain>/actuator/health` says UP.
+2. `deploy/.env` filled in (`JWT_SECRET`, passwords, SMTP). `docker compose up -d --build` works and `https://api.<domain>/actuator/health` says UP.
 3. Rehearse on today's data: take a fresh dump and run `deploy/rehearse-upgrade.sh <dump> 20261007000057`, then `node deploy/verify-counts.mjs <dump>`. Zero differences, no integrity problems. (Last rehearsal, 2026-10-26: 48 tables matched.)
 4. Test the new stack with the seed (`deploy/rehearse.sh --seed` or the compose stack): sign in as every role on web and the mobile app, score a match, register a player with a photo, run a password reset email.
 5. Tell organizers the date; pick a quiet hour (no live match, no auction running).

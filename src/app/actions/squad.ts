@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { revalidatePath } from 'next/cache';
 
 export async function assignPlayerManuallyAction(
@@ -10,14 +10,14 @@ export async function assignPlayerManuallyAction(
     amount: number = 0
 ) {
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const api = await createClient();
+        const { data: { user } } = await api.auth.getUser();
 
         if (!user) {
             return { success: false, error: 'User is not authenticated' };
         }
 
-        const { data, error } = await supabase.rpc('assign_player_manually', {
+        const { data, error } = await api.rpc('assign_player_manually', {
             p_tournament_id: tournamentId,
             p_team_id: teamId,
             p_player_id: playerId,
@@ -43,14 +43,14 @@ export async function removePlayerManuallyAction(
     teamPlayerId: string
 ) {
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const api = await createClient();
+        const { data: { user } } = await api.auth.getUser();
 
         if (!user) {
             return { success: false, error: 'User is not authenticated' };
         }
 
-        const { data, error } = await supabase.rpc('remove_player_manually', {
+        const { data, error } = await api.rpc('remove_player_manually', {
             p_tournament_id: tournamentId,
             p_team_player_id: teamPlayerId,
         });

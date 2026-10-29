@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
  * they are the only organizer of a running tournament); this endpoint then deletes the files they uploaded.
  */
 @RestController
-@RequestMapping("/account/v1")
+@RequestMapping("/account")
 class AccountController {
 
     private static final Logger log = LoggerFactory.getLogger(AccountController.class);

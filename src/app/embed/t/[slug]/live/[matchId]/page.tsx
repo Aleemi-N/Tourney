@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { EmbedShell } from '@/components/embed/EmbedShell';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getTournamentHeader } from '@/lib/tournament-header';
 import { getCanonicalOrigin } from '@/lib/origin';
 
@@ -21,8 +21,8 @@ export default async function EmbedLive({ params, searchParams }: { params: Prom
   const href = `${getCanonicalOrigin()}/t/${slug}/match/${matchId}`;
   const unavailable = (text: string) => <EmbedShell theme={theme} title="Live score" href={getCanonicalOrigin()} refreshSeconds={60}><p className="text-sm text-text-muted">{text}</p></EmbedShell>;
   if (!tournament) return unavailable('This tournament is not public.');
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('get_public_match_state', { p_match_id: matchId });
+  const api = await createClient();
+  const { data, error } = await api.rpc('get_public_match_state', { p_match_id: matchId });
   const state = data as unknown as State | null;
   if (error || !state) return unavailable('This match is not available.');
 

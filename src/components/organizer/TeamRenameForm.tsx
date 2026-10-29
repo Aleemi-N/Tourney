@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 
 export function TeamRenameForm({ teamId, currentName }: { teamId: string; currentName: string }) {
   const router = useRouter();

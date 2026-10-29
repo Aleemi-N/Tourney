@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { notFound } from 'next/navigation';
 import { PaymentSettingsForm } from './PaymentSettingsForm';
 import { RegistrationLimitsForm } from './RegistrationLimitsForm';
@@ -12,18 +12,18 @@ import type { Phase5Configuration } from './SettingsForm';
 import type { AuctionCategory } from '@/lib/organizer/organizer-auction';
 
 export async function SettingsServer({ tournament }: { tournament: any }) {
-  const supabase = await createClient();
+  const api = await createClient();
 
   const isAuctionLeague =
     tournament.format === 'LEAGUE' && tournament.league_mode === 'AUCTION';
 
   const [{ data: settings }, { data: branding }, { data: phase5Configuration }, auctionCategoriesResult, auctionStatusResult] =
     await Promise.all([
-      supabase.from('tournament_settings').select('*').eq('tournament_id', tournament.id).single(),
-      supabase.from('tournament_branding').select('logo_path').eq('tournament_id', tournament.id).maybeSingle(),
-      supabase.rpc('get_tournament_phase5a_configuration', { p_tournament_id: tournament.id }),
+      api.from('tournament_settings').select('*').eq('tournament_id', tournament.id).single(),
+      api.from('tournament_branding').select('logo_path').eq('tournament_id', tournament.id).maybeSingle(),
+      api.rpc('get_tournament_phase5a_configuration', { p_tournament_id: tournament.id }),
       isAuctionLeague
-        ? supabase
+        ? api
           .from('tournament_auction_categories')
           .select('id,category_code,display_name,base_price,display_order')
           .eq('tournament_id', tournament.id)
@@ -31,7 +31,7 @@ export async function SettingsServer({ tournament }: { tournament: any }) {
         : Promise.resolve({ data: null }),
       // Check whether auction has been prepared (prepared_at is NOT NULL)
       isAuctionLeague
-        ? supabase
+        ? api
           .from('auctions')
           .select('id,prepared_at')
           .eq('tournament_id', tournament.id)
@@ -44,7 +44,7 @@ export async function SettingsServer({ tournament }: { tournament: any }) {
   }
 
   const logoPath = branding?.logo_path ?? null;
-  const logoUrl = logoPath ? supabase.storage.from('logos').getPublicUrl(logoPath).data.publicUrl : null;
+  const logoUrl = logoPath ? api.storage.from('logos').getPublicUrl(logoPath).data.publicUrl : null;
 
   // Map DB rows to typed categories
   const rawCategories = (auctionCategoriesResult.data ?? []) as {

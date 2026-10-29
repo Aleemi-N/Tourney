@@ -6,7 +6,6 @@ One server, five containers: PostgreSQL, PostgREST, the Spring Boot API (`../api
 1. DNS: point `app.<domain>` and `api.<domain>` at the server; open ports 80 and 443.
 2. `cp .env.example .env` and fill it in:
    - `JWT_SECRET`: `openssl rand -base64 48`
-   - `ANON_KEY`: `JWT_SECRET=<the secret> node make-anon-key.mjs`
    - passwords for the database and the `authenticator` role.
 3. `docker compose up -d --build`. On the first start the database volume runs `initdb.sh`: `bootstrap.sql` (roles, auth/storage stubs) and every migration except the two auction resets.
 4. Check: `https://api.<domain>/actuator/health` returns `{"status":"UP"}`.
@@ -27,5 +26,5 @@ See [CUTOVER.md](CUTOVER.md) for the full migration-day checklist.
 
 ## Operations
 - Back up the `db-data` volume (or `pg_dump` nightly) and the `storage` volume.
-- Rotating `JWT_SECRET` signs everyone out and needs a new `ANON_KEY`.
+- Rotating `JWT_SECRET` signs everyone out.
 - Logs: `docker compose logs -f api`.

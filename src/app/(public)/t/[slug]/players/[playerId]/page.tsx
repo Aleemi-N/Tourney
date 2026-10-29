@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getTournamentHeader } from '@/lib/tournament-header';
 import { PublicTournamentFrame } from '@/components/public/PublicTournamentFrame';
 import { TournamentNotFound } from '@/components/public/TournamentNotFound';
@@ -20,11 +20,11 @@ export default async function PublicPlayerStatsPage({ params }: Props) {
   const tournament = await getTournamentHeader(slug);
   if (!tournament) return <TournamentNotFound />;
 
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('get_player_stats', { p_player_id: playerId });
+  const api = await createClient();
+  const { data, error } = await api.rpc('get_player_stats', { p_player_id: playerId });
   if (error || !data) notFound();
   const { player, teams, stats } = data as unknown as PlayerStats;
-  const photoUrl = player.photo_path ? supabase.storage.from('player-photos').getPublicUrl(player.photo_path).data.publicUrl : null;
+  const photoUrl = player.photo_path ? api.storage.from('player-photos').getPublicUrl(player.photo_path).data.publicUrl : null;
 
   return (
     <PublicTournamentFrame slug={slug} name={tournament.name} logoUrl={tournament.logoUrl} status={tournament.status}>

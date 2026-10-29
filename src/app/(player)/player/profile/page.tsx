@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { redirect } from 'next/navigation';
 import { ProfileForm } from './ProfileForm';
 import Link from 'next/link';
@@ -14,22 +14,22 @@ const registrationStatusStyles: Record<string, string> = {
 };
 
 export default async function PlayerProfilePage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const api = await createClient();
+  const { data: { user } } = await api.auth.getUser();
 
   if (!user) {
     redirect('/login?next=/player/profile');
   }
 
   // Fetch existing profile
-  const { data: profile } = await supabase
+  const { data: profile } = await api
     .from('player_profiles')
     .select('*')
     .eq('user_id', user.id)
     .single();
 
   // Fetch registrations
-  const { data: registrations } = await supabase
+  const { data: registrations } = await api
     .from('player_tournament_registrations')
     .select(`
       id,

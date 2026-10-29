@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { UserIcon, CheckCircleIcon, XCircleIcon, SparklesIcon, TagIcon } from '@heroicons/react/24/solid';
-import { createClient } from '@/lib/supabase/client';
-import { resolvePublicStorageUrl } from '@/lib/supabase/storage-url';
+import { createClient } from '@/lib/api/client';
+import { resolvePublicStorageUrl } from '@/lib/api/storage-url';
 import { PlayerDetailModal, PlayerDetailData } from '@/components/player/PlayerDetailModal';
 import { formatVolleyballPosition } from '@/lib/volleyball-positions';
 

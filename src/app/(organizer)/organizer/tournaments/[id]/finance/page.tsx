@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { FinanceManager } from './FinanceManager';
 
 export const metadata: Metadata = { title: 'Income & expenses' };
 
 export default async function OrganizerFinancePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: tournament } = await supabase.from('tournaments').select('id,name').eq('id', id).maybeSingle();
+  const api = await createClient();
+  const { data: tournament } = await api.from('tournaments').select('id,name').eq('id', id).maybeSingle();
   if (!tournament) notFound();
   return (
     <main className="mx-auto max-w-6xl p-4 sm:p-8">

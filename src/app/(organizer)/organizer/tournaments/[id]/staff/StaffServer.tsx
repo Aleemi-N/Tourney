@@ -1,17 +1,17 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { notFound } from 'next/navigation';
 import { StaffManager } from './StaffManager';
 
 export async function StaffServer({ tournamentId }: { tournamentId: string }) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('get_tournament_staff', { p_tournament_id: tournamentId });
+  const api = await createClient();
+  const { data, error } = await api.rpc('get_tournament_staff', { p_tournament_id: tournamentId });
 
   if (error) notFound();
 
   const staff = (data ?? []).map((person) => ({
     ...person,
     avatarUrl: person.avatar_path
-      ? supabase.storage.from('avatars').getPublicUrl(person.avatar_path).data.publicUrl
+      ? api.storage.from('avatars').getPublicUrl(person.avatar_path).data.publicUrl
       : null,
   }));
 

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { PublicLandingNav } from '@/components/landing/PublicLandingNav';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { TournamentDiscoveryCard, type DiscoveryTournamentProps } from '@/components/landing/TournamentDiscoveryCard';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 
 export const metadata: Metadata = {
   title: 'Find a Tournament',
@@ -23,9 +23,9 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) 
 export default async function TournamentsDirectory({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const raw = await searchParams;
   const params: Params = { q: one(raw.q).slice(0, 80), status: one(raw.status) || 'ALL', when: one(raw.when) || 'ANY' };
-  const supabase = await createClient();
+  const api = await createClient();
 
-  let query = supabase
+  let query = api
     .from('tournaments')
     .select('id, slug, name, status, start_date, end_date, venue, format, league_mode, tournament_branding (logo_path), tournament_settings (player_registration_enabled, team_registration_enabled)')
     .eq('is_public', true)

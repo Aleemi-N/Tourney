@@ -1,6 +1,6 @@
 import { buildTournamentMetadata } from '@/lib/public-tournament-metadata';
 import type { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { getTeamColors, getTournamentHeader } from '@/lib/tournament-header';
 import { PublicTournamentFrame } from '@/components/public/PublicTournamentFrame';
 import { TournamentNotFound } from '@/components/public/TournamentNotFound';
@@ -28,8 +28,8 @@ export default async function PublicMatchPage({ params }: Props) {
   const tournament = await getTournamentHeader(slug);
   if (!tournament) return <TournamentNotFound />;
 
-  const supabase = await createClient();
-  const { data: matchState, error } = await supabase.rpc('get_public_match_state', {
+  const api = await createClient();
+  const { data: matchState, error } = await api.rpc('get_public_match_state', {
     p_match_id: matchId,
   });
 

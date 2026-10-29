@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { PhotoIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 type TournamentDetails = {
@@ -29,7 +29,7 @@ const detailErrors: Record<string, string> = {
 
 export function TournamentDetailsForm({ tournament, initialLogoPath, initialLogoUrl }: { tournament: TournamentDetails; initialLogoPath: string | null; initialLogoUrl: string | null }) {
   const router = useRouter();
-  const supabase = createClient();
+  const api = createClient();
   const [name, setName] = useState(tournament.name);
   const [venue, setVenue] = useState(tournament.venue ?? '');
   const [startDate, setStartDate] = useState(tournament.start_date ?? '');
@@ -72,12 +72,12 @@ export function TournamentDetailsForm({ tournament, initialLogoPath, initialLogo
       if (logoFile) {
         const extension = logoFile.name.split('.').pop()?.toLowerCase() || 'webp';
         uploadedPath = `${tournament.id}/${crypto.randomUUID()}.${extension}`;
-        const { error: uploadError } = await supabase.storage.from('logos').upload(uploadedPath, logoFile, { contentType: logoFile.type, upsert: false });
+        const { error: uploadError } = await api.storage.from('logos').upload(uploadedPath, logoFile, { contentType: logoFile.type, upsert: false });
         if (uploadError) throw new Error('Logo upload failed. Please try again.');
         nextLogoPath = uploadedPath;
       }
 
-      const { data, error } = await supabase.rpc('update_tournament_details', {
+      const { data, error } = await api.rpc('update_tournament_details', {
         p_tournament_id: tournament.id,
         p_name: name,
         p_venue: venue || undefined,
@@ -89,14 +89,14 @@ export function TournamentDetailsForm({ tournament, initialLogoPath, initialLogo
       const result = data as RpcResult | null;
       if (error || !result?.ok) throw new Error(result?.code ? (detailErrors[result.code] ?? 'Unable to save tournament details.') : 'Unable to save tournament details.');
 
-      if (previousLogoPath && previousLogoPath !== nextLogoPath) await supabase.storage.from('logos').remove([previousLogoPath]);
+      if (previousLogoPath && previousLogoPath !== nextLogoPath) await api.storage.from('logos').remove([previousLogoPath]);
       setLogoPath(nextLogoPath);
       setLogoFile(null);
-      if (nextLogoPath) setLogoUrl(supabase.storage.from('logos').getPublicUrl(nextLogoPath).data.publicUrl);
+      if (nextLogoPath) setLogoUrl(api.storage.from('logos').getPublicUrl(nextLogoPath).data.publicUrl);
       setMessage({ type: 'success', text: 'Tournament details updated.' });
       router.refresh();
     } catch (error) {
-      if (uploadedPath) await supabase.storage.from('logos').remove([uploadedPath]);
+      if (uploadedPath) await api.storage.from('logos').remove([uploadedPath]);
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to save tournament details.' });
     } finally {
       setSaving(false);

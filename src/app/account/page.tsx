@@ -1,15 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { AccountDataPanel } from '@/components/account/AccountDataPanel';
 
 export const metadata: Metadata = { title: 'Your data', robots: { index: false } };
 export const dynamic = 'force-dynamic';
 
 export default async function AccountPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const api = await createClient();
+  const { data: { user } } = await api.auth.getUser();
   if (!user) redirect('/login?next=/account');
   return (
     <main className="mx-auto min-h-screen max-w-2xl px-5 py-10">

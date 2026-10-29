@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { ImageUpload } from '@/components/forms/ImageUpload';
 import { Loader2 } from 'lucide-react';
 import { VOLLEYBALL_POSITIONS, formatVolleyballPosition } from '@/lib/volleyball-positions';
@@ -14,7 +14,7 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
   const [photoUrl, setPhotoUrl] = useState<string | null>(initialProfile?.photo_path || null);
   const [primaryPosition, setPrimaryPosition] = useState(initialProfile?.primary_position || '');
   const [secondaryPosition, setSecondaryPosition] = useState(initialProfile?.secondary_position || '');
-  const supabase = createClient();
+  const api = createClient();
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -48,7 +48,7 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
     }
 
     try {
-      const { error: rpcError } = await supabase.rpc('submit_player_registration', {
+      const { error: rpcError } = await api.rpc('submit_player_registration', {
         p_tournament_id: tournamentId,
         p_display_name: displayName,
         p_primary_position: submittedPrimaryPosition,
@@ -68,7 +68,7 @@ export function PlayerRegistrationForm({ userId, tournamentId, initialProfile }:
 
       const previousPhotoPath = initialProfile?.photo_path as string | null | undefined;
       if (previousPhotoPath && photoUrl !== previousPhotoPath && previousPhotoPath.startsWith(`${userId}/`)) {
-        const { error: cleanupError } = await supabase.storage.from('avatars').remove([previousPhotoPath]);
+        const { error: cleanupError } = await api.storage.from('avatars').remove([previousPhotoPath]);
         if (cleanupError) console.error('Previous profile photo cleanup failed:', cleanupError);
       }
       

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Settings, Save, AlertTriangle } from 'lucide-react';
-import type { createClient } from '@/lib/supabase/client';
+import type { createClient } from '@/lib/api/client';
 import type { QueuePlayer } from '@/lib/organizer/organizer-auction';
 
 interface ConfigureQueueModalProps {
@@ -12,7 +12,7 @@ interface ConfigureQueueModalProps {
   onClose: () => void;
   queue: QueuePlayer[];
   playerNameMap: Record<string, string>;
-  supabase: ReturnType<typeof createClient>;
+  api: ReturnType<typeof createClient>;
   onSaved: () => void;
 }
 
@@ -35,7 +35,7 @@ export function ConfigureQueueModal({
   onClose,
   queue,
   playerNameMap,
-  supabase,
+  api,
   onSaved,
 }: ConfigureQueueModalProps) {
   // The parent mounts this modal only while it is open, so the queue is read once per opening.
@@ -63,7 +63,7 @@ export function ConfigureQueueModal({
     try {
       // Execute all updates in parallel
       const promises = items.map(item => 
-        supabase
+        api
           .from('auction_players')
           .update({ auction_order: Number(item.order) })
           .eq('id', item.id)

@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import { resolvePublicStorageUrl, type PublicStorageClient } from '@/lib/supabase/storage-url';
+import { resolvePublicStorageUrl, type PublicStorageClient } from '@/lib/api/storage-url';
 import { formatVolleyballPosition } from '@/lib/volleyball-positions';
 
 export interface PlayerCardData {
@@ -64,7 +64,7 @@ function drawStarburst(ctx: CanvasRenderingContext2D, cx: number, cy: number, ou
  */
 export async function generatePlayerCardCanvas(
   player: PlayerCardData,
-  supabase: PublicStorageClient
+  api: PublicStorageClient
 ): Promise<HTMLCanvasElement> {
   const canvas = document.createElement('canvas');
   canvas.width = 1200;
@@ -181,7 +181,7 @@ export async function generatePlayerCardCanvas(
   ctx.fillText(lotNum, photoBoxX + 36, photoBoxY + 64);
 
   // Photo / Avatar inside Photo Box
-  const photoUrl = player.photo_path ? resolvePublicStorageUrl(supabase, 'avatars', player.photo_path) : null;
+  const photoUrl = player.photo_path ? resolvePublicStorageUrl(api, 'avatars', player.photo_path) : null;
   const initial = player.display_name.trim().charAt(0).toUpperCase() || 'P';
 
   ctx.save();
@@ -438,9 +438,9 @@ export async function generatePlayerCardCanvas(
  */
 export async function downloadSinglePlayerCardPNG(
   player: PlayerCardData,
-  supabase: PublicStorageClient
+  api: PublicStorageClient
 ): Promise<void> {
-  const canvas = await generatePlayerCardCanvas(player, supabase);
+  const canvas = await generatePlayerCardCanvas(player, api);
   const dataUrl = canvas.toDataURL('image/png');
   const link = document.createElement('a');
   const safeName = player.display_name.toLowerCase().replace(/[^a-z0-9]/g, '_');
@@ -455,7 +455,7 @@ export async function downloadSinglePlayerCardPNG(
 export async function downloadAllPlayerCardsZip(
   players: CardSourcePlayer[],
   auctionCategories: CardAuctionCategory[],
-  supabase: PublicStorageClient,
+  api: PublicStorageClient,
   onProgress?: (current: number, total: number) => void,
   auctionOrderMap?: Record<string, number>
 ): Promise<void> {
@@ -491,7 +491,7 @@ export async function downloadAllPlayerCardsZip(
     }
 
     try {
-      const canvas = await generatePlayerCardCanvas(cardData, supabase);
+      const canvas = await generatePlayerCardCanvas(cardData, api);
       const dataUrl = canvas.toDataURL('image/png');
       const base64Data = dataUrl.replace(/^data:image\/png;base64,/, '');
 
@@ -523,7 +523,7 @@ export async function downloadAllPlayerCardsZip(
  */
 export async function downloadAllPlayerPhotosZip(
   players: CardSourcePlayer[],
-  supabase: PublicStorageClient,
+  api: PublicStorageClient,
   onProgress?: (current: number, total: number) => void
 ): Promise<void> {
   const zip = new JSZip();
@@ -547,7 +547,7 @@ export async function downloadAllPlayerPhotosZip(
     if (!photoPath) continue;
 
     try {
-      const photoUrl = resolvePublicStorageUrl(supabase, 'avatars', photoPath);
+      const photoUrl = resolvePublicStorageUrl(api, 'avatars', photoPath);
       if (!photoUrl) continue;
 
       const res = await fetch(photoUrl);

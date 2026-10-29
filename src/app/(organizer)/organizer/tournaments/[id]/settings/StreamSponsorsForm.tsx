@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/api/client';
 import { callRpc } from '@/lib/web-push';
 import { SponsorStrip, type Sponsor } from '@/components/public/SponsorStrip';
 
@@ -20,9 +20,9 @@ export function StreamSponsorsForm({ tournamentId }: { tournamentId: string }) {
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   const load = useCallback(async () => {
-    const supabase = createClient();
+    const api = createClient();
     const [s, l] = await Promise.all([
-      supabase.from('tournament_settings').select('*').eq('tournament_id', tournamentId).maybeSingle(),
+      api.from('tournament_settings').select('*').eq('tournament_id', tournamentId).maybeSingle(),
       callRpc('list_sponsors', { p_tournament_id: tournamentId }),
     ]);
     setStream(((s.data as { stream_url?: string | null } | null)?.stream_url) ?? '');

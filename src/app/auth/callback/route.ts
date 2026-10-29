@@ -1,5 +1,7 @@
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { PKCE_COOKIE } from '@/lib/api/session-cookie';
+import { createClient } from '@/lib/api/server';
 import { getSafeRedirectUrl } from '@/lib/utils/url';
 
 export async function GET(request: Request) {
@@ -9,8 +11,11 @@ export async function GET(request: Request) {
   const next = getSafeRedirectUrl(searchParams.get('next'), '/player');
 
   if (code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const api = await createClient();
+    const jar = await cookies();
+    const verifier = jar.get(PKCE_COOKIE)?.value;
+    const { error } = verifier ? await api.auth.exchangeCode(code, verifier) : { error: true };
+    jar.delete(PKCE_COOKIE);
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }

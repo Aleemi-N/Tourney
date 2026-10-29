@@ -2,16 +2,16 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { KIND_LABEL, type Certificate } from '@/components/certificates/CertificateSheet';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 
 export const metadata: Metadata = { title: 'Certificates' };
 
 export default async function OrganizerCertificatesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: tournament } = await supabase.from('tournaments').select('id,name,slug,status').eq('id', id).maybeSingle();
+  const api = await createClient();
+  const { data: tournament } = await api.from('tournaments').select('id,name,slug,status').eq('id', id).maybeSingle();
   if (!tournament) notFound();
-  const rpc = supabase as unknown as { rpc: (n: string, a: Record<string, unknown>) => PromiseLike<{ data: unknown }> };
+  const rpc = api as unknown as { rpc: (n: string, a: Record<string, unknown>) => PromiseLike<{ data: unknown }> };
   const { data } = await rpc.rpc('get_certificates', { p_tournament_id: id });
   const certs = (data ?? []) as Certificate[];
   const done = tournament.status === 'COMPLETED' || tournament.status === 'ARCHIVED';

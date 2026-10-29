@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/api/server';
 import { revalidatePath } from 'next/cache';
 
 function participantActionError(message: string, subject: 'registration' | 'application') {
@@ -42,8 +42,8 @@ function correctionError(result: CorrectionResult | null, action: 'revoke' | 're
 }
 
 export async function approvePlayerAction(registrationId: string, classification?: string | null, notes?: string | null) {
-  const supabase = await createClient();
-  const { error } = await supabase.rpc('approve_player_registration', {
+  const api = await createClient();
+  const { error } = await api.rpc('approve_player_registration', {
     p_registration_id: registrationId,
     p_auction_category: classification || undefined,
     p_notes: notes || undefined
@@ -58,8 +58,8 @@ export async function approvePlayerAction(registrationId: string, classification
 }
 
 export async function rejectPlayerAction(registrationId: string, notes?: string | null) {
-  const supabase = await createClient();
-  const { error } = await supabase.rpc('reject_player_registration', {
+  const api = await createClient();
+  const { error } = await api.rpc('reject_player_registration', {
     p_registration_id: registrationId,
     p_notes: notes || undefined
   });
@@ -73,8 +73,8 @@ export async function rejectPlayerAction(registrationId: string, notes?: string 
 }
 
 export async function revokePlayerApprovalAction(registrationId: string, reason?: string | null) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('revoke_player_approval', {
+  const api = await createClient();
+  const { data, error } = await api.rpc('revoke_player_approval', {
     p_registration_id: registrationId,
     p_reason: reason || undefined,
   });
@@ -88,8 +88,8 @@ export async function revokePlayerApprovalAction(registrationId: string, reason?
 }
 
 export async function reopenPlayerRegistrationAction(registrationId: string, reason?: string | null) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('reopen_player_registration', {
+  const api = await createClient();
+  const { data, error } = await api.rpc('reopen_player_registration', {
     p_registration_id: registrationId,
     p_reason: reason || undefined,
   });
@@ -103,8 +103,8 @@ export async function reopenPlayerRegistrationAction(registrationId: string, rea
 }
 
 export async function approveTeamOwnerAction(applicationId: string, notes?: string | null) {
-  const supabase = await createClient();
-  const { error } = await supabase.rpc('approve_team_owner_application', {
+  const api = await createClient();
+  const { error } = await api.rpc('approve_team_owner_application', {
     p_application_id: applicationId,
     p_notes: notes || undefined
   });
@@ -118,8 +118,8 @@ export async function approveTeamOwnerAction(applicationId: string, notes?: stri
 }
 
 export async function rejectTeamOwnerAction(applicationId: string, notes?: string | null) {
-  const supabase = await createClient();
-  const { error } = await supabase.rpc('reject_team_owner_application', {
+  const api = await createClient();
+  const { error } = await api.rpc('reject_team_owner_application', {
     p_application_id: applicationId,
     p_notes: notes || undefined
   });
@@ -158,8 +158,8 @@ const MANUAL_REG_ERRORS: Record<string, string> = {
 };
 
 export async function manualRegisterPlayerAction(payload: ManualRegisterPayload) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('organizer_register_player', {
+  const api = await createClient();
+  const { data, error } = await api.rpc('organizer_register_player', {
     p_tournament_id:      payload.tournamentId,
     p_display_name:       payload.displayName,
     p_phone:              payload.phone,

@@ -17,7 +17,7 @@ export async function paymentsFetch<T>(path: string, init: { method?: string; bo
   const { data } = await api.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error('Sign in first.');
-  const response = await fetch(`${apiUrl}/payments/v1${path}`, {
+  const response = await fetch(`${apiUrl}/payments${path}`, {
     method: init.method ?? 'GET',
     headers: { Authorization: `Bearer ${token}`, ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' }) },
     body: init.body === undefined ? undefined : JSON.stringify(init.body),

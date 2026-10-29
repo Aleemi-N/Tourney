@@ -208,7 +208,7 @@ export function OrganizerAddPlayerModal({
                           className="h-4 w-4 border-border-strong bg-transparent text-primary focus:ring-primary focus:ring-offset-0"
                         />
                         {p.photo_path ? (
-                          <img src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${p.photo_path}`} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover bg-surface-muted" />
+                          <img src={`${process.env.NEXT_PUBLIC_API_URL}/storage/object/public/avatars/${p.photo_path}`} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover bg-surface-muted" />
                         ) : (
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-muted text-xs font-bold text-text-secondary">
                             {p.display_name.charAt(0).toUpperCase()}

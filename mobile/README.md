@@ -1,9 +1,9 @@
 # Tourny mobile (Expo)
 
-Player, scorer and public screens on the same API as the web app (the Spring Boot API in `../api` speaks the supabase-js protocol, so only the address changes).
+Player, scorer and public screens on the same API as the web app (the Spring Boot API in `../api`; set `EXPO_PUBLIC_API_URL`).
 
 ```bash
-cp .env.example .env     # EXPO_PUBLIC_API_URL, EXPO_PUBLIC_API_KEY (the deployment's ANON_KEY)
+cp .env.example .env     # EXPO_PUBLIC_API_URL, EXPO_PUBLIC_SITE_URL
 npm install
 npx expo start           # press a / i, or scan the QR code with Expo Go
 npx expo start --web     # browser build, handy for checking against the API

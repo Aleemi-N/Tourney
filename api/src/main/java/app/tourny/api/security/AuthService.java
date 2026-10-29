@@ -27,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Accounts and sessions, shaped like the GoTrue responses supabase-js expects: short-lived access
+ * Accounts and sessions: short-lived access
  * tokens (JWT, subject = user id) and rotating opaque refresh tokens. Users live in auth.users with
  * their existing bcrypt hashes.
  */

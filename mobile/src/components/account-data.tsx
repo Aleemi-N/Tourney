@@ -37,7 +37,7 @@ export function AccountData() {
     setBusy('delete'); setError(null);
     try {
       const { data } = await api.auth.getSession();
-      const response = await fetch(`${apiUrl}/account/v1/delete`, {
+      const response = await fetch(`${apiUrl}/account/delete`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${data.session?.access_token ?? ''}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ confirm }),
