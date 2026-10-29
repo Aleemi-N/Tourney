@@ -12,7 +12,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -34,6 +37,8 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 public class AuthService {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
     public static class AuthException extends RuntimeException {
         public final int status;
         public final String code;
@@ -46,8 +51,16 @@ public class AuthService {
     }
 
     private static final Duration REFRESH_TTL = Duration.ofDays(30);
-    private static final int MAX_FAILURES = 10;
+    // A token that was just rotated may arrive again within seconds (two tabs, or the website's proxy and the browser, renewing
+    // together). That is not theft; only a later replay is.
+    private static final Duration ROTATION_GRACE = Duration.ofSeconds(10);
     private static final Duration FAILURE_WINDOW = Duration.ofMinutes(15);
+    private static final int MAX_FAILURES_PER_EMAIL = 10;
+    private static final int MAX_FAILURES_PER_IP = 30;
+    private static final Duration HOUR = Duration.ofHours(1);
+    private static final int MIN_PASSWORD = 8;
+    private static final int MAX_PASSWORD_BYTES = 72; // what bcrypt reads
+    private static final java.util.regex.Pattern EMAIL = java.util.regex.Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     private final JdbcClient jdbc;
     private final PasswordEncoder encoder;
@@ -56,16 +69,17 @@ public class AuthService {
     private final long ttlSeconds;
     private final String dummyHash;
     private final SecureRandom random = new SecureRandom();
-    private final Map<String, List<Instant>> failures = new ConcurrentHashMap<>();
-
     private final RecoveryMailer mailer;
     private final List<String> siteOrigins;
-    private final Map<String, List<Instant>> recoveries = new ConcurrentHashMap<>();
+    private final RateLimiter limits;
+    // Sending mail takes far longer than not sending it; doing it off the request keeps the answer the same speed for every email.
+    private final ExecutorService mailQueue = Executors.newSingleThreadExecutor(r -> { var t = new Thread(r, "recovery-mail"); t.setDaemon(true); return t; });
 
-    AuthService(JdbcClient jdbc, PasswordEncoder encoder, JwtEncoder jwtEncoder, ObjectMapper mapper, RecoveryMailer mailer,
+    AuthService(JdbcClient jdbc, PasswordEncoder encoder, JwtEncoder jwtEncoder, ObjectMapper mapper, RecoveryMailer mailer, RateLimiter limits,
                 @Value("${tourny.cors.origins:}") List<String> siteOrigins,
                 @Value("${tourny.jwt.ttl-seconds}") long ttlSeconds) {
         this.mailer = mailer;
+        this.limits = limits;
         this.siteOrigins = siteOrigins.stream().map(String::trim).filter(o -> !o.isEmpty()).toList();
         this.jdbc = jdbc;
         this.encoder = encoder;
@@ -76,17 +90,20 @@ public class AuthService {
     }
 
     @Transactional
-    public Map<String, Object> signInWithPassword(String email, String password) {
+    public Map<String, Object> signInWithPassword(String email, String password, String ip) {
         String key = email.trim().toLowerCase();
-        throttle(key);
+        if (limits.exceeded("login-email", key, MAX_FAILURES_PER_EMAIL, FAILURE_WINDOW) || limits.exceeded("login-ip", ip, MAX_FAILURES_PER_IP, FAILURE_WINDOW)) {
+            throw new AuthException(429, "over_request_rate_limit", "Too many sign-in attempts. Try again later.");
+        }
         Optional<Map<String, Object>> row = findUser("lower(email) = :v", key);
         String hash = row.map(r -> (String) r.get("encrypted_password")).orElse(null);
-        boolean ok = encoder.matches(password, hash == null ? dummyHash : hash);
+        boolean ok = password.getBytes(StandardCharsets.UTF_8).length <= MAX_PASSWORD_BYTES && encoder.matches(password, hash == null ? dummyHash : hash);
         if (row.isEmpty() || hash == null || !ok) {
-            recordFailure(key);
+            limits.record("login-email", key);
+            limits.record("login-ip", ip);
             throw new AuthException(400, "invalid_credentials", "Invalid login credentials");
         }
-        failures.remove(key);
+        limits.clear("login-email", key);
         return session(row.get());
     }
 
@@ -98,22 +115,27 @@ public class AuthService {
                 .param("h", hash).query().listOfRows().stream().findFirst();
         if (stored.isEmpty()) throw new AuthException(400, "refresh_token_not_found", "Invalid Refresh Token: Refresh Token Not Found");
         String userId = (String) stored.get().get("user_id");
-        if (stored.get().get("revoked_at") != null) {
-            // A rotated token came back: assume it leaked and end every session of this user.
-            jdbc.sql("UPDATE public.api_refresh_tokens SET revoked_at = now() WHERE user_id = :u::uuid AND revoked_at IS NULL").param("u", userId).update();
+        var revokedAt = (java.sql.Timestamp) stored.get().get("revoked_at");
+        if (revokedAt != null && revokedAt.toInstant().isBefore(Instant.now().minus(ROTATION_GRACE))) {
+            // A token that was rotated (or ended by sign-out) came back later: assume it leaked and end every session of this user.
+            revokeAll(userId);
             throw new AuthException(400, "refresh_token_already_used", "Invalid Refresh Token: Already Used");
         }
         if (((java.sql.Timestamp) stored.get().get("expires_at")).toInstant().isBefore(Instant.now())) {
             throw new AuthException(400, "refresh_token_not_found", "Invalid Refresh Token: expired");
         }
-        jdbc.sql("UPDATE public.api_refresh_tokens SET revoked_at = now() WHERE token_hash = :h").param("h", hash).update();
+        jdbc.sql("UPDATE public.api_refresh_tokens SET revoked_at = now() WHERE token_hash = :h AND revoked_at IS NULL").param("h", hash).update(); // the first renewal sets the time the grace counts from
         return session(findUser("id = :v::uuid", userId).orElseThrow(() -> new AuthException(400, "user_not_found", "User not found")));
     }
 
     @Transactional
-    public Map<String, Object> signUp(String email, String password, Map<String, Object> metadata) {
+    public Map<String, Object> signUp(String email, String password, Map<String, Object> metadata, String ip) {
+        // Account creation is open, so cap it per address: 20 accounts per hour is far above any real use.
+        if (limits.exceeded("signup-ip", ip, 20, HOUR)) throw new AuthException(429, "over_request_rate_limit", "Too many sign-ups from this address. Try again later.");
+        limits.record("signup-ip", ip);
         String normalized = email.trim().toLowerCase();
-        if (password.length() < 6) throw new AuthException(422, "weak_password", "Password should be at least 6 characters.");
+        if (normalized.length() > 254 || !EMAIL.matcher(normalized).matches()) throw new AuthException(422, "validation_failed", "Enter a valid email address.");
+        checkPassword(password);
         if (findUser("lower(email) = :v", normalized).isPresent()) throw new AuthException(422, "user_already_exists", "User already registered");
         String id = UUID.randomUUID().toString();
         try {
@@ -136,27 +158,36 @@ public class AuthService {
      * one-time code that only the browser holding the PKCE verifier can exchange.
      */
     @Transactional
-    public void recover(String email, String codeChallenge, String method, String redirectTo) {
+    public void recover(String email, String codeChallenge, String method, String redirectTo, String ip) {
+        // Only the S256 form of PKCE: with "plain" the challenge is the verifier, and the email link would be enough to redeem the code.
+        if (codeChallenge == null || codeChallenge.isBlank() || (method != null && !"s256".equalsIgnoreCase(method))) {
+            throw new AuthException(400, "validation_failed", "A PKCE code_challenge with method s256 is required");
+        }
         String key = email.trim().toLowerCase();
-        Instant cutoff = Instant.now().minus(Duration.ofHours(1));
-        List<Instant> recent = recoveries.getOrDefault(key, List.of()).stream().filter(t -> t.isAfter(cutoff)).toList();
-        if (recent.size() >= 3) throw new AuthException(429, "over_email_send_rate_limit", "Too many reset requests. Try again later.");
-        var attempts = new java.util.ArrayList<>(recent);
-        attempts.add(Instant.now());
-        recoveries.put(key, attempts);
+        if (limits.exceeded("recover-email", key, 3, HOUR) || limits.exceeded("recover-ip", ip, 10, HOUR)) {
+            throw new AuthException(429, "over_email_send_rate_limit", "Too many reset requests. Try again later.");
+        }
+        limits.record("recover-email", key);
+        limits.record("recover-ip", ip);
 
         Optional<Map<String, Object>> user = findUser("lower(email) = :v", key);
-        if (user.isEmpty() || codeChallenge == null || codeChallenge.isBlank() || siteOrigins.isEmpty()) return;
-        String normalizedMethod = "plain".equalsIgnoreCase(method) ? "plain" : "s256";
+        if (user.isEmpty() || siteOrigins.isEmpty()) return;
 
         byte[] raw = new byte[32];
         random.nextBytes(raw);
         String code = Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
-        jdbc.sql("INSERT INTO public.api_auth_codes (user_id, code_hash, code_challenge, code_challenge_method, expires_at) VALUES (:u::uuid, :h, :c, :m, :e)")
-                .param("u", user.get().get("id")).param("h", sha256(code)).param("c", codeChallenge).param("m", normalizedMethod)
+        jdbc.sql("INSERT INTO public.api_auth_codes (user_id, code_hash, code_challenge, code_challenge_method, expires_at) VALUES (:u::uuid, :h, :c, 's256', :e)")
+                .param("u", user.get().get("id")).param("h", sha256(code)).param("c", codeChallenge)
                 .param("e", java.sql.Timestamp.from(Instant.now().plus(Duration.ofHours(1)))).update();
         String base = safeRedirect(redirectTo);
-        mailer.sendRecoveryLink(key, base + (base.contains("?") ? "&" : "?") + "code=" + code);
+        String link = base + (base.contains("?") ? "&" : "?") + "code=" + code;
+        mailQueue.execute(() -> {
+            try {
+                mailer.sendRecoveryLink(key, link);
+            } catch (RuntimeException e) {
+                log.warn("Could not send a password recovery email: {}", e.toString());
+            }
+        });
     }
 
     /** Completes the PKCE exchange: the code from the email plus the verifier gives a session. */
@@ -170,8 +201,7 @@ public class AuthService {
         }
         jdbc.sql("UPDATE public.api_auth_codes SET used_at = now() WHERE id = :i").param("i", row.get().get("id")).update(); // single use, even if the verifier is wrong
         String expected = (String) row.get().get("code_challenge");
-        String actual = "plain".equals(row.get().get("code_challenge_method")) ? verifier
-                : Base64.getUrlEncoder().withoutPadding().encodeToString(sha256Bytes(verifier));
+        String actual = Base64.getUrlEncoder().withoutPadding().encodeToString(sha256Bytes(verifier));
         if (!java.security.MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), actual.getBytes(StandardCharsets.UTF_8))) {
             throw new AuthException(400, "bad_code_verifier", "Invalid code verifier");
         }
@@ -189,14 +219,25 @@ public class AuthService {
 
     @Transactional
     public void signOut(String userId) {
-        jdbc.sql("UPDATE public.api_refresh_tokens SET revoked_at = now() WHERE user_id = :u::uuid AND revoked_at IS NULL").param("u", userId).update();
+        revokeAll(userId);
+    }
+
+    /** Ends every session of the user. Dated before the rotation grace, so none of these tokens can be renewed again. */
+    private void revokeAll(String userId) {
+        jdbc.sql("UPDATE public.api_refresh_tokens SET revoked_at = now() - interval '1 hour' WHERE user_id = :u::uuid AND revoked_at IS NULL").param("u", userId).update();
+    }
+
+    private static void checkPassword(String password) {
+        if (password.length() < MIN_PASSWORD) throw new AuthException(422, "weak_password", "Password should be at least " + MIN_PASSWORD + " characters.");
+        if (password.getBytes(StandardCharsets.UTF_8).length > MAX_PASSWORD_BYTES) throw new AuthException(422, "weak_password", "Password is too long (at most " + MAX_PASSWORD_BYTES + " bytes).");
     }
 
     @Transactional
     public Map<String, Object> updateUser(String userId, String password, Map<String, Object> metadata) {
         if (password != null) {
-            if (password.length() < 6) throw new AuthException(422, "weak_password", "Password should be at least 6 characters.");
+            checkPassword(password);
             jdbc.sql("UPDATE auth.users SET encrypted_password = :h, updated_at = now() WHERE id = :u::uuid").param("h", encoder.encode(password)).param("u", userId).update();
+            revokeAll(userId); // whoever held an old session must sign in again with the new password (this session's access token lasts out its hour)
         }
         if (metadata != null) {
             jdbc.sql("UPDATE auth.users SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || :m::jsonb, updated_at = now() WHERE id = :u::uuid")
@@ -291,22 +332,5 @@ public class AuthService {
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
-    }
-
-    private void throttle(String key) {
-        List<Instant> recent = failures.getOrDefault(key, List.of());
-        Instant cutoff = Instant.now().minus(FAILURE_WINDOW);
-        if (recent.stream().filter(t -> t.isAfter(cutoff)).count() >= MAX_FAILURES) {
-            throw new AuthException(429, "over_request_rate_limit", "Too many sign-in attempts. Try again later.");
-        }
-    }
-
-    private void recordFailure(String key) {
-        Instant cutoff = Instant.now().minus(FAILURE_WINDOW);
-        failures.compute(key, (k, old) -> {
-            var list = new java.util.ArrayList<Instant>(old == null ? List.of() : old.stream().filter(t -> t.isAfter(cutoff)).toList());
-            list.add(Instant.now());
-            return list;
-        });
     }
 }

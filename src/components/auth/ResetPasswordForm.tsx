@@ -93,7 +93,7 @@ export function ResetPasswordForm() {
                 type={showPassword ? "text" : "password"} 
                 autoComplete="new-password"
                 required
-                minLength={6}
+                minLength={8}
                 disabled={sessionStatus === 'pending'}
                 className="w-full p-3 pr-12 rounded-xl border border-border bg-surface-muted text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all disabled:opacity-50"
               />
@@ -122,7 +122,7 @@ export function ResetPasswordForm() {
                 type={showConfirmPassword ? "text" : "password"} 
                 autoComplete="new-password"
                 required
-                minLength={6}
+                minLength={8}
                 disabled={sessionStatus === 'pending'}
                 className="w-full p-3 pr-12 rounded-xl border border-border bg-surface-muted text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all disabled:opacity-50"
               />

@@ -16,8 +16,8 @@ export function createClient(): Api<Database> {
       get: () => decodeSession(document.cookie.split('; ').find((c) => c.startsWith(`${SESSION_COOKIE}=`))?.slice(SESSION_COOKIE.length + 1)),
       set: (session) => {
         document.cookie = session
-          ? `${SESSION_COOKIE}=${encodeSession(session)}; path=${cookieOptions.path}; max-age=${cookieOptions.maxAge}; samesite=lax`
-          : `${SESSION_COOKIE}=; path=${cookieOptions.path}; max-age=0; samesite=lax`;
+          ? `${SESSION_COOKIE}=${encodeSession(session)}; path=${cookieOptions.path}; max-age=${cookieOptions.maxAge}; samesite=lax${cookieOptions.secure ? '; secure' : ''}`
+          : `${SESSION_COOKIE}=; path=${cookieOptions.path}; max-age=0; samesite=lax${cookieOptions.secure ? '; secure' : ''}`;
       },
     },
   }));

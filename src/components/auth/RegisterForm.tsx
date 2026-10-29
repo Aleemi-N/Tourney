@@ -75,7 +75,7 @@ export function RegisterForm() {
           name="password" 
           type="password" 
           required
-          minLength={6}
+          minLength={8}
           className="p-3.5 rounded-xl border border-glass-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-card"
         />
       </div>

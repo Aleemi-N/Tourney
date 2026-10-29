@@ -5,7 +5,9 @@ export const SESSION_COOKIE = 'tourny-session';
 export const PKCE_COOKIE = 'tourny-pkce';
 
 const YEAR = 60 * 60 * 24 * 365;
-export const cookieOptions = { path: '/', sameSite: 'lax' as const, maxAge: YEAR };
+// Secure wherever the API is served over https (every real deployment); plain http is only for local development.
+const secure = process.env.NEXT_PUBLIC_API_URL?.startsWith('https:') ?? false;
+export const cookieOptions = { path: '/', sameSite: 'lax' as const, maxAge: YEAR, secure };
 
 export function encodeSession(session: StoredSession): string {
   return btoa(JSON.stringify({ a: session.access_token, r: session.refresh_token, e: session.expires_at })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');

@@ -30,7 +30,7 @@ export default function RegisterScreen() {
       <AuthField label="Full name" value={name} onChangeText={setName} autoComplete="name" textContentType="name" />
       <AuthField label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" />
       <AuthField label="Password" secure value={password} onChangeText={setPassword} autoComplete="new-password" textContentType="newPassword" onSubmitEditing={() => void submit()} />
-      <Button title="Create Account" onPress={() => void submit()} loading={busy} disabled={!name.trim() || !email || password.length < 6} />
+      <Button title="Create Account" onPress={() => void submit()} loading={busy} disabled={!name.trim() || !email || password.length < 8} />
     </AuthShell>
   );
 }

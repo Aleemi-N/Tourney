@@ -37,6 +37,8 @@ class RestProxyController {
     private static final Set<String> FORWARDED_RESPONSE = Set.of(
             "content-type", "content-range", "etag", "preference-applied", "location", "content-profile");
 
+    private static final java.util.regex.Pattern TABLE_PATH = java.util.regex.Pattern.compile("/[A-Za-z0-9_]+");
+
     private final RestClient client;
     private final String baseUrl;
     private final JwtEncoder jwtEncoder;
@@ -58,6 +60,9 @@ class RestProxyController {
     ResponseEntity<byte[]> forward(HttpServletRequest request, @AuthenticationPrincipal Jwt jwt) throws Exception {
         String uri = request.getRequestURI();
         String path = uri.substring("/rest".length());
+        // Only tables and views (/rest/<name>). The API root would list the whole schema, and /rest/rpc/* would reach every database
+        // function PostgREST knows, around the allow-list that POST /rpc/{function} enforces.
+        if (!TABLE_PATH.matcher(path).matches() || path.equals("/rpc")) return ResponseEntity.notFound().build();
         String query = request.getQueryString();
         String token = jwt != null ? jwt.getTokenValue() : anonymousToken();
 

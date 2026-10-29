@@ -24,7 +24,7 @@ import org.springframework.test.context.DynamicPropertySource;
  * skipped when that database is not reachable.
  */
 @org.springframework.context.annotation.Import(ApiIntegrationTest.CapturingMailer.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "server.error.include-message=always")
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = { "server.error.include-message=always", "tourny.push.enabled=false", "tourny.payments.reconcile-ms=600000" })
 class ApiIntegrationTest {
 
     // Defaults to deploy/dev-stack.sh (PostgreSQL on 5440, PostgREST on 3001); for another setup:
@@ -52,6 +52,7 @@ class ApiIntegrationTest {
     static void seededDatabase() throws Exception {
         try (var c = DriverManager.getConnection(DB_URL, "postgres", "postgres")) {
             assumeTrue(c.isValid(2));
+            c.createStatement().execute("DELETE FROM public.api_rate_events"); // limits from earlier runs must not count here
         } catch (Exception e) {
             assumeTrue(false, "database not reachable at " + DB_URL + ": " + e);
         }
@@ -153,7 +154,10 @@ class ApiIntegrationTest {
         assertEquals(200, second.statusCode(), second.body());
         String rotated = field(second.body(), "refresh_token");
 
-        // Replaying the old token is theft: it fails and revokes the rotated one too.
+        // Replaying the old token after the short grace window is theft: it fails and revokes the rotated one too.
+        try (var c = DriverManager.getConnection(DB_URL, "postgres", "postgres")) {
+            c.createStatement().execute("UPDATE public.api_refresh_tokens SET revoked_at = now() - interval '1 minute' WHERE revoked_at IS NOT NULL AND user_id = (SELECT id FROM auth.users WHERE email = 'player@tourny.local')");
+        }
         assertEquals(400, post("/auth/token?grant_type=refresh_token", "{\"refresh_token\":\"" + refresh + "\"}", null).statusCode());
         assertEquals(400, post("/auth/token?grant_type=refresh_token", "{\"refresh_token\":\"" + rotated + "\"}", null).statusCode());
     }
@@ -288,6 +292,7 @@ class ApiIntegrationTest {
         var response = post("/auth/recover" + (redirectTo == null ? "" : "?redirect_to=" + java.net.URLEncoder.encode(redirectTo, "UTF-8")),
                 "{\"email\":\"" + email + "\",\"code_challenge\":\"" + challenge(verifier) + "\",\"code_challenge_method\":\"s256\"}", null);
         assertEquals(200, response.statusCode(), response.body());
+        for (int i = 0; i < 40 && CapturingMailer.SENT.size() == before; i++) Thread.sleep(50); // the mail goes out in the background
         return CapturingMailer.SENT.size() > before ? CapturingMailer.SENT.get(CapturingMailer.SENT.size() - 1)[1] : null;
     }
 
@@ -313,5 +318,81 @@ class ApiIntegrationTest {
         String evil = requestRecovery("scorer@tourny.local", verifier, "https://evil.example/steal");
         assertTrue(evil.startsWith("http://localhost:3000/auth/callback?code=") || evil.startsWith("http://localhost:3100/auth/callback?code=") || evil.startsWith("http://localhost:8081/auth/callback?code="), evil);
         assertTrue(requestRecovery("nobody@tourny.local", verifier, null) == null);
+    }
+
+    @Test
+    void restProxyDoesNotExposeFunctionsOrTheSchema() throws Exception {
+        String token = login("organizer@tourny.local");
+        // The helper is not on the allow-list, so POST /rpc refuses it...
+        assertEquals(404, post("/rpc/is_tournament_organizer", "{\"tourn_id\":\"90200000-0000-0000-0000-000000000001\"}", token).statusCode());
+        // ...and the proxy must not be a way around that, nor list every table and function.
+        assertEquals(404, post("/rest/rpc/is_tournament_organizer", "{\"tourn_id\":\"90200000-0000-0000-0000-000000000001\"}", token).statusCode());
+        assertEquals(404, get("/rest/", token).statusCode());
+        assertEquals(404, get("/rest", null).statusCode());
+        assertTrue(get("/rest/tournaments/../rpc/is_tournament_organizer", token).statusCode() >= 400);
+        assertEquals(200, get("/rest/tournaments?select=id&limit=1", token).statusCode());
+    }
+
+    @Test
+    void aSessionThatRenewsTwiceAtOnceSurvivesButALaterReplayEndsEverything() throws Exception {
+        var first = post("/auth/token?grant_type=password", "{\"email\":\"owner@tourny.local\",\"password\":\"" + password + "\"}", null);
+        String refresh = field(first.body(), "refresh_token");
+        var a = post("/auth/token?grant_type=refresh_token", "{\"refresh_token\":\"" + refresh + "\"}", null);
+        var b = post("/auth/token?grant_type=refresh_token", "{\"refresh_token\":\"" + refresh + "\"}", null); // a parallel renewal with the same token
+        assertEquals(200, a.statusCode(), a.body());
+        assertEquals(200, b.statusCode(), b.body());
+        try (var c = DriverManager.getConnection(DB_URL, "postgres", "postgres")) {
+            c.createStatement().execute("UPDATE public.api_refresh_tokens SET revoked_at = now() - interval '1 minute' WHERE revoked_at IS NOT NULL AND user_id = (SELECT id FROM auth.users WHERE email = 'owner@tourny.local')");
+        }
+        assertEquals(400, post("/auth/token?grant_type=refresh_token", "{\"refresh_token\":\"" + refresh + "\"}", null).statusCode()); // replayed later: theft
+        assertEquals(400, post("/auth/token?grant_type=refresh_token", "{\"refresh_token\":\"" + field(b.body(), "refresh_token") + "\"}", null).statusCode());
+    }
+
+    @Test
+    void changingThePasswordEndsEverySession() throws Exception {
+        String email = "sessions-" + System.nanoTime() + "@tourny.local";
+        assertEquals(200, post("/auth/signup", "{\"email\":\"" + email + "\",\"password\":\"first-password\"}", null).statusCode());
+        var one = post("/auth/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"first-password\"}", null);
+        var two = post("/auth/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"first-password\"}", null);
+        var change = HTTP.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/auth/user")).header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + field(one.body(), "access_token")).PUT(HttpRequest.BodyPublishers.ofString("{\"password\":\"second-password\"}")).build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, change.statusCode(), change.body());
+        // A stolen session cannot be renewed after the password changed, not even right away.
+        assertEquals(400, post("/auth/token?grant_type=refresh_token", "{\"refresh_token\":\"" + field(one.body(), "refresh_token") + "\"}", null).statusCode());
+        assertEquals(400, post("/auth/token?grant_type=refresh_token", "{\"refresh_token\":\"" + field(two.body(), "refresh_token") + "\"}", null).statusCode());
+        assertEquals(200, post("/auth/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"second-password\"}", null).statusCode());
+        assertEquals(400, post("/auth/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"first-password\"}", null).statusCode());
+    }
+
+    @Test
+    void accountsNeedAnEmailAndAStrongEnoughPassword() throws Exception {
+        String tag = "" + System.nanoTime();
+        assertEquals(422, post("/auth/signup", "{\"email\":\"not-an-email\",\"password\":\"long-enough-1\"}", null).statusCode());
+        assertEquals(422, post("/auth/signup", "{\"email\":\"short-" + tag + "@tourny.local\",\"password\":\"1234567\"}", null).statusCode());
+        assertEquals(422, post("/auth/signup", "{\"email\":\"long-" + tag + "@tourny.local\",\"password\":\"" + "x".repeat(73) + "\"}", null).statusCode()); // bcrypt reads 72 bytes
+        assertEquals(200, post("/auth/signup", "{\"email\":\"ok-" + tag + "@tourny.local\",\"password\":\"12345678\"}", null).statusCode());
+        assertEquals(400, post("/auth/token?grant_type=password", "{\"email\":\"ok-" + tag + "@tourny.local\",\"password\":\"" + "x".repeat(500) + "\"}", null).statusCode()); // refused, not a 500
+    }
+
+    @Test
+    void recoveryRequiresS256AndIsLimitedPerEmail() throws Exception {
+        String challenge = challenge("v".repeat(50));
+        assertEquals(400, post("/auth/recover", "{\"email\":\"player@tourny.local\",\"code_challenge\":\"" + challenge + "\",\"code_challenge_method\":\"plain\"}", null).statusCode());
+        assertEquals(400, post("/auth/recover", "{\"email\":\"player@tourny.local\"}", null).statusCode());
+        String email = "limit-" + System.nanoTime() + "@tourny.local";
+        for (int i = 0; i < 3; i++) assertEquals(200, post("/auth/recover", "{\"email\":\"" + email + "\",\"code_challenge\":\"" + challenge + "\",\"code_challenge_method\":\"s256\"}", null).statusCode());
+        assertEquals(429, post("/auth/recover", "{\"email\":\"" + email + "\",\"code_challenge\":\"" + challenge + "\",\"code_challenge_method\":\"s256\"}", null).statusCode());
+    }
+
+    @Test
+    void signInFailuresAreCountedInTheDatabaseAndLimitedPerEmail() throws Exception {
+        String email = "lockout-" + System.nanoTime() + "@tourny.local";
+        for (int i = 0; i < 10; i++) assertEquals(400, post("/auth/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"wrong-password\"}", null).statusCode());
+        assertEquals(429, post("/auth/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"wrong-password\"}", null).statusCode());
+        try (var c = DriverManager.getConnection(DB_URL, "postgres", "postgres")) {
+            var rs = c.createStatement().executeQuery("SELECT count(*) FROM public.api_rate_events WHERE bucket = 'login-email'");
+            rs.next();
+            assertTrue(rs.getInt(1) >= 10, "failures are stored, so a restart does not forget them");
+        }
     }
 }

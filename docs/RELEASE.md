@@ -31,7 +31,9 @@ This is the single list for taking v2 live. "Verified" means I ran it here; "You
 - Access tokens last one hour: a suspended or removed user keeps access until the token expires.
 - The live-update socket tells any listener that a match changed (never its contents); public event tables are public by design.
 - Single server: no automatic failover. Restores come from the nightly backup.
-- Sign-in and sign-up limits are kept in the API's memory, so they reset when it restarts.
+- Sign-in, sign-up and password-reset limits are counted in the database (per email and per address), so a restart does not reset them. Ten wrong passwords lock that email for 15 minutes, which also lets a stranger lock someone out briefly.
+- The sign-in session is a cookie the browser's scripts can read (the website needs that), so a script-injection bug would expose it. The pages send no Content-Security-Policy yet; adding one is the next hardening step.
+- There is no email verification at sign-up, and sign-up says when an email already has an account.
 - Mobile app: everything in the web portals is on mobile, plus push notifications. Push needs the Expo project and credentials above, and the API must be able to reach exp.host.
 - Google/OAuth sign-in is not supported (the app never used it).
 - The web app was not load-tested. A tournament weekend with a few hundred spectators is well within a small VPS; thousands on one live match are untested.

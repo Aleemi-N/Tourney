@@ -105,6 +105,7 @@ class PaymentIntegrationTest {
     static void seeded() throws Exception {
         try (Connection c = DriverManager.getConnection(DB_URL, "postgres", "postgres")) {
             assumeTrue(c.isValid(2));
+            c.createStatement().execute("DELETE FROM public.api_rate_events"); // limits from earlier runs must not count here
         } catch (Exception e) {
             assumeTrue(false, "database not reachable at " + DB_URL + ": " + e);
         }
