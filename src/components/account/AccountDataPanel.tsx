@@ -69,7 +69,7 @@ export function AccountDataPanel({ email }: { email: string }) {
           <label className="block text-sm font-medium text-text-primary">Type DELETE to confirm
             <input value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="off" spellCheck={false} className={field} />
           </label>
-          <button disabled={busy !== null || confirm !== 'DELETE'} className="min-h-11 rounded-xl bg-danger px-5 font-semibold text-white hover:opacity-90 disabled:opacity-50">Delete my account</button>
+          <button disabled={busy !== null || confirm !== 'DELETE'} className="min-h-11 rounded-xl bg-danger px-5 font-semibold text-text-inverse hover:opacity-90 disabled:opacity-50">Delete my account</button>
         </form>
       </section>
     </div>

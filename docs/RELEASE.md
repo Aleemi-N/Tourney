@@ -52,6 +52,9 @@ This is the single list for taking v2 live. "Verified" means I ran it here; "You
 - Migrations 78 to 85 are new since the last dump: take a fresh production dump and rehearse the cutover again.
 - Real push delivery to phones and browsers could not be tried here: browsers were tested with a stubbed subscription and phones against a fake Expo server.
 
+## Before every release: the end-to-end journey
+`tests/e2e-journey.mjs` takes a brand-new organizer from sign-up to certificates on the real stack (production web build, API, mobile web, Postgres): create and open a tournament in the app, set fees, limits, UPI and sponsors on the website, register four players (the fourth is waitlisted), pay by UPI, confirm and approve, apply with two teams, generate fixtures, score a match, check the public pages and overlay, complete the tournament, certificates, the finance log, and a player downloading their data and deleting their account. The run instructions are at the top of the file. Run `pnpm test` (database tests, one file at a time), `cd api && ./mvnw test` and the journey before shipping.
+
 ## After launch
 - Keep the old Supabase project read-only for a week, then delete it.
 - Never run `supabase db push` against it.

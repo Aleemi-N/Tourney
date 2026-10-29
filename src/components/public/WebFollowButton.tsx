@@ -55,7 +55,7 @@ export function WebFollowButton({ kind, targetId, slug, label }: { kind: Kind; t
         <Icon className="h-4 w-4" aria-hidden="true" />
         <span className="hidden sm:inline">{following ? 'Following' : 'Follow'}</span>
       </button>
-      {error ? <span role="alert" className="max-w-48 text-right text-[11px] text-danger">{error}</span> : null}
+      {error ? <span role="alert" className="max-w-48 text-right text-xs text-danger">{error}</span> : null}
     </span>
   );
 }

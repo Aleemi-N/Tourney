@@ -13,8 +13,14 @@ const RULES = [
   [/\b(?:background|backgroundColor|color|border|borderColor|boxShadow)\s*:\s*['"`](?:#[0-9a-fA-F]{3,8}|rgba?\()/, 'literal colour in style={{}}: use token classes (team colours from data are fine)'],
 ];
 
-// Metadata (theme-color) and the OG image renderer cannot use CSS classes.
-const IGNORED = [path.join('src', 'app', 'layout.tsx'), path.join('src', 'app', 'api', 'og')];
+// Metadata (theme-color) and the OG image renderer cannot use CSS classes. Certificates are paper and the streaming
+// overlay is composited over video, so both keep their own fixed colours in every theme.
+const IGNORED = [
+  path.join('src', 'app', 'layout.tsx'),
+  path.join('src', 'app', 'api', 'og'),
+  path.join('src', 'components', 'certificates', 'CertificateSheet.tsx'),
+  path.join('src', 'app', 'embed', 't', '[slug]', 'overlay'),
+];
 
 const files = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
   const full = path.join(dir, entry.name);

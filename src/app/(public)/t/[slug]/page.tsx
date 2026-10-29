@@ -11,6 +11,7 @@ import { cardClasses } from '@/components/ui/Card';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { teamColorStyle } from '@/lib/utils';
 import { buildTournamentMetadata } from '@/lib/public-tournament-metadata';
+import { SponsorsSection, WatchLive } from '@/components/public/PublicExtras';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -141,6 +142,7 @@ export default async function TournamentPublicPage({ params }: Props) {
           {tournament.description && (
             <p className="max-w-2xl text-base leading-relaxed text-text-secondary">{tournament.description}</p>
           )}
+          <WatchLive slug={slug} />
         </header>
 
         {/* Key facts */}
@@ -239,6 +241,7 @@ export default async function TournamentPublicPage({ params }: Props) {
             ))}
           </div>
         </section>
+        <SponsorsSection slug={slug} />
       </main>
 
       <LandingFooter />

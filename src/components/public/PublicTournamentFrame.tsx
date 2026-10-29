@@ -59,7 +59,7 @@ export function PublicTournamentFrame({ slug, name, logoUrl, status, children }:
             </Link>
             <div className="flex shrink-0 items-center gap-1">
               {status === 'LIVE' ? <StatusPill status="LIVE" /> : null}
-              {extras?.stream_url ? <a href={extras.stream_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-live px-3 text-sm font-bold text-white hover:opacity-90"><Video className="h-4 w-4" aria-hidden="true" />Watch live</a> : null}
+              {extras?.stream_url ? <a href={extras.stream_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-live px-3 text-sm font-bold text-text-inverse hover:opacity-90"><Video className="h-4 w-4" aria-hidden="true" />Watch live</a> : null}
               {matchId ? <WebFollowButton kind="MATCH" targetId={matchId} label="this match" /> : null}
               {teamId ? <WebFollowButton kind="TEAM" targetId={teamId} label="this team" /> : null}
               <WebFollowButton kind="TOURNAMENT" slug={slug} label={name} />
