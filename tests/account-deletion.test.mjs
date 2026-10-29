@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import pg from 'pg';
 
 // Downloading your data and deleting your account. Rolled back at the end.
-const client = new pg.Client({ connectionString: process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' });
+const client = new pg.Client({ connectionString: process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:5440/tourny' });
 await client.connect();
 const T1 = '90200000-0000-0000-0000-000000000001';
 

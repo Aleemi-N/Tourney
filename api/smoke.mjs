@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs';
 const require = createRequire(process.cwd() + '/package.json');
 const { createClient } = require('@supabase/supabase-js');
-const password = fs.readFileSync('supabase/seed.sql', 'utf8').match(/extensions\.crypt\('([^']+)'/)[1];
+const password = fs.readFileSync('db/seed.sql', 'utf8').match(/extensions\.crypt\('([^']+)'/)[1];
 const key = fs.readFileSync('.env.local', 'utf8').match(/NEXT_PUBLIC_SUPABASE_ANON_KEY=(\S+)/)[1].replace(/"/g, '');
 const sb = createClient('http://localhost:8080', key, { auth: { persistSession: false } });
 const { data, error } = await sb.auth.signInWithPassword({ email: 'player@tourny.local', password });

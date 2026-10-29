@@ -9,7 +9,7 @@ const team = '90300000-0000-0000-0000-000000000001';
 const match = '90700000-0000-0000-0000-000000000001';
 const widths = [320, 390, 768, 1024, 1440];
 const browser = await chromium.launch({ headless: true });
-const db = new pg.Client({ connectionString: 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' });
+const db = new pg.Client({ connectionString: 'postgresql://postgres:postgres@127.0.0.1:5440/tourny' });
 await db.connect();
 
 async function login(email) {

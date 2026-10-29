@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import pg from 'pg';
 
-const url=process.env.M33_DATABASE_URL??'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+const url=process.env.M33_DATABASE_URL??'postgresql://postgres:postgres@127.0.0.1:5440/tourny';
 if(!/127\.0\.0\.1|localhost/.test(url))throw new Error('M33_DATABASE_URL must be local');
 const organizer='90000000-0000-0000-0000-000000000001', outsider='90000000-0000-0000-0000-000000000004', org='90100000-0000-0000-0000-000000000001';
 const tournament='93500000-0000-0000-0000-000000000001', stage='93500000-0000-0000-0000-000000000002';

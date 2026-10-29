@@ -4,7 +4,7 @@
  * Tests the pure business-logic helpers used by PublicAuctionLive.
  * No database, no browser required.
  *
- * Run: node supabase/tests/public-auction-live.test.mjs
+ * Run: node db/tests/public-auction-live.test.mjs
  */
 
 import assert from 'assert';

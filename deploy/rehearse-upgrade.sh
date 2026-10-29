@@ -14,7 +14,7 @@ until docker exec tourny-plain pg_isready -U postgres -d tourny >/dev/null 2>&1;
 psql_in() { docker exec -i tourny-plain psql -U postgres -d tourny -v ON_ERROR_STOP=1 -q "$@"; }
 psql_in -v authenticator_password=authpw < deploy/bootstrap.sql
 phase=before
-for f in supabase/migrations/*.sql; do
+for f in db/migrations/*.sql; do
   base=$(basename "$f")
   case "$base" in *20261003000052*|*20261003000053*) continue;; esac
   if [ "$phase" = before ] && [[ "$base" > "$last" && "$base" != "$last"* ]]; then

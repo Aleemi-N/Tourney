@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-const sql = readFileSync(new URL('../supabase/migrations/20260923000024_phase5b_hidden_card_lot.sql', import.meta.url), 'utf8');
+const sql = readFileSync(new URL('../db/migrations/20260923000024_phase5b_hidden_card_lot.sql', import.meta.url), 'utf8');
 test('multi-round and active invariants exist', () => {
   assert.match(sql, /round_number integer NOT NULL/);
   assert.match(sql, /lot_turns_one_active_per_session/);

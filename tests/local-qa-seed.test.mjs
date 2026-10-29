@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import pg from 'pg';
 
-const connectionString = process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+const connectionString = process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:5440/tourny';
 const client = new pg.Client({ connectionString });
 await client.connect();
 const accounts = await client.query("SELECT email,(email_confirmed_at IS NOT NULL) AS confirmed,(encrypted_password IS NOT NULL AND length(encrypted_password)>0) AS password_ready FROM auth.users WHERE email LIKE '%@tourny.local' ORDER BY email");

@@ -1,11 +1,11 @@
 // v2 feature checks against the local synthetic seed. Every test runs in its own
 // transaction and rolls back, so the seed is left untouched.
-// Run: node --test supabase/tests/v2-features.test.mjs (after `supabase db reset --local`)
+// Run: node --test db/tests/v2-features.test.mjs (after `supabase db reset --local`)
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import pg from 'pg';
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:5440/tourny';
 const ORGANIZER = '90000000-0000-0000-0000-000000000001';
 const T1 = '90200000-0000-0000-0000-000000000001';
 

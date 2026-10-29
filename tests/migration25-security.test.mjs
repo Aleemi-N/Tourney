@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const sql = readFileSync(new URL('../supabase/migrations/20260924000025_phase5c_live_auction.sql', import.meta.url), 'utf8');
+const sql = readFileSync(new URL('../db/migrations/20260924000025_phase5c_live_auction.sql', import.meta.url), 'utf8');
 
 assert.match(sql, /CREATE TABLE public\.auction_public_events/);
 assert.match(sql, /CREATE TABLE public\.tournament_auction_categories/);

@@ -40,7 +40,7 @@ import org.springframework.test.context.DynamicPropertySource;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = { "tourny.payments.reconcile-ms=600000", "tourny.push.enabled=false" })
 class PaymentIntegrationTest {
 
-    private static final String DB_URL = System.getenv().getOrDefault("TOURNY_TEST_DB_URL", "jdbc:postgresql://127.0.0.1:54322/postgres");
+    private static final String DB_URL = System.getenv().getOrDefault("TOURNY_TEST_DB_URL", "jdbc:postgresql://127.0.0.1:5440/tourny");
     private static final String T1 = "90200000-0000-0000-0000-000000000001";
     private static final String GOOD_ID = "rzp_test_AbCdEf123456";
     private static final String GOOD_SECRET = "SecretValue1234567890";
@@ -98,9 +98,7 @@ class PaymentIntegrationTest {
         new SecureRandom().nextBytes(key);
         registry.add("tourny.secrets.key", () -> Base64.getEncoder().encodeToString(key));
         registry.add("tourny.site-url", () -> "https://app.example.test");
-        registry.add("tourny.jwt.secret", () -> "super-secret-jwt-token-with-at-least-32-characters-long");
-        var env = Pattern.compile("NEXT_PUBLIC_SUPABASE_ANON_KEY=\"?([^\"\\s]+)").matcher(Files.readString(Path.of("../.env.local")));
-        if (env.find()) registry.add("tourny.postgrest.api-key", () -> env.group(1));
+        registry.add("tourny.jwt.secret", () -> "dev-only-jwt-secret-0123456789-0123456789");
     }
 
     @BeforeAll
@@ -110,7 +108,7 @@ class PaymentIntegrationTest {
         } catch (Exception e) {
             assumeTrue(false, "database not reachable at " + DB_URL + ": " + e);
         }
-        var m = Pattern.compile("extensions\\.crypt\\('([^']+)'").matcher(Files.readString(Path.of("../supabase/seed.sql")));
+        var m = Pattern.compile("extensions\\.crypt\\('([^']+)'").matcher(Files.readString(Path.of("../db/seed.sql")));
         assertTrue(m.find());
         password = m.group(1);
     }

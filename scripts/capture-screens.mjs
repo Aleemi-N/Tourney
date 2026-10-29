@@ -27,9 +27,9 @@ const only = opt('--match', '');
 const SCHEMES = ['light', 'dark'];
 
 // The seed's one local-only password, read from the seed itself so it lives in one place.
-const password = fs.readFileSync('supabase/seed.sql', 'utf8').match(/extensions\.crypt\('([^']+)'/)[1];
+const password = fs.readFileSync('db/seed.sql', 'utf8').match(/extensions\.crypt\('([^']+)'/)[1];
 
-const db = new pg.Client({ connectionString: process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' });
+const db = new pg.Client({ connectionString: process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:5440/tourny' });
 await db.connect();
 const matchId = async (status) => (await db.query(
   "SELECT id FROM public.matches WHERE stage_id = '90500000-0000-0000-0000-000000000003' AND status = $1 ORDER BY program_order LIMIT 1", [status],

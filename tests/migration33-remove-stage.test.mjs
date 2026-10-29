@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-const sql = readFileSync(new URL('../supabase/migrations/20260928000033_remove_tournament_stage.sql', import.meta.url), 'utf8');
+const sql = readFileSync(new URL('../db/migrations/20260928000033_remove_tournament_stage.sql', import.meta.url), 'utf8');
 const ui = readFileSync(new URL('../src/app/(organizer)/organizer/tournaments/[id]/settings/RulesAndStages.tsx', import.meta.url), 'utf8');
 
 test('stage removal is organizer-only, transactional, locked, and audited', () => {

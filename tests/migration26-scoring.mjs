@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import pg from 'pg';
 
-const connectionString = process.env.M26_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+const connectionString = process.env.M26_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:5440/tourny';
 const matchId = '90700000-0000-0000-0000-000000000001';
 const homeTeamId = '90300000-0000-0000-0000-000000000001';
 const scorerId = '90000000-0000-0000-0000-000000000004';

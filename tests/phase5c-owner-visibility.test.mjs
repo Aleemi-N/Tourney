@@ -1,4 +1,4 @@
-// Owner visibility QA against the local seed (supabase/seed.sql) and a running app.
+// Owner visibility QA against the local seed (db/seed.sql) and a running app.
 // Each owner must see only their own teams, in the data layer and in the portal,
 // and must get a 404 on another owner's team page.
 // Run: LOCAL_SUPABASE_ANON_KEY=<from `supabase status`> PHASE5C_BASE_URL=http://localhost:3000 node tests/phase5c-owner-visibility.test.mjs
@@ -12,7 +12,7 @@ const anonKey = process.env.LOCAL_SUPABASE_ANON_KEY;
 const baseUrl = process.env.PHASE5C_BASE_URL ?? 'http://localhost:3000';
 // The seed's single local-only password, read from the seed so it lives in one place.
 const password = process.env.LOCAL_QA_PASSWORD
-  ?? readFileSync(new URL('../supabase/seed.sql', import.meta.url), 'utf8').match(/extensions\.crypt\('([^']+)'/)[1];
+  ?? readFileSync(new URL('../db/seed.sql', import.meta.url), 'utf8').match(/extensions\.crypt\('([^']+)'/)[1];
 
 if (!/^http:\/\/(127\.0\.0\.1|localhost)/.test(supabaseUrl) ||
     !/^http:\/\/(127\.0\.0\.1|localhost)/.test(baseUrl)) {
@@ -20,7 +20,7 @@ if (!/^http:\/\/(127\.0\.0\.1|localhost)/.test(supabaseUrl) ||
 }
 if (!anonKey) throw new Error('LOCAL_SUPABASE_ANON_KEY is required');
 
-// Seeded ownership (supabase/seed.sql): owner@ owns one team per tournament, owner2@ another.
+// Seeded ownership (db/seed.sql): owner@ owns one team per tournament, owner2@ another.
 const OWNER_TEAMS = ['Estuary Eagles', 'Harbour Hawks', 'Kayal Kings', 'QA Falcons', 'Rainmakers'];
 const OWNER2_TEAMS = ['Breakwater Blasters', 'Canal Cobras', 'Coastline Strikers', 'Thunder Spikers'];
 const OWNER_AUCTION_TEAM = '90300000-0000-0000-0000-000000000021'; // Harbour Hawks, live auction

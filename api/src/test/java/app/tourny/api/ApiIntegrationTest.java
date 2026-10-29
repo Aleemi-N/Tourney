@@ -20,28 +20,26 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 /**
- * Runs against the local Supabase database seeded by supabase/seed.sql (supabase db reset --local);
+ * Runs against the local database seeded by db/seed.sql (deploy/dev-stack.sh);
  * skipped when that database is not reachable.
  */
 @org.springframework.context.annotation.Import(ApiIntegrationTest.CapturingMailer.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "server.error.include-message=always")
 class ApiIntegrationTest {
 
-    // Defaults to the local Supabase stack; deploy/rehearse.sh gives a plain PostgreSQL + PostgREST setup:
+    // Defaults to deploy/dev-stack.sh (PostgreSQL on 5440, PostgREST on 3001); for another setup:
     //   TOURNY_TEST_DB_URL=jdbc:postgresql://127.0.0.1:55432/tourny TOURNY_DB_URL=$TOURNY_TEST_DB_URL TOURNY_POSTGREST_URL=http://127.0.0.1:3001
-    private static final String DB_URL = System.getenv().getOrDefault("TOURNY_TEST_DB_URL", "jdbc:postgresql://127.0.0.1:54322/postgres");
+    private static final String DB_URL = System.getenv().getOrDefault("TOURNY_TEST_DB_URL", "jdbc:postgresql://127.0.0.1:5440/tourny");
     private static final HttpClient HTTP = HttpClient.newHttpClient();
     private static String password;
 
     @LocalServerPort
     int port;
 
-    // The local Supabase PostgREST verifies tokens with its own secret and sits behind Kong's anon key.
+    // PostgREST verifies tokens with the same secret as the API.
     @DynamicPropertySource
-    static void localSupabase(DynamicPropertyRegistry registry) throws Exception {
-        registry.add("tourny.jwt.secret", () -> "super-secret-jwt-token-with-at-least-32-characters-long");
-        var env = Pattern.compile("NEXT_PUBLIC_SUPABASE_ANON_KEY=\"?([^\"\\s]+)").matcher(Files.readString(Path.of("../.env.local")));
-        if (env.find()) registry.add("tourny.postgrest.api-key", () -> env.group(1));
+    static void localStack(DynamicPropertyRegistry registry) throws Exception {
+        registry.add("tourny.jwt.secret", () -> "dev-only-jwt-secret-0123456789-0123456789");
     }
 
     private HttpResponse<String> get(String path, String token) throws Exception {
@@ -57,7 +55,7 @@ class ApiIntegrationTest {
         } catch (Exception e) {
             assumeTrue(false, "database not reachable at " + DB_URL + ": " + e);
         }
-        var seed = Files.readString(Path.of("../supabase/seed.sql"));
+        var seed = Files.readString(Path.of("../db/seed.sql"));
         var m = Pattern.compile("extensions\\.crypt\\('([^']+)'").matcher(seed);
         assertTrue(m.find());
         password = m.group(1);
@@ -116,7 +114,7 @@ class ApiIntegrationTest {
 
     @Test
     void restKeepsThePostgrestQueryLanguageAndRowSecurity() throws Exception {
-        // Public data is readable signed out, with embedding and filters as supabase-js sends them.
+        // Public data is readable signed out, with embedding and filters as the web client sends them.
         var teams = get("/rest/teams?select=id,name,tournaments(name)&limit=3", null);
         assertEquals(200, teams.statusCode(), "status " + teams.statusCode() + " " + teams.body());
         assertTrue(teams.body().startsWith("["));

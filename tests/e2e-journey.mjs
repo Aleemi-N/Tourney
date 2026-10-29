@@ -19,7 +19,7 @@ const ANON = fs.readFileSync('.env.local', 'utf8').match(/NEXT_PUBLIC_SUPABASE_A
 const PW = 'E2e-Journey-1!';
 if (!process.env.PHOTO) throw new Error('Set PHOTO to the path of any .jpg file');
 const PHOTO = fs.readFileSync(process.env.PHOTO);
-const db = new pg.Client({ connectionString: process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' });
+const db = new pg.Client({ connectionString: process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:5440/tourny' });
 await db.connect();
 const q = async (sql, p = []) => (await db.query(sql, p)).rows;
 const one = async (sql, p = []) => (await q(sql, p))[0];

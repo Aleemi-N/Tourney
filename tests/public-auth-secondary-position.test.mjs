@@ -9,8 +9,8 @@ const registrationForm = read('src/app/(public)/t/[slug]/register/player/PlayerR
 const profileForm = read('src/app/(player)/player/profile/ProfileForm.tsx');
 const playerCard = read('src/components/player/PlayerCard.tsx');
 const participantManager = read('src/app/(organizer)/organizer/tournaments/[id]/participants/ParticipantManager.tsx');
-const playerSchema = read('supabase/migrations/20260920000002_players_and_registrations.sql');
-const playerRpcs = read('supabase/migrations/20260920000017_participant_applications_and_storage.sql');
+const playerSchema = read('db/migrations/20260920000002_players_and_registrations.sql');
+const playerRpcs = read('db/migrations/20260920000017_participant_applications_and_storage.sql');
 
 test('public tournament pages use authoritative server-resolved navigation', () => {
   assert.match(publicNav, /await getUser\(\)/);

@@ -4,7 +4,7 @@
  * Tests pure TypeScript helper functions from src/lib/organizer/organizer-auction.ts
  * These run with Node.js (tsx) — no database required.
  *
- * Run: npx tsx supabase/tests/organizer-auction-ui.test.mjs
+ * Run: npx tsx db/tests/organizer-auction-ui.test.mjs
  */
 
 import assert from 'assert';

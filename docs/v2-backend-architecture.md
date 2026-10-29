@@ -33,7 +33,7 @@ All of supabase-js (auth, rest, rpc, storage, realtime) is therefore served by t
 Web and mobile then differ from today only by the project URL, which is how "one backend for both" is met.
 
 ## Order of work
-1. Spring Boot skeleton, Flyway baseline from `supabase/migrations` 1-67 (dropping the destructive 52/53), JWT auth, `/rpc` with RLS context. Tests against a throwaway Postgres.
+1. Spring Boot skeleton, Flyway baseline from `db/migrations` 1-67 (dropping the destructive 52/53), JWT auth, `/rpc` with RLS context. Tests against a throwaway Postgres.
 2. Closing the security holes found in the review while moving: revoke direct table writes (self-approval), enforce suspension, safe redirect.
 3. `@tourny/api` client; port the web app file by file (auth first, then scorer/public, then organizer).
 4. Uploads and SSE realtime.
@@ -41,6 +41,6 @@ Web and mobile then differ from today only by the project URL, which is how "one
 6. Data migration from the production backup, rehearsal on a copy, cutover checklist.
 
 ## Open points
-- JWT claims must carry `sub` and role so the transaction-local settings match what RLS expects (verified via the existing `act_as` pattern in `supabase/seed.sql`).
+- JWT claims must carry `sub` and role so the transaction-local settings match what RLS expects (verified via the existing `act_as` pattern in `db/seed.sql`).
 - Maven vs Gradle: default Maven wrapper (no global install needed).
 - Realtime fan-out on one VPS is fine for a tournament's audience; revisit if a single match has thousands of viewers.

@@ -8,7 +8,7 @@ const organizerFixtures = read('src/components/organizer/FixtureManager.tsx');
 const publicAuction = read('src/app/(public)/t/[slug]/live/PublicAuctionLive.tsx');
 const publicFrame = read('src/components/public/PublicTournamentFrame.tsx');
 const player = read('src/app/(player)/player/page.tsx');
-const migration = read('supabase/migrations/20260924000026_v1_fixtures_scoring_snapshots.sql');
+const migration = read('db/migrations/20260924000026_v1_fixtures_scoring_snapshots.sql');
 
 test('fixture and scorer mutations stay behind trusted RPCs', () => {
   assert.match(organizerFixtures, /generate_stage_fixtures/);

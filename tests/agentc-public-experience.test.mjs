@@ -37,10 +37,10 @@ const notFound      = read('src/components/public/TournamentNotFound.tsx');
 const headerHelper  = read('src/lib/tournament-header.ts');
 const metadata      = read('src/lib/public-tournament-metadata.ts');
 const sw            = read('public/sw.js');
-const rls           = read('supabase/migrations/20260920000007_rls_policies.sql');
-const views         = read('supabase/migrations/20260920000008_views.sql');
-const branding      = read('supabase/migrations/20260920000006_branding_and_audit.sql');
-const migration26   = read('supabase/migrations/20260924000026_v1_fixtures_scoring_snapshots.sql');
+const rls           = read('db/migrations/20260920000007_rls_policies.sql');
+const views         = read('db/migrations/20260920000008_views.sql');
+const branding      = read('db/migrations/20260920000006_branding_and_audit.sql');
+const migration26   = read('db/migrations/20260924000026_v1_fixtures_scoring_snapshots.sql');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. FRAME — tab navigation completeness

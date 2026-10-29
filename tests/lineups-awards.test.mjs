@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import pg from 'pg';
 
 // Lineups, substitutions, rotation counts and awards, run as real signed-in roles inside a transaction that is rolled back.
-const client = new pg.Client({ connectionString: process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' });
+const client = new pg.Client({ connectionString: process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:5440/tourny' });
 await client.connect();
 const T3 = '90200000-0000-0000-0000-000000000003';
 

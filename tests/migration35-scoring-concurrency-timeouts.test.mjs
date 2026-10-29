@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { Client } = require('pg');
 
-const DATABASE_URL = process.env.M35_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+const DATABASE_URL = process.env.M35_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:5440/tourny';
 
 function createPgClient() {
   return new Client({

@@ -33,12 +33,12 @@ import org.springframework.test.context.DynamicPropertySource;
 
 /**
  * Queued push messages reach the Expo endpoint and dead device tokens are forgotten.
- * Uses the local Supabase database (supabase db reset --local) and a fake Expo server.
+ * Uses the local database (deploy/dev-stack.sh) and a fake Expo server.
  */
 @SpringBootTest(properties = "tourny.push.interval-ms=200")
 class PushIntegrationTest {
 
-    private static final String DB_URL = System.getenv().getOrDefault("TOURNY_TEST_DB_URL", "jdbc:postgresql://127.0.0.1:54322/postgres");
+    private static final String DB_URL = System.getenv().getOrDefault("TOURNY_TEST_DB_URL", "jdbc:postgresql://127.0.0.1:5440/tourny");
     private static final List<String> received = new CopyOnWriteArrayList<>();
     private static volatile String reply = "{\"data\":[{\"status\":\"ok\",\"id\":\"1\"}]}";
     private static HttpServer expo;
@@ -95,9 +95,7 @@ class PushIntegrationTest {
         new SecureRandom().nextBytes(authBytes);
         subscriptionAuth = b64(authBytes);
         registry.add("tourny.push.url", () -> "http://127.0.0.1:" + expo.getAddress().getPort() + "/push");
-        registry.add("tourny.jwt.secret", () -> "super-secret-jwt-token-with-at-least-32-characters-long");
-        var env = Pattern.compile("NEXT_PUBLIC_SUPABASE_ANON_KEY=\"?([^\"\\s]+)").matcher(Files.readString(Path.of("../.env.local")));
-        if (env.find()) registry.add("tourny.postgrest.api-key", () -> env.group(1));
+        registry.add("tourny.jwt.secret", () -> "dev-only-jwt-secret-0123456789-0123456789");
     }
 
     @BeforeAll

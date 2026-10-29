@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-const migration = readFileSync(new URL('../supabase/migrations/20260922000023_phase5a_tournament_configuration.sql', import.meta.url), 'utf8');
+const migration = readFileSync(new URL('../db/migrations/20260922000023_phase5a_tournament_configuration.sql', import.meta.url), 'utf8');
 const settings = readFileSync(new URL('../src/app/(organizer)/organizer/tournaments/[id]/settings/SettingsForm.tsx', import.meta.url), 'utf8');
 const rules = readFileSync(new URL('../src/app/(organizer)/organizer/tournaments/[id]/settings/RulesAndStages.tsx', import.meta.url), 'utf8');
 

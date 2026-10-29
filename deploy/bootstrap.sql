@@ -1,6 +1,6 @@
 -- The Supabase-owned pieces the Tourny migrations and the API expect, for a plain PostgreSQL
--- server. Run once on an empty database, then apply supabase/migrations in order (except 52 and
--- 53, which only reset auction data) and, for rehearsals, supabase/seed.sql.
+-- server. Run once on an empty database, then apply db/migrations in order (except 52 and
+-- 53, which only reset auction data) and, for rehearsals, db/seed.sql.
 --   psql -v ON_ERROR_STOP=1 -v authenticator_password='...' -f deploy/bootstrap.sql
 
 CREATE SCHEMA IF NOT EXISTS extensions;

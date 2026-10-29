@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import pg from 'pg';
 
-const databaseUrl = process.env.M32_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+const databaseUrl = process.env.M32_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:5440/tourny';
 if (!/127\.0\.0\.1|localhost/.test(databaseUrl)) throw new Error('M32_DATABASE_URL must be local');
 
 const ids = {

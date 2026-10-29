@@ -9,9 +9,9 @@ docker run -d --name tourny-plain -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=t
 until docker exec tourny-plain pg_isready -U postgres -d tourny >/dev/null 2>&1; do sleep 1; done; sleep 3
 psql_in() { docker exec -i tourny-plain psql -U postgres -d tourny -v ON_ERROR_STOP=1 -q "$@"; }
 psql_in -v authenticator_password=authpw < deploy/bootstrap.sql
-for f in supabase/migrations/*.sql; do
+for f in db/migrations/*.sql; do
   case "$f" in *20261003000052*|*20261003000053*) continue;; esac
   psql_in -1 < "$f" > /dev/null || { echo "migration failed: $f" >&2; exit 1; }
 done
-if [ "${1:-}" = "--seed" ]; then psql_in < supabase/seed.sql > /dev/null; fi
+if [ "${1:-}" = "--seed" ]; then psql_in < db/seed.sql > /dev/null; fi
 echo "ready: postgresql://postgres:postgres@127.0.0.1:55432/tourny"

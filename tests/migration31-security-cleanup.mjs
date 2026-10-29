@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import pg from 'pg';
 
-const url=process.env.M31_DATABASE_URL??'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+const url=process.env.M31_DATABASE_URL??'postgresql://postgres:postgres@127.0.0.1:5440/tourny';
 if(!/127\.0\.0\.1|localhost/.test(url))throw new Error('M31_DATABASE_URL must be local');
 
 test('M31 obsolete lot view is absent and anonymous score history is hidden',async()=>{

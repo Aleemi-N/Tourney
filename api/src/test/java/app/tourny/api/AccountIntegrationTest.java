@@ -25,7 +25,7 @@ import org.springframework.test.context.DynamicPropertySource;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = { "tourny.push.enabled=false", "tourny.payments.reconcile-ms=600000" })
 class AccountIntegrationTest {
 
-    private static final String DB_URL = System.getenv().getOrDefault("TOURNY_TEST_DB_URL", "jdbc:postgresql://127.0.0.1:54322/postgres");
+    private static final String DB_URL = System.getenv().getOrDefault("TOURNY_TEST_DB_URL", "jdbc:postgresql://127.0.0.1:5440/tourny");
     private static final HttpClient HTTP = HttpClient.newHttpClient();
     private static Path storage;
 
@@ -36,9 +36,7 @@ class AccountIntegrationTest {
     static void config(DynamicPropertyRegistry registry) throws Exception {
         storage = Files.createTempDirectory("tourny-account-test");
         registry.add("tourny.storage.root", () -> storage.toString());
-        registry.add("tourny.jwt.secret", () -> "super-secret-jwt-token-with-at-least-32-characters-long");
-        var env = Pattern.compile("NEXT_PUBLIC_SUPABASE_ANON_KEY=\"?([^\"\\s]+)").matcher(Files.readString(Path.of("../.env.local")));
-        if (env.find()) registry.add("tourny.postgrest.api-key", () -> env.group(1));
+        registry.add("tourny.jwt.secret", () -> "dev-only-jwt-secret-0123456789-0123456789");
     }
 
     @BeforeAll

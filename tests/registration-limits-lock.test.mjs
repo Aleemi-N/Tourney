@@ -3,7 +3,7 @@ import pg from 'pg';
 
 // Two approvals racing for the last place must not both succeed. The first transaction commits while the second is
 // waiting on it; the second must then count the first and refuse. The test restores what it changed.
-const url = process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+const url = process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:5440/tourny';
 const T1 = '90200000-0000-0000-0000-000000000001';
 let pendingIds = [];
 const a = new pg.Client({ connectionString: url });

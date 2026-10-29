@@ -2,7 +2,7 @@ import pg from 'pg';
 import assert from 'assert';
 
 const { Client } = pg;
-const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:5440/tourny';
 
 async function runTests() {
     console.log('--- STARTING MANUAL ASSIGNMENT INTEGRATION TESTS ---');
