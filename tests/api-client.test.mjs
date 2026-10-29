@@ -152,3 +152,29 @@ test('images: public URLs, raw-body upload with upsert, remove', async () => {
   assert.deepEqual(removed.data, [{ name: 'a/b.png' }]);
   assert.deepEqual(calls[1].body, { prefixes: ['a/b.png'] });
 });
+
+test('a store that renews itself (the browser) is used instead of the refresh token, and never sees one', async () => {
+  const fresh = token('u1', { n: 3 });
+  const calls = [];
+  let renewals = 0;
+  const kept = { session: { access_token: token('u1'), refresh_token: '', expires_at: now() - 5 } };
+  const api = new Api('http://api.test', {
+    fetch: async (url, init) => { calls.push({ url: String(url), auth: init?.headers?.Authorization }); return json([]); },
+    store: { get: () => kept.session, set: (s) => { kept.session = s; }, renew: async () => { renewals += 1; kept.session = { access_token: fresh, refresh_token: '', expires_at: now() + 900 }; return kept.session; } },
+  });
+  await Promise.all([api.from('a').select('*'), api.from('b').select('*')]);
+  assert.equal(renewals, 1, 'both requests wait for one renewal');
+  assert.ok(!calls.some((c) => c.url.includes('/auth/token')), 'the API is not asked to renew: the website server does that');
+  assert.ok(calls.every((c) => c.auth === `Bearer ${fresh}`));
+});
+
+test('when the website says the session is over, the client is signed out', async () => {
+  const events = [];
+  const api = new Api('http://api.test', {
+    fetch: async () => json([]),
+    store: { get: () => ({ access_token: token('u1'), refresh_token: '', expires_at: now() - 5 }), set: () => {}, renew: async () => null },
+  });
+  api.auth.onAuthStateChange((event) => events.push(event));
+  assert.equal((await api.auth.getSession()).data.session, null);
+  assert.ok(events.includes('SIGNED_OUT'));
+});

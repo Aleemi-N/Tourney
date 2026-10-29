@@ -52,8 +52,8 @@ async function login(email) {
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Sign In' }).click();
   await page.waitForURL((url) => !url.pathname.startsWith('/login'));
-  const authCookies = (await context.cookies()).filter((cookie) => cookie.name === 'tourny-session');
-  assert.ok(authCookies.length > 0, `${email} did not receive a session cookie`);
+  const authCookies = (await context.cookies()).filter((cookie) => cookie.name === 'tourny-refresh' && cookie.httpOnly);
+  assert.ok(authCookies.length > 0, `${email} did not receive an HttpOnly refresh cookie`);
   return { context, page };
 }
 

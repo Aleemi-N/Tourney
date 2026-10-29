@@ -16,6 +16,8 @@ export type Session = StoredSession & { user: User };
 export type SessionStore = {
   get(): StoredSession | null | Promise<StoredSession | null>;
   set(session: StoredSession | null): void | Promise<void>;
+  /** Renews an expired session some other way than calling the API with the stored refresh token (null: signed out). */
+  renew?(): Promise<StoredSession | null>;
 };
 
 type AnyDb = any;
@@ -280,6 +282,17 @@ class Auth {
   }
 
   private async renew(stored: StoredSession): Promise<Session | null> {
+    if (this.store.renew) {
+      try {
+        const renewed = await this.store.renew();
+        if (!renewed) { this.emit('SIGNED_OUT', null); return null; }
+        const session = withUser(renewed);
+        this.emit('TOKEN_REFRESHED', session);
+        return session;
+      } catch {
+        return null; // offline: keep the sign-in for next time
+      }
+    }
     const { data, error } = await this.post<any>('/auth/token?grant_type=refresh_token', { refresh_token: stored.refresh_token });
     if (error || !data) {
       // A refresh the server refuses means the sign-in is over; a network failure keeps it for next time.

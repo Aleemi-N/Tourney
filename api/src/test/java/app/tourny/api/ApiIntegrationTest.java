@@ -389,10 +389,29 @@ class ApiIntegrationTest {
         String email = "lockout-" + System.nanoTime() + "@tourny.local";
         for (int i = 0; i < 10; i++) assertEquals(400, post("/auth/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"wrong-password\"}", null).statusCode());
         assertEquals(429, post("/auth/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"wrong-password\"}", null).statusCode());
+        // Someone else guessing at the same account from another address is not locked out by that, and cannot lock the owner out either:
+        // the owner's own attempts are counted for the owner's address.
+        try (var c = DriverManager.getConnection(DB_URL, "postgres", "postgres")) {
+            c.createStatement().execute("DELETE FROM public.api_rate_events WHERE bucket = 'login-pair'"); // as if the failures came from another address
+        }
+        assertEquals(400, post("/auth/token?grant_type=password", "{\"email\":\"" + email + "\",\"password\":\"wrong-password\"}", null).statusCode());
         try (var c = DriverManager.getConnection(DB_URL, "postgres", "postgres")) {
             var rs = c.createStatement().executeQuery("SELECT count(*) FROM public.api_rate_events WHERE bucket = 'login-email'");
             rs.next();
             assertTrue(rs.getInt(1) >= 10, "failures are stored, so a restart does not forget them");
+        }
+    }
+
+    @Test
+    void suspendingAnAccountEndsItsSessionsAtOnce() throws Exception {
+        var first = post("/auth/token?grant_type=password", "{\"email\":\"scorer@tourny.local\",\"password\":\"" + password + "\"}", null);
+        assertEquals(200, first.statusCode(), first.body());
+        String refresh = field(first.body(), "refresh_token");
+        try (var c = DriverManager.getConnection(DB_URL, "postgres", "postgres")) {
+            c.createStatement().execute("UPDATE public.profiles SET status = 'SUSPENDED' WHERE id = (SELECT id FROM auth.users WHERE email = 'scorer@tourny.local')");
+            c.createStatement().execute("UPDATE public.profiles SET status = 'ACTIVE' WHERE id = (SELECT id FROM auth.users WHERE email = 'scorer@tourny.local')");
+            // Reinstated, but the session from before the suspension is gone for good (not merely blocked while suspended).
+            assertEquals(400, post("/auth/token?grant_type=refresh_token", "{\"refresh_token\":\"" + refresh + "\"}", null).statusCode());
         }
     }
 }

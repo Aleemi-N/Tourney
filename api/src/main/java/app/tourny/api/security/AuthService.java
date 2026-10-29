@@ -55,7 +55,10 @@ public class AuthService {
     // together). That is not theft; only a later replay is.
     private static final Duration ROTATION_GRACE = Duration.ofSeconds(10);
     private static final Duration FAILURE_WINDOW = Duration.ofMinutes(15);
-    private static final int MAX_FAILURES_PER_EMAIL = 10;
+    // Wrong passwords are counted three ways: for one email from one address (what a guesser trips first, and what a stranger
+    // elsewhere cannot use to lock the real owner out), for one email from anywhere (spread-out guessing), and for one address.
+    private static final int MAX_FAILURES_PER_EMAIL_AND_IP = 10;
+    private static final int MAX_FAILURES_PER_EMAIL = 100;
     private static final int MAX_FAILURES_PER_IP = 30;
     private static final Duration HOUR = Duration.ofHours(1);
     private static final int MIN_PASSWORD = 8;
@@ -92,18 +95,21 @@ public class AuthService {
     @Transactional
     public Map<String, Object> signInWithPassword(String email, String password, String ip) {
         String key = email.trim().toLowerCase();
-        if (limits.exceeded("login-email", key, MAX_FAILURES_PER_EMAIL, FAILURE_WINDOW) || limits.exceeded("login-ip", ip, MAX_FAILURES_PER_IP, FAILURE_WINDOW)) {
+        String pair = key + "|" + ip;
+        if (limits.exceeded("login-pair", pair, MAX_FAILURES_PER_EMAIL_AND_IP, FAILURE_WINDOW) || limits.exceeded("login-email", key, MAX_FAILURES_PER_EMAIL, FAILURE_WINDOW)
+                || limits.exceeded("login-ip", ip, MAX_FAILURES_PER_IP, FAILURE_WINDOW)) {
             throw new AuthException(429, "over_request_rate_limit", "Too many sign-in attempts. Try again later.");
         }
         Optional<Map<String, Object>> row = findUser("lower(email) = :v", key);
         String hash = row.map(r -> (String) r.get("encrypted_password")).orElse(null);
         boolean ok = password.getBytes(StandardCharsets.UTF_8).length <= MAX_PASSWORD_BYTES && encoder.matches(password, hash == null ? dummyHash : hash);
         if (row.isEmpty() || hash == null || !ok) {
+            limits.record("login-pair", pair);
             limits.record("login-email", key);
             limits.record("login-ip", ip);
             throw new AuthException(400, "invalid_credentials", "Invalid login credentials");
         }
-        limits.clear("login-email", key);
+        limits.clear("login-pair", pair);
         return session(row.get());
     }
 

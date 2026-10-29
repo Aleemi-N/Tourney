@@ -29,8 +29,8 @@ const nextConfig: NextConfig = {
     return [
       // Everything except the embeddable widgets may only be framed by this site.
       { source: '/:path((?!embed(?:/|$)).*)', headers: [...common, { key: 'X-Frame-Options', value: 'SAMEORIGIN' }] },
-      // /embed/* is read-only public data meant to be placed on other websites.
-      { source: '/embed/:path*', headers: [...common, { key: 'Content-Security-Policy', value: 'frame-ancestors *' }] },
+      // /embed/* is read-only public data meant to be placed on other websites (the proxy sets its Content-Security-Policy with frame-ancestors *).
+      { source: '/embed/:path*', headers: common },
     ];
   },
 

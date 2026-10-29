@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { Api } from '@/lib/api/core';
-import { SESSION_COOKIE, cookieOptions, decodeSession, encodeSession } from '@/lib/api/session-cookie';
+import { ACCESS_COOKIE, REFRESH_COOKIE, accessOptions, decodeAccess, encodeAccess, refreshOptions } from '@/lib/api/session-cookie';
 import type { Database } from '@/lib/api/types';
+import { contentSecurityPolicy } from '@/lib/csp';
 
 /**
  * Next.js Proxy (previously "middleware") — keeps the signed-in session fresh.
@@ -20,33 +21,46 @@ import type { Database } from '@/lib/api/types';
  * the is_platform_super_admin() RPC — NOT here.
  */
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({
-    request,
-  });
+  // Every page gets a Content-Security-Policy with a fresh nonce; the root layout puts the nonce on its own script (it reads x-nonce).
+  const nonce = btoa(crypto.randomUUID());
+  const csp = contentSecurityPolicy({ nonce, pathname: request.nextUrl.pathname, apiUrl: process.env.NEXT_PUBLIC_API_URL, development: process.env.NODE_ENV === 'development' });
+  const forwarded = new Headers(request.headers);
+  forwarded.set('x-nonce', nonce);
+  forwarded.set('Content-Security-Policy', csp);
+  let response = NextResponse.next({ request: { headers: forwarded } });
 
   const api = new Api<Database>(process.env.NEXT_PUBLIC_API_URL!, {
     store: {
-      get: () => decodeSession(request.cookies.get(SESSION_COOKIE)?.value),
+      get: () => decodeAccess(request.cookies.get(ACCESS_COOKIE)?.value, request.cookies.get(REFRESH_COOKIE)?.value ?? ''),
       set: (session) => {
-        const value = session ? encodeSession(session) : null;
-        if (value) request.cookies.set(SESSION_COOKIE, value);
-        else request.cookies.delete(SESSION_COOKIE);
+        if (session) {
+          request.cookies.set(ACCESS_COOKIE, encodeAccess(session));
+          request.cookies.set(REFRESH_COOKIE, session.refresh_token);
+        } else {
+          request.cookies.delete(ACCESS_COOKIE);
+          request.cookies.delete(REFRESH_COOKIE);
+        }
 
         // Server Components read the request's cookie header, so the renewed session must be written into it,
         // otherwise they would see the old, expired one.
-        const requestHeaders = new Headers(request.headers);
+        const requestHeaders = new Headers(forwarded);
         requestHeaders.set('cookie', request.cookies.getAll().map((c) => `${c.name}=${c.value}`).join('; '));
         response = NextResponse.next({ request: { headers: requestHeaders } });
 
-        // And the browser gets the new cookie.
-        if (value) response.cookies.set(SESSION_COOKIE, value, cookieOptions);
-        else response.cookies.delete(SESSION_COOKIE);
+        // And the browser gets the new cookies.
+        if (session) {
+          response.cookies.set(ACCESS_COOKIE, encodeAccess(session), accessOptions);
+          response.cookies.set(REFRESH_COOKIE, session.refresh_token, refreshOptions);
+        } else {
+          response.cookies.delete(ACCESS_COOKIE);
+          response.cookies.delete(REFRESH_COOKIE);
+        }
       },
     },
   });
 
   // Visitors who are not signed in have no cookie, so there is nothing to renew (and no request to make).
-  if (request.cookies.has(SESSION_COOKIE)) await api.auth.getSession();
+  if (request.cookies.has(REFRESH_COOKIE)) await api.auth.getSession();
 
   const isOrganizerRoute = request.nextUrl.pathname.startsWith('/organizer');
 
@@ -83,6 +97,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  response.headers.set('Content-Security-Policy', csp);
   return response;
 }
 

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { ServiceWorkerRegistration } from '@/components/pwa/ServiceWorkerRegistration';
@@ -73,7 +74,9 @@ type RootLayoutProps = {
  */
 const themeScript = `(function(){var k='tourny-theme',m=window.matchMedia('(prefers-color-scheme: dark)');function saved(){try{return localStorage.getItem(k)}catch(e){return null}}function apply(){var s=saved();document.documentElement.dataset.theme=s==='light'||s==='dark'?s:(m.matches?'dark':'light')}apply();m.addEventListener('change',apply)})()`;
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default async function RootLayout({ children }: RootLayoutProps) {
+  // The proxy sets a fresh nonce for every request (and with it the Content-Security-Policy); reading it makes pages render per request.
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   return (
     <html
       lang="en"
@@ -81,7 +84,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-full bg-background text-text-primary antialiased">
         <ServiceWorkerRegistration />

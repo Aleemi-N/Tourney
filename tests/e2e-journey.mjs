@@ -42,10 +42,13 @@ async function account(name) {
 }
 const rpc = async (who, fn, args = {}) => { const r = await who.c.rpc(fn, args); if (r.error) throw new Error(`${fn} as ${who.name}: ${r.error.message ?? JSON.stringify(r.error)}`); return r.data; };
 const rpcFails = async (who, fn, args, pattern) => { const r = await who.c.rpc(fn, args); assert.ok(r.error, `${fn} should fail`); assert.match(r.error.message, pattern); };
+// The website's Content-Security-Policy must never block anything the pages need.
+const watchPolicy = (page, who) => page.on('console', (m) => { if (m.type() === 'error' && /Content Security Policy|Refused to/i.test(m.text())) errors.push(`${who}: ${m.text()}`); });
 async function webLogin(e) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 950 }, acceptDownloads: true });
   const p = await ctx.newPage();
   p.on('pageerror', (er) => errors.push(`${e}: ${er.message}`));
+  watchPolicy(p, e);
   await p.goto(`${web}/login`, { waitUntil: 'load' }); await p.waitForTimeout(1500);
   await p.fill('#email', e); await p.fill('#password', PW);
   await Promise.all([p.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 60000 }), p.click('button[type="submit"]')]);
@@ -150,6 +153,7 @@ try {
   // the public registration page tells people the rules
   const visitor = currentPage = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
   visitor.on('pageerror', (er) => errors.push(`visitor: ${er.message}`));
+  watchPolicy(visitor, 'visitor');
   await visitor.goto(`${web}/t/${T.slug}`, { waitUntil: 'load' });
   await visitor.getByRole('link', { name: 'Watch live' }).waitFor({ timeout: 30000 });
   await visitor.getByText('E2E Sponsor').first().waitFor({ timeout: 20000 });
@@ -294,6 +298,50 @@ try {
   const relogin = await createClient(API).auth.signInWithPassword({ email: players[3].email, password: PW });
   assert.ok(relogin.error, 'cannot sign in any more');
   log('waitlisted player downloaded their data and deleted their account; registration withdrawn, token refused, sign-in gone');
+
+  // ======================================================================================================================
+  // 9. The session cookies, renewing through the website's server, and a password reset on the website
+  // ======================================================================================================================
+  const sess = currentPage = await webLogin(una.email);
+  const jar = await sess.context().cookies();
+  const access = jar.find((c) => c.name === 'tourny-access'), refresh = jar.find((c) => c.name === 'tourny-refresh');
+  assert.ok(access && !access.httpOnly, 'the access cookie is there for the page to read');
+  assert.ok(refresh && refresh.httpOnly, 'the refresh token is HttpOnly');
+  assert.ok(!(await sess.evaluate(() => document.cookie)).includes(refresh.value), 'no script can read the refresh token');
+  // The access token has run out: the browser asks the website's server, which renews it from the HttpOnly cookie.
+  const old = JSON.parse(Buffer.from(access.value, 'base64url').toString());
+  await sess.context().addCookies([{ ...access, value: Buffer.from(JSON.stringify({ ...old, e: Math.floor(Date.now() / 1000) - 5 })).toString('base64url') }]);
+  const renewed = await sess.evaluate(async () => { const r = await fetch('/session/refresh', { method: 'POST' }); return { status: r.status, body: await r.json() }; });
+  assert.equal(renewed.status, 200);
+  assert.notEqual(renewed.body.access_token, old.a, 'a new access token was issued');
+  assert.notEqual((await sess.context().cookies()).find((c) => c.name === 'tourny-access').value, access.value, 'and stored in the cookie');
+  // Signing out clears both; nothing can be renewed afterwards.
+  await sess.evaluate(() => fetch('/session/end', { method: 'POST' }));
+  assert.ok(!(await sess.context().cookies()).some((c) => c.name.startsWith('tourny-a') || c.name === 'tourny-refresh'), 'both cookies are gone');
+  assert.equal((await sess.evaluate(async () => (await fetch('/session/refresh', { method: 'POST' })).status)), 401);
+  log('session cookies: access readable, refresh HttpOnly, renewed through the server, cleared on sign-out');
+
+  const resetter = currentPage = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+  resetter.on('pageerror', (er) => errors.push(`reset: ${er.message}`));
+  watchPolicy(resetter, 'reset');
+  await resetter.goto(`${web}/forgot-password`, { waitUntil: 'load' }); await resetter.waitForTimeout(1500);
+  await resetter.fill('#email', una.email);
+  await resetter.click('button[type="submit"]');
+  let link = null;
+  for (let i = 0; i < 40 && !link; i++) {
+    const r = await fetch(`${API}/dev/recovery-link?email=${encodeURIComponent(una.email)}`);
+    if (r.ok) link = await r.text(); else await new Promise((res) => setTimeout(res, 250));
+  }
+  assert.ok(link, 'the reset email was sent');
+  await resetter.goto(link, { waitUntil: 'load' });
+  await resetter.waitForURL((u) => u.pathname === '/reset-password', { timeout: 30000 });
+  await resetter.waitForTimeout(1500);
+  await resetter.fill('#password', 'Brand-New-Pass-9'); await resetter.fill('#confirmPassword', 'Brand-New-Pass-9');
+  await Promise.all([resetter.waitForURL((u) => u.pathname === '/login', { timeout: 30000 }), resetter.click('button[type="submit"]')]);
+  const viaApi = (password) => createClient(API).auth.signInWithPassword({ email: una.email, password });
+  assert.ok((await viaApi(PW)).error, 'the old password no longer works');
+  assert.ok(!(await viaApi('Brand-New-Pass-9')).error, 'the new password works');
+  log('password reset on the website: link, new password; the old password no longer works');
 
   assert.deepEqual(errors, [], 'no page errors in any browser');
   console.log('\nE2E JOURNEY PASSED');

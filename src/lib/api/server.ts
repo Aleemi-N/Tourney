@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { cache } from 'react';
 import { Api } from './core';
-import { SESSION_COOKIE, cookieOptions, decodeSession, encodeSession } from './session-cookie';
+import { ACCESS_COOKIE, REFRESH_COOKIE, accessOptions, decodeAccess, encodeAccess, refreshOptions } from './session-cookie';
 import type { Database } from './types';
 
 /**
@@ -20,10 +20,15 @@ export async function createClient(): Promise<Api<Database>> {
   const cookieStore = await cookies();
   return new Api<Database>(process.env.NEXT_PUBLIC_API_URL!, {
     store: {
-      get: () => decodeSession(cookieStore.get(SESSION_COOKIE)?.value),
+      get: () => decodeAccess(cookieStore.get(ACCESS_COOKIE)?.value, cookieStore.get(REFRESH_COOKIE)?.value ?? ''),
       set: (session) => {
-        if (session) cookieStore.set(SESSION_COOKIE, encodeSession(session), cookieOptions);
-        else cookieStore.delete(SESSION_COOKIE);
+        if (session) {
+          cookieStore.set(ACCESS_COOKIE, encodeAccess(session), accessOptions);
+          cookieStore.set(REFRESH_COOKIE, session.refresh_token, refreshOptions);
+        } else {
+          cookieStore.delete(ACCESS_COOKIE);
+          cookieStore.delete(REFRESH_COOKIE);
+        }
       },
     },
   });

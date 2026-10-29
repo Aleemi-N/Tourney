@@ -1,23 +1,36 @@
 import type { StoredSession } from './core';
 
-/** The cookie that keeps a visitor signed in on the website: the two tokens and when the access token runs out. */
-export const SESSION_COOKIE = 'tourny-session';
+/**
+ * The website keeps a visitor signed in with two cookies:
+ * - `tourny-access` holds the short-lived access token and when it runs out. Scripts in the page can read it, because the
+ *   browser's own requests to the API need it.
+ * - `tourny-refresh` holds the 30-day refresh token and is HttpOnly: no script can read it, so a script-injection bug cannot
+ *   steal a long-lived sign-in. Only the website's server reads it, to renew the access token.
+ */
+export const ACCESS_COOKIE = 'tourny-access';
+export const REFRESH_COOKIE = 'tourny-refresh';
 export const PKCE_COOKIE = 'tourny-pkce';
 
-const YEAR = 60 * 60 * 24 * 365;
+const DAY = 60 * 60 * 24;
 // Secure wherever the API is served over https (every real deployment); plain http is only for local development.
 const secure = process.env.NEXT_PUBLIC_API_URL?.startsWith('https:') ?? false;
-export const cookieOptions = { path: '/', sameSite: 'lax' as const, maxAge: YEAR, secure };
+// The access cookie outlives the token, so an expired one is still there to say "renew me".
+export const accessOptions = { path: '/', sameSite: 'lax' as const, maxAge: 365 * DAY, secure };
+export const refreshOptions = { path: '/', sameSite: 'lax' as const, maxAge: 30 * DAY, secure, httpOnly: true };
 
-export function encodeSession(session: StoredSession): string {
-  return btoa(JSON.stringify({ a: session.access_token, r: session.refresh_token, e: session.expires_at })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const toBase64Url = (value: unknown) => btoa(JSON.stringify(value)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const fromBase64Url = (value: string) => JSON.parse(atob(value.replace(/-/g, '+').replace(/_/g, '/')));
+
+export function encodeAccess(session: Pick<StoredSession, 'access_token' | 'expires_at'>): string {
+  return toBase64Url({ a: session.access_token, e: session.expires_at });
 }
 
-export function decodeSession(value: string | undefined): StoredSession | null {
+/** The access half of a session. `refresh_token` is empty where only the access cookie can be read (the browser). */
+export function decodeAccess(value: string | undefined, refreshToken = ''): StoredSession | null {
   if (!value) return null;
   try {
-    const raw = JSON.parse(atob(value.replace(/-/g, '+').replace(/_/g, '/')));
-    return typeof raw.a === 'string' && typeof raw.r === 'string' && typeof raw.e === 'number' ? { access_token: raw.a, refresh_token: raw.r, expires_at: raw.e } : null;
+    const raw = fromBase64Url(value);
+    return typeof raw.a === 'string' && typeof raw.e === 'number' ? { access_token: raw.a, refresh_token: refreshToken, expires_at: raw.e } : null;
   } catch {
     return null;
   }
