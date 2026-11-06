@@ -5,6 +5,7 @@ import { Text } from '@/components/text';
 import { Button, ErrorText } from '@/components/ui';
 import { api } from '@/lib/api';
 import { shareCsv, type Cell } from '@/lib/csv';
+import { jerseySheet, type JerseyRow } from '@/lib/jersey-sheet';
 import { useTheme } from '@/theme';
 
 const stamp = (iso: string | null | undefined) => (iso ? new Date(iso).toISOString().slice(0, 16).replace('T', ' ') : '');
@@ -36,6 +37,13 @@ export function ExportPanel({ tournamentId, slug }: { tournamentId: string; slug
     type R = { acquisition_type: string; acquisition_amount: number | null; teams: { name: string } | null; player_profiles: { display_name: string; primary_position: string | null; jersey_number: string | null } | null };
     return [['Team', 'Player', 'Position', 'Jersey', 'How joined', 'Amount'],
       ...((data ?? []) as unknown as R[]).sort((a, b) => (a.teams?.name ?? '').localeCompare(b.teams?.name ?? '')).map((r) => [r.teams?.name, r.player_profiles?.display_name, r.player_profiles?.primary_position, r.player_profiles?.jersey_number, r.acquisition_type, r.acquisition_amount])];
+  };
+
+  const jerseys = async (): Promise<Cell[][]> => {
+    const { data, error: e } = await api.from('team_players').select('teams(name),player_profiles(display_name,jersey_name,jersey_number,jersey_size)').eq('tournament_id', tournamentId).eq('status', 'ACTIVE');
+    fail(e);
+    type R = { teams: { name: string } | null; player_profiles: { display_name: string; jersey_name: string | null; jersey_number: string | null; jersey_size: string | null } | null };
+    return jerseySheet(((data ?? []) as unknown as R[]).map((r): JerseyRow => ({ team: r.teams?.name ?? null, player: r.player_profiles?.display_name ?? null, jerseyName: r.player_profiles?.jersey_name ?? null, jerseyNumber: r.player_profiles?.jersey_number ?? null, jerseySize: r.player_profiles?.jersey_size ?? null })));
   };
 
   const fixtures = async (): Promise<Cell[][]> => {
@@ -74,6 +82,7 @@ export function ExportPanel({ tournamentId, slug }: { tournamentId: string; slug
       {error ? <ErrorText>{error}</ErrorText> : null}
       {item('registrations', 'Registrations', registrations)}
       {item('squads', 'Teams and squads', squads)}
+      {item('jerseys', 'Jersey sheet (number, name, size per team)', jerseys)}
       {item('fixtures', 'Fixtures and results', fixtures)}
       {item('standings', 'Standings', standings)}
       {item('payments', 'Payments', payments)}

@@ -6,6 +6,8 @@ import { AssignPlayerButton } from '@/components/organizer/AssignPlayerButton';
 import type { EligiblePlayer } from '@/components/organizer/AssignPlayerModal';
 import { TeamColorsForm, TeamRenameForm } from '@/components/organizer/TeamRenameForm';
 import { OrganizerTeamsSquadRoster, OrganizerSquadPlayer } from '@/components/organizer/OrganizerTeamsSquadRoster';
+import { JerseyExportButton } from '@/components/organizer/JerseyExportButton';
+import type { JerseyRow } from '@/lib/jersey-sheet';
 
 export const metadata: Metadata = {
     title: 'Teams & Squads | Organizer',
@@ -129,15 +131,28 @@ export default async function OrganizerTeamsPage({
         };
     });
 
+    // The jersey sheet is made from the squads shown on this page: each player's number, name on the jersey and size.
+    const jerseyRows = (team: { name: string; squad: SquadEntry[] }): JerseyRow[] => team.squad.map((p) => ({
+        team: team.name,
+        player: p.player?.display_name ?? null,
+        jerseyName: p.player?.jersey_name ?? null,
+        jerseyNumber: p.player?.jersey_number ?? null,
+        jerseySize: p.player?.jersey_size ?? null,
+    }));
+    const slug = tournament.name.replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'tournament';
+
     return (
         <div className="p-6 lg:p-10">
             <div className="mx-auto max-w-7xl">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-black tracking-tight text-text-primary flex items-center gap-3">
-                        <ShieldCheckIcon className="w-8 h-8 text-primary" />
-                        Teams & Squads
-                    </h1>
-                    <p className="mt-2 text-text-secondary">Authoritative view of all tournament teams and their assembled squads.</p>
+                <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl font-black tracking-tight text-text-primary flex items-center gap-3">
+                            <ShieldCheckIcon className="w-8 h-8 text-primary" />
+                            Teams & Squads
+                        </h1>
+                        <p className="mt-2 text-text-secondary">Authoritative view of all tournament teams and their assembled squads.</p>
+                    </div>
+                    <JerseyExportButton rows={teams.flatMap(jerseyRows)} fileName={`${slug}-jerseys.csv`} label="Export jersey sheet (all teams)" />
                 </div>
 
                 <div className="space-y-8">
@@ -157,6 +172,9 @@ export default async function OrganizerTeamsPage({
                                             eligiblePlayers={eligiblePlayers}
                                             remainingWalletBalance={team.remaining}
                                         />
+                                    </div>
+                                    <div className="mt-3">
+                                        <JerseyExportButton rows={jerseyRows(team)} fileName={`${slug}-${team.name.replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'team'}-jerseys.csv`} label="Export this team's jerseys" />
                                     </div>
                                     <div className="flex items-center gap-3 mt-2">
                                         <span className="text-sm font-semibold text-text-secondary">{team.count} / {team.max} players</span>
