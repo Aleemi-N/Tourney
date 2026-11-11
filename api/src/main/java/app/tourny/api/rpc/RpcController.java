@@ -47,6 +47,8 @@ class RpcController {
     private static String firstLine(String text) {
         if (text == null) return "";
         int end = text.indexOf('\n');
-        return end < 0 ? text : text.substring(0, end);
+        String line = end < 0 ? text : text.substring(0, end);
+        // The driver prefixes the severity ("ERROR: "); people should see only the reason.
+        return line.startsWith("ERROR:") ? line.substring("ERROR:".length()).trim() : line;
     }
 }

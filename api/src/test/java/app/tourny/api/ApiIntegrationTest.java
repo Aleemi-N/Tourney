@@ -424,5 +424,6 @@ class ApiIntegrationTest {
         assertEquals(400, refused.statusCode(), refused.body());
         assertTrue(refused.body().contains("lowercase letters, numbers, and hyphens"), refused.body());
         assertTrue(refused.body().contains("PT400"), refused.body());
+        assertTrue(!refused.body().contains("ERROR:"), "people see the reason, not the driver's severity prefix: " + refused.body());
     }
 }
