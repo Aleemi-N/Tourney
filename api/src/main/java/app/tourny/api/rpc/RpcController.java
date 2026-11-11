@@ -38,7 +38,9 @@ class RpcController {
         // P0001 is RAISE EXCEPTION: the function refused the request and says why.
         boolean refusal = state.equals("P0001") || state.startsWith("23") || state.startsWith("22");
         HttpStatus status = refusal ? HttpStatus.BAD_REQUEST : state.equals("42501") ? HttpStatus.FORBIDDEN : HttpStatus.INTERNAL_SERVER_ERROR;
-        String message = status == HttpStatus.INTERNAL_SERVER_ERROR ? "Internal error" : firstLine(cause.getMessage());
+        // PTnnn is the PostgREST way for a function to choose the HTTP status (PT400, PT403, PT404, PT409...): honour it.
+        if (state.matches("PT[45][0-9][0-9]") && HttpStatus.resolve(Integer.parseInt(state.substring(2))) != null) status = HttpStatus.resolve(Integer.parseInt(state.substring(2)));
+        String message = status.is5xxServerError() && !state.startsWith("PT") ? "Internal error" : firstLine(cause.getMessage());
         return ResponseEntity.status(status).body(Map.of("message", message, "code", state));
     }
 

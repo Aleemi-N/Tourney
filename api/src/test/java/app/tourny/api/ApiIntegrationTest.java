@@ -414,4 +414,15 @@ class ApiIntegrationTest {
             assertEquals(400, post("/auth/token?grant_type=refresh_token", "{\"refresh_token\":\"" + refresh + "\"}", null).statusCode());
         }
     }
+
+    @Test
+    void aFunctionsOwnRefusalReachesTheUserWithItsStatusAndMessage() throws Exception {
+        // Functions raise PT400/PT403/PT404/PT409 to choose the HTTP status (the PostgREST convention); before this, those
+        // reached people as "Internal error".
+        String token = login("player@tourny.local");
+        var refused = post("/rpc/initialize_organizer_onboarding", "{\"p_full_name\":\"T\",\"p_org_name\":\"TEST\",\"p_org_slug\":\"TEST.org\"}", token);
+        assertEquals(400, refused.statusCode(), refused.body());
+        assertTrue(refused.body().contains("lowercase letters, numbers, and hyphens"), refused.body());
+        assertTrue(refused.body().contains("PT400"), refused.body());
+    }
 }
