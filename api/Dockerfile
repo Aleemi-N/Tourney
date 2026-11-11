@@ -2,7 +2,8 @@ FROM eclipse-temurin:21-jdk AS build
 WORKDIR /src
 COPY .mvn .mvn
 COPY mvnw pom.xml ./
-RUN ./mvnw -B -q dependency:go-offline
+# The wrapper must be executable however the repository was checked out (Windows and some servers drop the flag).
+RUN chmod +x mvnw && ./mvnw -B -q dependency:go-offline
 COPY src src
 RUN ./mvnw -B -q -DskipTests package && cp target/tourny-api-*.jar /app.jar
 
