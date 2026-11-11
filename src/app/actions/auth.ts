@@ -89,20 +89,15 @@ export async function register(formData: FormData) {
   });
 
   if (authError) {
+    // The API refuses a second account for the same email (422, "User already registered").
+    if (/already registered/i.test(authError.message)) {
+      return { error: 'An account with this email already exists. Please sign in.' };
+    }
     return { error: authError.message };
   }
 
-  if (!authData.user) {
+  if (!authData.user || !authData.session) {
     return { error: 'Something went wrong during registration.' };
-  }
-
-  // The API returns a non-null user object even for duplicate emails when
-  // email confirmation is disabled — but the identities array is empty.
-  // This is a deliberate anti-enumeration measure of the sign-up endpoint.
-  // We must check for it explicitly; otherwise the action silently redirects
-  // to / as if registration succeeded, and the user can never sign in.
-  if (!authData.user.identities || authData.user.identities.length === 0) {
-    return { error: 'An account with this email already exists. Please sign in.' };
   }
 
   // Genuine new account — profile row created by on_auth_user_created trigger.

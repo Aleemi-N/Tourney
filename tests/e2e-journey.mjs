@@ -343,6 +343,25 @@ try {
   assert.ok(!(await viaApi('Brand-New-Pass-9')).error, 'the new password works');
   log('password reset on the website: link, new password; the old password no longer works');
 
+  // ======================================================================================================================
+  // 10. Signing up on the website itself (the form, not the API)
+  // ======================================================================================================================
+  const signup = async (address) => {
+    const page = currentPage = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+    page.on('pageerror', (er) => errors.push(`signup: ${er.message}`));
+    watchPolicy(page, 'signup');
+    await page.goto(`${web}/register`, { waitUntil: 'load' }); await page.waitForTimeout(1500);
+    await page.fill('#fullName', 'Web Signup'); await page.fill('#email', address); await page.fill('#password', PW);
+    await page.click('button[type="submit"]');
+    return page;
+  };
+  const webEmail = email('websignup');
+  const first = await signup(webEmail);
+  await first.waitForURL((u) => u.pathname.startsWith('/player'), { timeout: 30000 });
+  const second = await signup(webEmail);
+  await second.getByText('An account with this email already exists').waitFor({ timeout: 30000 });
+  log('signing up on the website works, and the same email a second time gets a clear message');
+
   assert.deepEqual(errors, [], 'no page errors in any browser');
   console.log('\nE2E JOURNEY PASSED');
 } catch (e) {
