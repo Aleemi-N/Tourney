@@ -61,6 +61,12 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "description": "Run and follow volleyball tournaments: registrations, live scoring, fixtures, results and standings."
+    "description": "Run and follow volleyball tournaments: registrations, live scoring, fixtures, results and standings.",
+    "extra": {
+      "eas": {
+        "projectId": "dfa8d45a-6123-4800-bc97-09a086ce148c"
+      }
+    },
+    "owner": "aleemi"
   }
 }
