@@ -1,5 +1,7 @@
 # Deploying Tourny v2 on a VPS
 
+On a server that runs Coolify, use `docker-compose.coolify.yml` and follow `deploy/COOLIFY.md` instead of this page.
+
 One server, five containers: PostgreSQL, PostgREST, the Spring Boot API (`../api`), the Next.js web app and Caddy (HTTPS). The Expo app talks to the same API URL.
 
 ## First start

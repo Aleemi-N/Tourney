@@ -1,0 +1,98 @@
+# Tourny on a server run by Coolify: PostgreSQL, PostgREST, the Spring Boot API and the Next.js website.
+# Coolify's own proxy serves HTTPS, so there is no Caddy here and no published port. In Coolify:
+#   New resource > Public/Private repository > Build pack "Docker Compose" > Docker Compose Location: /docker-compose.coolify.yml
+#   then give the "web" service the domain https://<app domain>:3000 and the "api" service https://<api domain>:8080,
+#   and fill in the environment variables Coolify lists (see deploy/COOLIFY.md).
+# For a server without Coolify use deploy/docker-compose.yml instead.
+services:
+  db:
+    build:
+      context: .
+      dockerfile: deploy/db.Dockerfile
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tourny
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      AUTHENTICATOR_PASSWORD: ${AUTHENTICATOR_PASSWORD}
+    volumes:
+      - tourny-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tourny"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  postgrest:
+    image: postgrest/postgrest:v12.2.3
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${AUTHENTICATOR_PASSWORD}@db:5432/tourny
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+
+  api:
+    build: ./api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      postgrest:
+        condition: service_started
+    environment:
+      # The server is shared with other sites: keep the API's memory bounded.
+      JAVA_TOOL_OPTIONS: -Duser.timezone=UTC -Xmx512m
+      TOURNY_DB_URL: jdbc:postgresql://db:5432/tourny
+      TOURNY_DB_USER: postgres
+      TOURNY_DB_PASSWORD: ${DB_PASSWORD}
+      TOURNY_JWT_SECRET: ${JWT_SECRET}
+      TOURNY_POSTGREST_URL: http://postgrest:3000
+      TOURNY_CORS_ORIGINS: https://${APP_DOMAIN}
+      TOURNY_SITE_URL: https://${APP_DOMAIN}
+      TOURNY_SMTP_HOST: ${SMTP_HOST:-}
+      TOURNY_SMTP_PORT: ${SMTP_PORT:-587}
+      TOURNY_SMTP_USER: ${SMTP_USER:-}
+      TOURNY_SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      TOURNY_MAIL_FROM: ${MAIL_FROM:-no-reply@localhost}
+      TOURNY_EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
+      TOURNY_VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      TOURNY_VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      TOURNY_VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:support@example.com}
+      TOURNY_SECRETS_KEY: ${SECRETS_KEY:-}
+    volumes:
+      - tourny-storage:/data/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8080' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  web:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+        NEXT_PUBLIC_SITE_URL: https://${APP_DOMAIN}
+        NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+      NEXT_PUBLIC_SITE_URL: https://${APP_DOMAIN}
+      NEXT_PUBLIC_CONTACT_EMAIL: ${CONTACT_EMAIL:-support@example.com}
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+volumes:
+  tourny-db:
+  tourny-storage:

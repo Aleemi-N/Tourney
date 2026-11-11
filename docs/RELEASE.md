@@ -12,7 +12,7 @@ This is the single list for taking v2 live. "Verified" means I ran it here; "You
 
 ## Before going public (yours, in this order)
 1. **Rotate the Supabase database password** you pasted in chat on 2026-10-26.
-2. **Decide the domains** (`app.<domain>` for the website, `api.<domain>` for the API) and rent the VPS (2 GB RAM is enough to start; Docker installed).
+2. **Hosting:** on a Coolify server follow `deploy/COOLIFY.md`; on a plain server `deploy/README.md`. **Decide the domains** (`app.<domain>` for the website, `api.<domain>` for the API) and rent the VPS (2 GB RAM is enough to start; Docker installed).
 3. **Fill `deploy/.env`** from `deploy/.env.example`: `JWT_SECRET`, database passwords, and `CONTACT_EMAIL`, the address the privacy policy and terms show.
 4b. **Razorpay card payments (optional; UPI fees need nothing):** make a key with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`, put it in `deploy/.env` as `SECRETS_KEY`, and back it up with the file. It encrypts the Razorpay keys organizers connect; if you lose or change it, they must reconnect. Without it organizers can still set fees and mark players paid by hand, just not take payments online.
 4a. **Browser push (optional):** run `node deploy/make-vapid-keys.mjs`, put the three `VAPID_*` lines in `deploy/.env`, and rebuild the web image (the public key is compiled in). Without them the website simply hides the Follow buttons.
