@@ -9,6 +9,10 @@ the server with other sites. (Without Coolify, use `deploy/docker-compose.yml`, 
   build needs 1.5 to 2 GB more for a few minutes. With other sites on the server, 4 GB in total is the sensible minimum.
 - **Two names in DNS.** Add A records for `app.<your domain>` (website) and `api.<your domain>` (API) pointing at the server's IP.
   The examples below use `app.example.com` and `api.example.com`.
+  **Behind Cloudflare's proxy** (orange cloud) is fine and keeps the server's address hidden: the API takes each visitor's
+  address from Cloudflare's `CF-Connecting-IP` header (only when the request really comes from Cloudflare), so the per-address
+  limits on sign-in and sign-up still count people, not Cloudflare. Use one-level names such as `tourny-api.example.com`
+  (Cloudflare's free certificate does not cover `api.tourny.example.com`) and SSL/TLS mode **Full (strict)**.
 - **The old site stays where it is** (Vercel + Supabase) until step 6.
 
 ## 2. Create the resource
