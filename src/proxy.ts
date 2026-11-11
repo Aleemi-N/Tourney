@@ -3,6 +3,7 @@ import { Api } from '@/lib/api/core';
 import { ACCESS_COOKIE, REFRESH_COOKIE, accessOptions, decodeAccess, encodeAccess, refreshOptions } from '@/lib/api/session-cookie';
 import type { Database } from '@/lib/api/types';
 import { contentSecurityPolicy } from '@/lib/csp';
+import { apiUrlForServer, visitorHeaders } from '@/lib/api/server-address';
 
 /**
  * Next.js Proxy (previously "middleware") — keeps the signed-in session fresh.
@@ -29,7 +30,9 @@ export async function proxy(request: NextRequest) {
   forwarded.set('Content-Security-Policy', csp);
   let response = NextResponse.next({ request: { headers: forwarded } });
 
-  const api = new Api<Database>(process.env.NEXT_PUBLIC_API_URL!, {
+  const api = new Api<Database>(apiUrlForServer(), {
+    publicUrl: process.env.NEXT_PUBLIC_API_URL,
+    headers: visitorHeaders((name) => request.headers.get(name)),
     store: {
       get: () => decodeAccess(request.cookies.get(ACCESS_COOKIE)?.value, request.cookies.get(REFRESH_COOKIE)?.value ?? ''),
       set: (session) => {

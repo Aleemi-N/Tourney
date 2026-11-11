@@ -8,6 +8,9 @@ import java.util.List;
 /**
  * The visitor's own address, for the per-address limits on sign-in, sign-up and password reset.
  *
+ * The website's own server makes many calls for its visitors (sign-in and sign-up are server actions); it passes the visitor's
+ * address in X-Tourny-Visitor-IP with a shared key, and only that key makes the header believable.
+ *
  * Behind Cloudflare's proxy every request arrives from one of Cloudflare's addresses, and the visitor's is in the
  * CF-Connecting-IP header. That header is believed only when the request really came from Cloudflare: anyone can send it,
  * but only Cloudflare connects from these ranges. Without Cloudflare the header is ignored.
@@ -23,7 +26,17 @@ final class ClientAddress {
 
     private ClientAddress() {}
 
-    static String of(HttpServletRequest request) {
+    /**
+     * @param internalKey the key the website's own server sends with the visitor's address (tourny.internal-key); empty
+     *                    means nobody's word is taken for it.
+     */
+    static String of(HttpServletRequest request, String internalKey) {
+        String passedOn = request.getHeader("X-Tourny-Visitor-IP");
+        String key = request.getHeader("X-Tourny-Internal-Key");
+        if (!internalKey.isEmpty() && key != null && passedOn != null && passedOn.length() <= 45 && passedOn.trim().matches("[0-9A-Fa-f:.]+")
+                && java.security.MessageDigest.isEqual(key.getBytes(java.nio.charset.StandardCharsets.UTF_8), internalKey.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
+            return passedOn.trim(); // the website's server, calling on a visitor's behalf
+        }
         String peer = request.getRemoteAddr();
         String visitor = request.getHeader("CF-Connecting-IP");
         if (visitor != null && !visitor.isBlank() && fromCloudflare(peer)) return visitor.trim();

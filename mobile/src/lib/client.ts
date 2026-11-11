@@ -48,7 +48,7 @@ const thrown = (e: unknown): ApiError => ({ message: e instanceof Error ? e.mess
 
 // -- queries ------------------------------------------------------------------------------------
 
-type Ctx = { url: string; token: () => Promise<string | null>; fetch: typeof fetch };
+type Ctx = { url: string; publicUrl: string; token: () => Promise<string | null>; fetch: typeof fetch };
 
 /** A query on a table or view, built by chaining and run when awaited. */
 export class Query<T, R = any> implements PromiseLike<Result<T>> {
@@ -371,7 +371,7 @@ class Bucket {
   constructor(ctx: Ctx, name: string) { this.ctx = ctx; this.name = name; }
 
   getPublicUrl(path: string) {
-    return { data: { publicUrl: `${this.ctx.url}/storage/object/public/${this.name}/${path.split('/').map(encodeURIComponent).join('/')}` } };
+    return { data: { publicUrl: `${this.ctx.publicUrl}/storage/object/public/${this.name}/${path.split('/').map(encodeURIComponent).join('/')}` } };
   }
 
   async upload(path: string, file: Blob | ArrayBuffer | ArrayBufferView, opts: { contentType?: string; upsert?: boolean; cacheControl?: string } = {}): Promise<{ data: { path: string }; error: null } | { data: null; error: ApiError }> {
@@ -533,7 +533,14 @@ class Socket {
 
 // -- the client ---------------------------------------------------------------------------------
 
-export type ApiOptions = { store: SessionStore; fetch?: typeof fetch };
+export type ApiOptions = {
+  store: SessionStore;
+  fetch?: typeof fetch;
+  /** Where browsers reach the API, for image links and live updates, when `url` is an address only this server can use. */
+  publicUrl?: string;
+  /** Sent with every request (the website's server uses this to pass on the visitor's address). */
+  headers?: Record<string, string>;
+};
 
 export class Api<DB = AnyDb> {
   readonly auth: Auth;
@@ -544,11 +551,14 @@ export class Api<DB = AnyDb> {
   constructor(url: string, opts: ApiOptions) {
     this.url = url;
     const base = url.replace(/\/+$/, '');
+    const publicBase = (opts.publicUrl ?? url).replace(/\/+$/, '');
     // `fetch` is looked up when called, so tests and Next.js can replace it after the client exists.
-    const doFetch: typeof fetch = opts.fetch ?? ((input, init) => fetch(input, init));
+    const plainFetch: typeof fetch = opts.fetch ?? ((input, init) => fetch(input, init));
+    const extra = opts.headers;
+    const doFetch: typeof fetch = extra ? (input, init) => plainFetch(input, { ...init, headers: { ...extra, ...(init?.headers as Record<string, string> | undefined) } }) : plainFetch;
     this.auth = new Auth(base, opts.store, doFetch);
-    this.ctx = { url: base, fetch: doFetch, token: async () => (await this.auth.getSession()).data.session?.access_token ?? null };
-    this.socket = new Socket(base);
+    this.ctx = { url: base, publicUrl: publicBase, fetch: doFetch, token: async () => (await this.auth.getSession()).data.session?.access_token ?? null };
+    this.socket = new Socket(publicBase);
   }
 
   from<N extends string>(table: N) {

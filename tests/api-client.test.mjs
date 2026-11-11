@@ -178,3 +178,20 @@ test('when the website says the session is over, the client is signed out', asyn
   assert.equal((await api.auth.getSession()).data.session, null);
   assert.ok(events.includes('SIGNED_OUT'));
 });
+
+test('a server-side client calls the internal address, sends its extra headers, and still gives public image links', async () => {
+  const calls = [];
+  const api = new Api('http://api:8080', {
+    publicUrl: 'https://tourny-api.example.com',
+    headers: { 'X-Tourny-Visitor-IP': '203.0.113.5' },
+    fetch: async (url, init) => { calls.push({ url: String(url), headers: init.headers }); return json({ access_token: token('u9'), refresh_token: 'r', expires_at: now() + 60 }); },
+    store: { get: () => null, set: () => {} },
+  });
+  await api.from('tournaments').select('id');
+  await api.rpc('f');
+  await api.auth.signInWithPassword({ email: 'a@b.c', password: 'pw' });
+  assert.ok(calls.every((c) => c.url.startsWith('http://api:8080/')), 'every request goes to the internal address');
+  assert.ok(calls.every((c) => c.headers['X-Tourny-Visitor-IP'] === '203.0.113.5'), 'and carries the extra headers');
+  assert.equal(calls[2].headers['Content-Type'], 'application/json', 'without losing its own headers');
+  assert.equal(api.storage.from('logos').getPublicUrl('t/1.png').data.publicUrl, 'https://tourny-api.example.com/storage/object/public/logos/t/1.png');
+});

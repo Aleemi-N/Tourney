@@ -19,15 +19,17 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 class AuthController {
 
     private final AuthService auth;
+    private final String internalKey;
 
-    AuthController(AuthService auth) {
+    AuthController(AuthService auth, @org.springframework.beans.factory.annotation.Value("${tourny.internal-key:}") String internalKey) {
         this.auth = auth;
+        this.internalKey = internalKey.trim();
     }
 
     @PostMapping("/auth/token")
     Map<String, Object> token(@RequestParam("grant_type") String grantType, @RequestBody Map<String, Object> body, jakarta.servlet.http.HttpServletRequest request) {
         return switch (grantType) {
-            case "password" -> auth.signInWithPassword(text(body, "email"), text(body, "password"), ClientAddress.of(request));
+            case "password" -> auth.signInWithPassword(text(body, "email"), text(body, "password"), ClientAddress.of(request, internalKey));
             case "refresh_token" -> auth.refresh(text(body, "refresh_token"));
             case "pkce" -> auth.exchangeCode(text(body, "auth_code"), text(body, "code_verifier"));
             default -> throw new AuthService.AuthException(400, "unsupported_grant_type", "Unsupported grant_type");
@@ -38,7 +40,7 @@ class AuthController {
     Map<String, Object> signUp(@RequestBody Map<String, Object> body, jakarta.servlet.http.HttpServletRequest request) {
         @SuppressWarnings("unchecked")
         Map<String, Object> data = (Map<String, Object>) body.get("data");
-        return auth.signUp(text(body, "email"), text(body, "password"), data, ClientAddress.of(request));
+        return auth.signUp(text(body, "email"), text(body, "password"), data, ClientAddress.of(request, internalKey));
     }
 
     @GetMapping("/auth/user")
@@ -62,7 +64,7 @@ class AuthController {
     /** Always 200, so the response never reveals whether an email has an account. */
     @PostMapping("/auth/recover")
     Map<String, Object> recover(@RequestBody Map<String, Object> body, @RequestParam(name = "redirect_to", required = false) String redirectTo, jakarta.servlet.http.HttpServletRequest request) {
-        auth.recover(text(body, "email"), (String) body.get("code_challenge"), (String) body.get("code_challenge_method"), redirectTo, ClientAddress.of(request));
+        auth.recover(text(body, "email"), (String) body.get("code_challenge"), (String) body.get("code_challenge_method"), redirectTo, ClientAddress.of(request, internalKey));
         return Map.of();
     }
 

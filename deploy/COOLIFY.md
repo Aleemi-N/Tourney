@@ -15,6 +15,11 @@ the server with other sites. (Without Coolify, use `deploy/docker-compose.yml`, 
   (Cloudflare's free certificate does not cover `api.tourny.example.com`) and SSL/TLS mode **Full (strict)**.
 - **The old site stays where it is** (Vercel + Supabase) until step 6.
 
+**How the pieces talk.** Browsers and the mobile app use the public API address. The website's own server calls the API
+inside the server (`API_INTERNAL_URL=http://api:8080`), so it needs no DNS and no trip through Cloudflare, and it passes on
+each visitor's address with a key Coolify generates (`SERVICE_PASSWORD_INTERNALKEY`), so the API's per-address limits count
+visitors, not the website.
+
 ## 2. Create the resource
 1. Projects > New Project, name it `Tourny`, open its `production` environment.
 2. Add Resource > Private Repository (GitHub App) for `Aleemi-N/Tourney`, or Public Repository if the repository is public.

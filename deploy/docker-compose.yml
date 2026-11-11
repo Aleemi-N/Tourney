@@ -56,6 +56,8 @@ services:
       # Registration fees: organizers' Razorpay secrets are stored encrypted with this key (32 random bytes, base64). Keep it safe and never change it,
       # or saved Razorpay accounts stop working. Leave empty to run without online payments (organizers can still mark players as paid).
       TOURNY_SECRETS_KEY: ${SECRETS_KEY:-}
+      # The website's server passes on each visitor's address with this key.
+      TOURNY_INTERNAL_KEY: ${INTERNAL_KEY:-}
       TOURNY_SITE_URL: https://${APP_DOMAIN}
     volumes:
       - storage:/data/storage
@@ -73,6 +75,9 @@ services:
       NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
       NEXT_PUBLIC_SITE_URL: https://${APP_DOMAIN}
       NEXT_PUBLIC_CONTACT_EMAIL: ${CONTACT_EMAIL:-support@example.com}
+      # The website's server calls the API inside the server; browsers use the public address.
+      API_INTERNAL_URL: http://api:8080
+      API_INTERNAL_KEY: ${INTERNAL_KEY:-}
 
   caddy:
     image: caddy:2

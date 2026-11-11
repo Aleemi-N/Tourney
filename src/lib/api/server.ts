@@ -1,6 +1,7 @@
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
 import { Api } from './core';
+import { apiUrlForServer, visitorHeaders } from './server-address';
 import { ACCESS_COOKIE, REFRESH_COOKIE, accessOptions, decodeAccess, encodeAccess, refreshOptions } from './session-cookie';
 import type { Database } from './types';
 
@@ -18,7 +19,10 @@ import type { Database } from './types';
  */
 export async function createClient(): Promise<Api<Database>> {
   const cookieStore = await cookies();
-  return new Api<Database>(process.env.NEXT_PUBLIC_API_URL!, {
+  const requestHeaders = await headers();
+  return new Api<Database>(apiUrlForServer(), {
+    publicUrl: process.env.NEXT_PUBLIC_API_URL,
+    headers: visitorHeaders((name) => requestHeaders.get(name)),
     store: {
       get: () => decodeAccess(cookieStore.get(ACCESS_COOKIE)?.value, cookieStore.get(REFRESH_COOKIE)?.value ?? ''),
       set: (session) => {
