@@ -203,7 +203,8 @@ export function TournamentWizard({ initialData }: { initialData?: any }) {
                   value={formData.slug}
                   onChange={(e) => handleUpdate('', 'slug', e.target.value)}
                   placeholder="e.g. summer-spikes-26"
-                  pattern="^[a-z0-9-]+$"
+                  pattern="[a-z0-9\-]+"
+                  title="Lowercase letters, numbers, and hyphens only"
                   className="p-3 rounded-lg border border-border bg-surface-muted text-text-primary focus:outline-none focus:border-primary transition-colors"
                 />
               </div>

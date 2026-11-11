@@ -57,7 +57,7 @@ export function OrganizerOnboardingForm() {
           id="orgSlug"
           name="orgSlug" 
           type="text" 
-          pattern="^[a-z0-9-]+$"
+          pattern="[a-z0-9\-]+"
           title="Lowercase letters, numbers, and hyphens only"
           required 
           className="p-3 rounded-lg border border-border bg-surface-muted text-text-primary focus:outline-none focus:border-primary transition-colors"
