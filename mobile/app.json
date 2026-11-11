@@ -8,7 +8,7 @@
     "scheme": "tourny",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "app.tourny.mobile",
+      "bundleIdentifier": "com.appfyniti.tourny",
       "supportsTablet": true,
       "buildNumber": "1",
       "infoPlist": {
@@ -16,7 +16,7 @@
       }
     },
     "android": {
-      "package": "app.tourny.mobile",
+      "package": "com.appfyniti.tourny",
       "versionCode": 1,
       "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
