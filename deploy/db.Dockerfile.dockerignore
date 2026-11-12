@@ -2,3 +2,4 @@
 !deploy/initdb.sh
 !deploy/bootstrap.sql
 !db/migrations
+!deploy/cutover-load.sh

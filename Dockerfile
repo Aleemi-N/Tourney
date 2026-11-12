@@ -2,6 +2,8 @@ FROM node:22-slim AS build
 RUN corepack enable
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# The browser that the end-to-end tests drive is not needed in the image (it took minutes to download on every build).
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 RUN pnpm install --frozen-lockfile
 COPY . .
 # NEXT_PUBLIC_* values are compiled into the browser bundle, so they are build arguments.

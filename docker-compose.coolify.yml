@@ -65,7 +65,8 @@ services:
       # The website's server passes on each visitor's address with this key (Coolify generates it).
       TOURNY_INTERNAL_KEY: ${SERVICE_PASSWORD_INTERNALKEY}
     volumes:
-      - tourny-storage:/data/storage
+      # tourny-images, not the first tourny-storage volume, which was created owned by root (the API could not write to it).
+      - tourny-images:/data/storage
     healthcheck:
       test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8080' || exit 1"]
       interval: 10s
@@ -100,4 +101,4 @@ services:
 
 volumes:
   tourny-db:
-  tourny-storage:
+  tourny-images:

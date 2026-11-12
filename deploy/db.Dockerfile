@@ -4,5 +4,7 @@ FROM postgres:17
 COPY --chmod=755 deploy/initdb.sh /docker-entrypoint-initdb.d/10-init.sh
 COPY deploy/bootstrap.sql /init/bootstrap.sql
 COPY db/migrations /init/migrations
-# The repository may be checked out with Windows line endings; the shell script must have Unix ones.
-RUN sed -i 's/\r$//' /docker-entrypoint-initdb.d/10-init.sh
+# The move from Supabase, run by hand in this container.
+COPY --chmod=755 deploy/cutover-load.sh /init/cutover-load.sh
+# The repository may be checked out with Windows line endings; the shell scripts must have Unix ones.
+RUN sed -i 's/\r$//' /docker-entrypoint-initdb.d/10-init.sh /init/cutover-load.sh
