@@ -3,9 +3,11 @@ import { NextResponse } from 'next/server';
 import { PKCE_COOKIE } from '@/lib/api/session-cookie';
 import { createClient } from '@/lib/api/server';
 import { getSafeRedirectUrl } from '@/lib/utils/url';
+import { siteOrigin } from '@/lib/site-origin';
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = siteOrigin(request);
   const code = searchParams.get('code');
   // "next" may only be a path on this site; anything else (https://evil.example, //evil.example) falls back.
   const next = getSafeRedirectUrl(searchParams.get('next'), '/player');

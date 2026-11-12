@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { siteOrigin } from '@/lib/site-origin';
 import { createClient } from '@/lib/api/server';
 
 const ID = /^[0-9a-f-]{36}$/i;
@@ -14,7 +15,7 @@ export async function GET(request: Request) {
   const tournamentId = url.searchParams.get('tournamentId') ?? '';
   const kind = url.searchParams.get('kind') ?? '';
   const api = await createClient();
-  const to = (path: string) => NextResponse.redirect(new URL(path, url.origin));
+  const to = (path: string) => NextResponse.redirect(new URL(path, siteOrigin(request)));
 
   // Payment alerts: the organizer goes to the Payments page, the payer to their account.
   if ((kind === 'PAYMENT_SUBMITTED' || kind === 'PAYMENT_RECEIVED') && ID.test(tournamentId)) return to(`/organizer/tournaments/${tournamentId}/payments`);

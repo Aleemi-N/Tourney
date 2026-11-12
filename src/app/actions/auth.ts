@@ -7,6 +7,7 @@ import { getSafeRedirectUrl } from '@/lib/utils/url';
 import { cookies, headers } from 'next/headers';
 import { createHash, randomBytes } from 'node:crypto';
 import { PKCE_COOKIE } from '@/lib/api/session-cookie';
+import { siteOrigin } from '@/lib/site-origin';
 
 export async function login(formData: FormData) {
   const api = await createClient();
@@ -149,15 +150,17 @@ export async function requestPasswordReset(formData: FormData) {
   }
 
   const headerList = await headers();
-  const origin = headerList.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-  
+  const origin = process.env.NEXT_PUBLIC_SITE_URL ? siteOrigin() : headerList.get('origin') || siteOrigin();
+
   // The reset link comes back with a one-time code; only this browser, which holds the verifier, can trade it for a sign-in.
   const verifier = randomBytes(32).toString('base64url');
-  (await cookies()).set(PKCE_COOKIE, verifier, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 });
   const { error } = await api.auth.requestPasswordReset(email, {
     redirectTo: `${origin}/auth/callback?next=/reset-password`,
     challenge: createHash('sha256').update(verifier).digest('base64url'),
   });
+  // Keep the verifier only when an email can have gone out: a refused request (too many tries) must not replace the
+  // verifier of the email that is already on its way, or that link would stop working.
+  if (!error) (await cookies()).set(PKCE_COOKIE, verifier, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 });
 
   if (error) {
     console.error('Password reset request error:', error);

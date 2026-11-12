@@ -324,16 +324,29 @@ try {
   const resetter = currentPage = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
   resetter.on('pageerror', (er) => errors.push(`reset: ${er.message}`));
   watchPolicy(resetter, 'reset');
-  await resetter.goto(`${web}/forgot-password`, { waitUntil: 'load' }); await resetter.waitForTimeout(1500);
-  await resetter.fill('#email', una.email);
-  await resetter.click('button[type="submit"]');
+  const latestLink = async () => { const r = await fetch(`${API}/dev/recovery-link?email=${encodeURIComponent(una.email)}`); return r.ok ? r.text() : null; };
+  const askForReset = async () => {
+    await resetter.goto(`${web}/forgot-password`, { waitUntil: 'load' }); await resetter.waitForTimeout(1500);
+    await resetter.fill('#email', una.email);
+    await resetter.click('button[type="submit"]');
+    await resetter.getByText('Check your email').waitFor({ timeout: 30000 });
+  };
+  // Asked three times (the hourly limit), each email replacing the last; then a fourth time, which is refused.
   let link = null;
-  for (let i = 0; i < 40 && !link; i++) {
-    const r = await fetch(`${API}/dev/recovery-link?email=${encodeURIComponent(una.email)}`);
-    if (r.ok) link = await r.text(); else await new Promise((res) => setTimeout(res, 250));
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const before = link;
+    await askForReset();
+    for (let i = 0; i < 40 && (link = await latestLink()) === before; i++) await new Promise((res) => setTimeout(res, 250));
+    assert.ok(link && link !== before, `reset email ${attempt} was sent`);
   }
-  assert.ok(link, 'the reset email was sent');
+  await askForReset();
+  await new Promise((res) => setTimeout(res, 1500));
+  assert.equal(await latestLink(), link, 'the fourth request within the hour sends nothing');
+  // The refused request must not have replaced the browser's verifier: the last email that went out still works,
+  // and it leads to this website's own address, not the server's internal one.
+  assert.ok(link.startsWith(`${web}/auth/callback`), `the link points at the website: ${link}`);
   await resetter.goto(link, { waitUntil: 'load' });
+  assert.ok(new URL(resetter.url()).origin === web, `the callback redirects within the website, not to ${resetter.url()}`);
   await resetter.waitForURL((u) => u.pathname === '/reset-password', { timeout: 30000 });
   await resetter.waitForTimeout(1500);
   await resetter.fill('#password', 'Brand-New-Pass-9'); await resetter.fill('#confirmPassword', 'Brand-New-Pass-9');
