@@ -31,6 +31,7 @@ export function LandingFooter() {
               <li><a href="#tournaments" className="hover:text-text-primary transition-colors">Tournaments</a></li>
               <li><a href="#features" className="hover:text-text-primary transition-colors">Features</a></li>
               <li><a href="#how-it-works" className="hover:text-text-primary transition-colors">How It Works</a></li>
+              <li><a href={APP_CONFIG.playStoreUrl} target="_blank" rel="noopener noreferrer" className="hover:text-text-primary transition-colors">Android app</a></li>
             </ul>
           </div>
 

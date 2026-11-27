@@ -269,3 +269,14 @@ button:disabled,
   letter-spacing: -0.02em;
   font-weight: 700;
 }
+
+/* Landing page motion (all of it stops for visitors who ask for reduced motion) */
+@keyframes landing-marquee { to { transform: translateX(-50%); } }
+@keyframes landing-shimmer { to { background-position: 200% center; } }
+@keyframes landing-drift { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(40px, -30px) scale(1.1); } }
+.landing-marquee { animation: landing-marquee 40s linear infinite; }
+.landing-shimmer { background-size: 200% auto; animation: landing-shimmer 6s linear infinite; }
+.landing-drift { animation: landing-drift 14s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .landing-marquee, .landing-shimmer, .landing-drift { animation: none; }
+}

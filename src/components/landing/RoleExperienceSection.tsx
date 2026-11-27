@@ -1,73 +1,40 @@
 import React from 'react';
-import { Shield, Layers, Star, Play, Check } from 'lucide-react';
+import { ClipboardCheck, Eye, Shield, Star, Users } from 'lucide-react';
+import { Reveal } from './LandingMotion';
+
+const ROLES = [
+  { icon: Shield, title: 'Organizer', caps: ['Create and run tournaments', 'Approve teams and players', 'Lot draw, auction, fixtures'] },
+  { icon: Users, title: 'Team owner', caps: ['Register your team', 'Bid in the live auction', 'Manage your squad'] },
+  { icon: Star, title: 'Player', caps: ['One profile, every season', 'Register in a few taps', 'Certificates and history'] },
+  { icon: ClipboardCheck, title: 'Scorer', caps: ['Score rally by rally', 'Works on any phone', 'Undo mistakes safely'] },
+  { icon: Eye, title: 'Fan', caps: ['Live scores and sets', 'Fixtures and standings', 'Follow from anywhere'] },
+];
 
 export function RoleExperienceSection() {
-  const roles = [
-    {
-      title: 'Organizer',
-      icon: Shield,
-      color: 'text-primary',
-      borderColor: 'border-primary/20',
-      bgColor: 'bg-primary/5',
-      caps: ['Create tournaments', 'Manage participants', 'Control operations']
-    },
-    {
-      title: 'Team Owner',
-      icon: Layers,
-      color: 'text-primary',
-      borderColor: 'border-primary/20',
-      bgColor: 'bg-primary/5',
-      caps: ['Register team', 'Manage roster', 'Auction & squad']
-    },
-    {
-      title: 'Player',
-      icon: Star,
-      color: 'text-info',
-      borderColor: 'border-info/20',
-      bgColor: 'bg-info/5',
-      caps: ['Reusable profile', 'Tournament registration', 'Track status']
-    },
-    {
-      title: 'Spectator',
-      icon: Play,
-      color: 'text-success',
-      borderColor: 'border-success/20',
-      bgColor: 'bg-success/5',
-      caps: ['Live scores', 'Fixtures', 'Standings']
-    }
-  ];
-
   return (
-    <section className="w-full py-16 lg:py-24 bg-background relative z-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-text-primary tracking-tight">One platform. Every perspective.</h2>
-        </div>
+    <section className="w-full bg-background py-16 lg:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <Reveal className="mb-12 max-w-2xl">
+          <p className="text-sm font-bold uppercase tracking-widest text-primary">For everyone on court</p>
+          <h2 className="mt-2 text-3xl font-black tracking-tight text-text-primary md:text-5xl">One platform. Five roles.</h2>
+        </Reveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {roles.map((role, i) => (
-            <div key={i} className={`bg-surface rounded-3xl p-8 border ${role.borderColor} shadow-card relative overflow-hidden group hover:border-opacity-40 transition-colors h-full flex flex-col`}>
-              <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full ${role.bgColor} blur-2xl group-hover:scale-150 transition-transform duration-700`} />
-              
-              <div className="relative z-10 flex-1 flex flex-col">
-                <div className={`w-12 h-12 rounded-2xl ${role.bgColor} flex items-center justify-center mb-6`}>
-                  <role.icon className={`w-6 h-6 ${role.color}`} />
-                </div>
-                
-                <h3 className="text-xl font-bold text-text-primary mb-6">{role.title}</h3>
-                
-                <ul className="space-y-4">
-                  {role.caps.map((cap, j) => (
-                    <li key={j} className="flex items-start gap-3">
-                      <div className={`mt-0.5 rounded-full p-0.5 ${role.bgColor}`}>
-                        <Check className={`w-3 h-3 ${role.color}`} />
-                      </div>
-                      <span className="text-sm text-text-secondary leading-snug">{cap}</span>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {ROLES.map((r, i) => (
+            <Reveal key={r.title} delay={i * 0.06}>
+              <div className="group h-full rounded-2xl border border-border bg-surface p-6 shadow-card transition duration-300 hover:-translate-y-1 hover:border-primary/40">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground"><r.icon className="h-5 w-5" /></span>
+                <h3 className="mt-4 text-lg font-bold text-text-primary">{r.title}</h3>
+                <ul className="mt-3 space-y-2">
+                  {r.caps.map((c) => (
+                    <li key={c} className="flex gap-2 text-sm text-text-secondary">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                      {c}
                     </li>
                   ))}
                 </ul>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>

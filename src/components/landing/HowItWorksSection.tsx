@@ -1,58 +1,35 @@
 import React from 'react';
-import { Trophy, Users, ClipboardList, Play, BarChart2 } from 'lucide-react';
-import Link from 'next/link';
+import { ClipboardList, Gavel, Play, Trophy } from 'lucide-react';
+import { DrawLine, Reveal } from './LandingMotion';
+
+const STEPS = [
+  { icon: Trophy, title: 'Create', desc: 'Set the format, rules, fees and your tournament’s look.' },
+  { icon: ClipboardList, title: 'Register', desc: 'Teams and players sign up online; you approve them.' },
+  { icon: Gavel, title: 'Build squads', desc: 'Run the lot draw and live auction, or use registered teams.' },
+  { icon: Play, title: 'Play live', desc: 'Fixtures, live scoring, standings and certificates follow.' },
+];
 
 export function HowItWorksSection() {
-  const steps = [
-    { num: '01', title: 'Create Tournament', icon: Trophy, desc: 'Set format, rules, and branding' },
-    { num: '02', title: 'Register Teams & Players', icon: Users, desc: 'Reusable profiles, team applications' },
-    { num: '03', title: 'Manage Competition', icon: ClipboardList, desc: 'Lot draw, auction, squad building' },
-    { num: '04', title: 'Go Live', icon: Play, desc: 'Fixtures, live scoring, real-time updates' },
-    { num: '05', title: 'Results & Standings', icon: BarChart2, desc: 'Automatic standings, match history' }
-  ];
-
   return (
-    <section id="how-it-works" className="w-full py-16 lg:py-24 bg-background relative z-10 overflow-hidden scroll-mt-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-text-primary tracking-tight">Everything in one place.</h2>
-          <p className="text-text-secondary mt-4 text-lg">From creation to final whistle — managed end to end.</p>
-        </div>
+    <section id="how-it-works" className="w-full scroll-mt-20 border-y border-border bg-surface py-16 lg:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <Reveal className="mb-12 max-w-2xl">
+          <p className="text-sm font-bold uppercase tracking-widest text-primary">How it works</p>
+          <h2 className="mt-2 text-3xl font-black tracking-tight text-text-primary md:text-5xl">From sign-up to final whistle.</h2>
+        </Reveal>
 
-        <div className="relative">
-          {/* Connecting Line Desktop */}
-          <div className="hidden lg:block absolute top-[44px] left-[10%] right-[10%] h-[2px] bg-surface" />
-          {/* Connecting Line Mobile */}
-          <div className="lg:hidden absolute top-[10%] bottom-[10%] left-[39px] w-[2px] bg-surface" />
-
-          <div className="flex flex-col lg:flex-row gap-12 lg:gap-4 justify-between relative z-10">
-            {steps.map((step, i) => (
-              <div key={i} className="flex lg:flex-col items-center lg:items-center text-left lg:text-center gap-6 lg:gap-4 lg:w-1/5 relative group">
-                <div className="w-20 h-20 shrink-0 rounded-2xl bg-surface border border-border flex items-center justify-center relative shadow-card group-hover:border-primary/50 transition-colors">
-                  <step.icon className="w-8 h-8 text-primary" />
-                  <span className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-surface border border-border text-xs font-bold flex items-center justify-center text-text-muted group-hover:text-text-primary group-hover:border-primary/50 transition-colors">
-                    {step.num}
-                  </span>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-text-primary mb-1">{step.title}</h3>
-                  <p className="text-sm text-text-secondary leading-relaxed max-w-[200px] lg:mx-auto">{step.desc}</p>
-                </div>
+        <DrawLine className="mb-6 hidden h-1 rounded-full bg-gradient-to-r from-primary via-info to-success lg:block" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {STEPS.map((s, i) => (
+            <Reveal key={s.title} delay={i * 0.1}>
+              <div className="relative h-full overflow-hidden rounded-2xl border border-border bg-background p-6">
+                <span className="numeric-display absolute -right-2 -top-4 text-8xl font-black text-primary/10" aria-hidden="true">{i + 1}</span>
+                <span className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground"><s.icon className="h-5 w-5" /></span>
+                <h3 className="relative mt-5 text-xl font-bold text-text-primary">{i + 1}. {s.title}</h3>
+                <p className="relative mt-2 text-sm leading-relaxed text-text-secondary">{s.desc}</p>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-12 text-center flex flex-col items-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface border border-border text-xs sm:text-xs text-text-muted mb-8 tracking-wider">
-            <span className="text-primary font-semibold uppercase">Auction Leagues:</span> Player Registration &rarr; Lot Draw &rarr; Auction &rarr; Squad
-          </div>
-          <Link 
-            href="/organizer/tournaments/new"
-            className="text-primary font-bold hover:text-primary-hover flex items-center gap-1"
-          >
-            Create Tournament &rarr;
-          </Link>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>

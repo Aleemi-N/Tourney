@@ -1,61 +1,83 @@
 import React from 'react';
-import { Trophy, Users, UserCircle, DollarSign, Shuffle, Calendar, Edit3, BarChart2, Palette, Smartphone } from 'lucide-react';
-import { HeroMatchScoreCard } from './HeroMatchScoreCard';
+import { Bell, CalendarDays, ClipboardList, Gavel, Trophy, Zap } from 'lucide-react';
+import { Reveal } from './LandingMotion';
+import { AuctionBidTicker } from './AuctionBidTicker';
+import { CertificateVisual, JerseyVisual, LotDrawVisual, StandingsVisual } from './FeatureVisuals';
+
+const VISUAL_FEATURES = [
+  { title: 'Digital lot draw', desc: 'Fair, visible draws for icon and setter lots.', Visual: LotDrawVisual },
+  { title: 'Standings', desc: 'Tables update themselves after every match.', Visual: StandingsVisual },
+  { title: 'Jersey export', desc: 'Names, numbers and sizes ready for the printer.', Visual: JerseyVisual },
+  { title: 'Certificates', desc: 'Printable certificates for players and winners.', Visual: CertificateVisual },
+];
+
+const FEATURES = [
+  { icon: Trophy, title: 'Tournament management', desc: 'Format, rules, branding and every setting in one place.' },
+  { icon: ClipboardList, title: 'Team & player registration', desc: 'Online forms, fees and approvals — profiles reused every season.' },
+  { icon: CalendarDays, title: 'Fixtures', desc: 'League and knockout schedules built for you.' },
+  { icon: Bell, title: 'Notifications', desc: 'Players and owners hear about what matters to them.' },
+];
 
 export function FeaturesSection() {
-  const features = [
-    { icon: Trophy, title: 'Tournament Management' },
-    { icon: Users, title: 'Team & Player Registration' },
-    { icon: UserCircle, title: 'Player Profiles' },
-    { icon: DollarSign, title: 'Live Auction' },
-    { icon: Shuffle, title: 'Digital Lot Draw' },
-    { icon: Calendar, title: 'Fixtures & Schedule' },
-    { icon: Edit3, title: 'Volleyball Scoring' },
-    { icon: BarChart2, title: 'Standings & Results' },
-    { icon: Palette, title: 'Tournament Branding' },
-    { icon: Smartphone, title: 'Mobile-First PWA' }
-  ];
-
   return (
-    <section id="features" className="w-full py-16 lg:py-24 bg-background relative z-10 scroll-mt-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-16">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-text-primary tracking-tight">Built for serious volleyball.</h2>
-        </div>
+    <section id="features" className="relative w-full scroll-mt-20 bg-background py-16 lg:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <Reveal className="mb-12 max-w-2xl">
+          <p className="text-sm font-bold uppercase tracking-widest text-primary">Features</p>
+          <h2 className="mt-2 text-3xl font-black tracking-tight text-text-primary md:text-5xl">Everything game day needs.</h2>
+        </Reveal>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          
-          {/* Featured Tile */}
-          <div className="w-full lg:w-2/5 rounded-3xl bg-surface border border-border p-8 flex flex-col justify-between overflow-hidden relative shadow-card group">
-            <div className="absolute inset-0 bg-gradient-to-br from-live/5 to-transparent opacity-50" />
-            <div className="relative z-10 mb-12">
-              <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider text-live bg-live/10 border border-live/20 rounded-full inline-flex items-center gap-2 mb-4">
-                <span className="w-1.5 h-1.5 rounded-full bg-live animate-pulse" />
-                Live Experience
-              </span>
-              <h3 className="text-2xl font-bold text-text-primary mb-2">Live Tournament Experience</h3>
-              <p className="text-text-secondary leading-relaxed">
-                Follow the action as it happens with live scores, set progress, and real-time match timelines.
-              </p>
-            </div>
-            
-            <div className="relative z-10 w-full flex justify-center lg:justify-start transition-transform duration-500 origin-bottom-left">
-              <HeroMatchScoreCard />
-            </div>
-          </div>
-
-          {/* Icon Grid */}
-          <div className="w-full lg:w-3/5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {features.map((feature, i) => (
-              <div key={i} className="bg-surface border border-border rounded-2xl p-6 flex items-center gap-4 hover:border-border transition-colors group">
-                <div className="w-12 h-12 rounded-xl bg-surface flex items-center justify-center text-primary group-hover:bg-primary/10 transition-colors shrink-0">
-                  <feature.icon className="w-6 h-6 transition-transform" />
-                </div>
-                <h4 className="font-semibold text-text-primary text-base">{feature.title}</h4>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Reveal className="sm:col-span-2">
+            <div className="flex h-full flex-col justify-between gap-6 overflow-hidden rounded-3xl border border-border bg-surface p-6 shadow-card sm:p-8">
+              <div>
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-live/10 text-live"><Zap className="h-5 w-5" /></span>
+                <h3 className="mt-4 text-2xl font-bold text-text-primary">Point-by-point live scoring</h3>
+                <p className="mt-2 text-text-secondary">Scorers tap each rally on a phone. Fans see the score, sets and server change instantly — on the web, the app or a TV screen.</p>
               </div>
-            ))}
-          </div>
+              <div className="flex items-center gap-2" aria-hidden="true">
+                {[25, 23, 25, 19].map((p, i) => (
+                  <div key={i} className="flex-1 rounded-xl bg-surface-muted p-3 text-center">
+                    <p className="text-xs font-semibold text-text-muted">Set {i + 1}</p>
+                    <p className="numeric-display text-xl font-black text-text-primary">{p}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Reveal>
 
+          <Reveal className="sm:col-span-2" delay={0.08}>
+            <div className="flex h-full flex-col justify-between gap-6 overflow-hidden rounded-3xl border border-border bg-surface p-6 shadow-card sm:p-8">
+              <div>
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary"><Gavel className="h-5 w-5" /></span>
+                <h3 className="mt-4 text-2xl font-bold text-text-primary">Live player auctions</h3>
+                <p className="mt-2 text-text-secondary">Team owners bid in real time with budgets enforced. Everyone watches the paddle go up together.</p>
+              </div>
+              <AuctionBidTicker />
+            </div>
+          </Reveal>
+
+          {VISUAL_FEATURES.map((f, i) => (
+            <Reveal key={f.title} delay={i * 0.06}>
+              <div className="flex h-full flex-col justify-between gap-5 rounded-3xl border border-border bg-surface p-6 shadow-card transition duration-300 hover:-translate-y-1 hover:border-primary/40">
+                <div className="flex min-h-28 items-center justify-center"><f.Visual /></div>
+                <div>
+                  <h3 className="font-bold text-text-primary">{f.title}</h3>
+                  <p className="mt-1 text-sm text-text-secondary">{f.desc}</p>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+
+          {FEATURES.map((f, i) => (
+            <Reveal key={f.title} delay={(i % 4) * 0.06}>
+              <div className="group h-full rounded-2xl border border-border bg-surface p-5 shadow-card transition duration-300 hover:-translate-y-1 hover:border-primary/40">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition group-hover:scale-110"><f.icon className="h-5 w-5" /></span>
+                <h3 className="mt-4 font-bold text-text-primary">{f.title}</h3>
+                <p className="mt-1 text-sm text-text-secondary">{f.desc}</p>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>

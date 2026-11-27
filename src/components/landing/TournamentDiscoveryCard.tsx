@@ -66,7 +66,7 @@ export function TournamentDiscoveryCard({ tournament }: DiscoveryTournamentProps
       case 'UPCOMING':
         return (
           <span className="px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-warning bg-warning/10 border border-warning/20 rounded-full">
-            PREPARATION
+            UPCOMING
           </span>
         );
       default:
@@ -81,7 +81,7 @@ export function TournamentDiscoveryCard({ tournament }: DiscoveryTournamentProps
   return (
     <Link 
       href={`/t/${tournament.slug}`}
-      className="group w-full max-w-[340px] min-w-[280px] bg-surface hover:bg-surface rounded-2xl border border-border hover:border-border transition-all shadow-card overflow-hidden relative flex flex-col snap-start shrink-0"
+      className="group w-full max-w-[340px] min-w-[280px] bg-surface rounded-2xl border border-border hover:border-primary/40 hover:-translate-y-1 transition duration-300 shadow-card overflow-hidden relative flex flex-col snap-start shrink-0"
     >
       <div className="absolute top-0 right-0 left-0 h-24 bg-gradient-to-br from-primary/10 to-transparent opacity-50 pointer-events-none transition-all" />
       <div className="p-5 flex flex-col flex-1 relative z-10 gap-4">
