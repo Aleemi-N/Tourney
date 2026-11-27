@@ -1,5 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
+import { LandingPhoto } from './LandingPhoto';
+import { PHOTOS } from './photos';
 import { Smartphone } from 'lucide-react';
 import { createClient } from '@/lib/api/server';
 import { CourtLineBackground } from './CourtLineBackground';
@@ -28,6 +30,9 @@ export async function HeroSection() {
 
   return (
     <section className="relative w-full overflow-hidden bg-background">
+      <LandingPhoto src={PHOTOS.heroSpike.src} alt="" fill preload sizes="100vw" className="landing-kenburns object-cover opacity-20 grayscale dark:opacity-30" />
+      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/40" />
+      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background to-transparent" />
       <CourtLineBackground />
       <div className="landing-drift pointer-events-none absolute -left-40 -top-40 h-[520px] w-[620px] rounded-full bg-primary/20 blur-[120px]" />
       <div className="landing-drift pointer-events-none absolute -right-40 top-40 h-[420px] w-[520px] rounded-full bg-info/15 blur-[120px] [animation-delay:-7s]" />

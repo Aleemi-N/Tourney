@@ -9,14 +9,18 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
 
   images: {
-    remotePatterns: apiUrl
-      ? [{
-          protocol: apiUrl.protocol.replace(':', '') as 'http' | 'https',
-          hostname: apiUrl.hostname,
-          ...(apiUrl.port ? { port: apiUrl.port } : {}),
-          pathname: '/storage/object/public/**',
-        }]
-      : [],
+    remotePatterns: [
+      ...(apiUrl
+        ? [{
+            protocol: apiUrl.protocol.replace(':', '') as 'http' | 'https',
+            hostname: apiUrl.hostname,
+            ...(apiUrl.port ? { port: apiUrl.port } : {}),
+            pathname: '/storage/object/public/**',
+          }]
+        : []),
+      // Free Unsplash stock photos on the home page (src/components/landing/photos.ts), served through next/image.
+      { protocol: 'https', hostname: 'images.unsplash.com', pathname: '/photo-*' },
+    ],
   },
 
   // Baseline security headers on every response (HSTS is set by the reverse proxy, which knows it serves HTTPS).

@@ -1,5 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
+import { LandingPhoto } from './LandingPhoto';
+import { PHOTOS } from './photos';
 import { CourtLineBackground } from './CourtLineBackground';
 import { Reveal } from './LandingMotion';
 import { VolleyballBall } from './VolleyballBall';
@@ -7,6 +9,8 @@ import { VolleyballBall } from './VolleyballBall';
 export function CtaSection() {
   return (
     <section className="relative w-full overflow-hidden border-t border-border bg-background py-20 lg:py-28">
+      <LandingPhoto src={PHOTOS.sunset.src} alt="" fill sizes="100vw" className="object-cover opacity-40 dark:opacity-50" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-background/70 to-background" />
       <CourtLineBackground className="opacity-50" />
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[400px] w-full max-w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-[100px]" />
 

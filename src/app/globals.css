@@ -274,9 +274,11 @@ button:disabled,
 @keyframes landing-marquee { to { transform: translateX(-50%); } }
 @keyframes landing-shimmer { to { background-position: 200% center; } }
 @keyframes landing-drift { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(40px, -30px) scale(1.1); } }
+@keyframes landing-kenburns { from { transform: scale(1.15); } to { transform: scale(1); } }
+.landing-kenburns { animation: landing-kenburns 18s ease-out both; }
 .landing-marquee { animation: landing-marquee 40s linear infinite; }
 .landing-shimmer { background-size: 200% auto; animation: landing-shimmer 6s linear infinite; }
 .landing-drift { animation: landing-drift 14s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .landing-marquee, .landing-shimmer, .landing-drift { animation: none; }
+  .landing-marquee, .landing-shimmer, .landing-drift, .landing-kenburns { animation: none; }
 }

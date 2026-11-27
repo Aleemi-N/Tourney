@@ -1,23 +1,19 @@
-'use client';
-
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Bell, Smartphone } from 'lucide-react';
-import Image from 'next/image';
+import { Smartphone } from 'lucide-react';
+import { AppPhoneNotifications } from './AppPhoneNotifications';
 import { Reveal } from './LandingMotion';
 import { APP_CONFIG } from '@/lib/config';
+import { PHOTOS } from './photos';
+import { LandingPhoto } from './LandingPhoto';
 
 
-const NOTIFICATIONS = [
-  { title: 'Set 2 to Blue Spikers', body: '25–23 · Blue Spikers lead 2–0' },
-  { title: 'You were picked!', body: 'Sold to Coast Smash in the auction' },
-  { title: 'Match starts in 15 min', body: 'Court 1 · Quarter-final' },
-];
 
 export function AppDownloadSection() {
   return (
     <section id="app" className="w-full scroll-mt-20 bg-background px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
       <div data-theme="dark" className="relative mx-auto grid max-w-7xl items-center gap-10 overflow-hidden rounded-[2rem] border border-border bg-surface p-8 text-text-primary sm:p-12 lg:grid-cols-2">
+        <LandingPhoto src={PHOTOS.ball.src} alt="" fill sizes="(min-width: 1024px) 1280px, 100vw" className="object-cover object-right opacity-35" />
+        <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/90 to-surface/30" />
         <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-primary/25 blur-[100px]" />
 
         <Reveal className="relative z-10 flex flex-col gap-5 text-center lg:text-left">
@@ -39,27 +35,10 @@ export function AppDownloadSection() {
           <div className="rounded-[2.5rem] border-4 border-border-strong bg-background p-4 shadow-overlay">
             <div className="mx-auto mb-6 h-1.5 w-16 rounded-full bg-border-strong" />
             <div className="mb-6 flex flex-col items-center gap-2">
-              <Image src="/icons/icon-192.png" alt="" width={56} height={56} className="rounded-2xl" />
+              <LandingPhoto src="/icons/icon-192.png" alt="" width={56} height={56} className="rounded-2xl" />
               <span className="text-sm font-bold">Tourny</span>
             </div>
-            <div className="flex min-h-[230px] flex-col gap-2.5">
-              {NOTIFICATIONS.map((n, i) => (
-                <motion.div
-                  key={n.title}
-                  initial={{ opacity: 0, y: -16, scale: 0.95 }}
-                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.4 + i * 0.45, type: 'spring', stiffness: 260, damping: 22 }}
-                  className="flex gap-3 rounded-2xl border border-border bg-surface-raised p-3"
-                >
-                  <Bell className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-bold">{n.title}</p>
-                    <p className="truncate text-xs text-text-muted">{n.body}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            <AppPhoneNotifications />
           </div>
         </div>
       </div>

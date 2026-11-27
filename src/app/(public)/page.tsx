@@ -2,6 +2,7 @@ import React from 'react';
 import { PublicLandingNav } from '@/components/landing/PublicLandingNav';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { FeatureMarquee } from '@/components/landing/FeatureMarquee';
+import { GameDaySection } from '@/components/landing/GameDaySection';
 import { TournamentDiscoverySection } from '@/components/landing/TournamentDiscoverySection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { FeaturesSection } from '@/components/landing/FeaturesSection';
@@ -24,6 +25,7 @@ export default async function LandingPage() {
         <main>
           <HeroSection />
           <FeatureMarquee />
+          <GameDaySection />
           <TournamentDiscoverySection />
           <HowItWorksSection />
           <FeaturesSection />
